@@ -1,0 +1,160 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum GoalStatus {
+  IN_PROGRESS
+  DONE
+  MISSED
+}
+
+enum ReviewChoice {
+  CARRY
+  CANCEL
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  authKey           AuthKey?
+  devices           Device[]
+  roles             Role[]
+  missionStatements MissionStatement[]
+
+  @@map("users")
+}
+
+// Holds both wrapped copies of the same master encryption key.
+// The server only ever stores ciphertext here — it cannot unwrap either copy itself.
+model AuthKey {
+  id                    String    @id @default(uuid())
+  userId                String    @unique
+  wrappedKeyPassword    Bytes
+  wrappedKeyRecovery    Bytes
+  recoveryKeyIssuedAt   DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("auth_keys")
+}
+
+model Device {
+  id                String   @id @default(uuid())
+  userId            String
+  deviceName        String
+  biometricEnabled  Boolean  @default(false)
+  lastActiveAt      DateTime @default(now())
+  createdAt         DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("devices")
+}
+
+model Role {
+  id         String   @id @default(uuid())
+  userId     String
+  domain     String
+  label      String
+  isFeatured Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goals          Goal[]
+  scheduleBlocks ScheduleBlock[]
+  growthRings    GrowthRing[]
+
+  @@index([userId])
+  @@map("roles")
+}
+
+model Goal {
+  id            String     @id @default(uuid())
+  roleId        String
+  title         String
+  status        GoalStatus @default(IN_PROGRESS)
+  carryForward  Boolean    @default(false)
+  weekStart     DateTime   @db.Date
+  createdAt     DateTime   @default(now())
+
+  role           Role            @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  reviewEntry    ReviewEntry?
+  scheduleBlocks ScheduleBlock[]
+
+  @@index([roleId, weekStart])
+  @@map("goals")
+}
+
+// Only exists once a missed goal has been reflected on —
+// its absence is what the weekly review screen checks for the "needs reflection" gate.
+model ReviewEntry {
+  id               String       @id @default(uuid())
+  goalId           String       @unique
+  reasonEncrypted  Bytes
+  choice           ReviewChoice
+  resolvedAt       DateTime     @default(now())
+
+  goal Goal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@map("review_entries")
+}
+
+// Serves both the hourly schedule grid and the day's priorities row.
+// isPriority + a null hour together represent an unscheduled, no-fixed-time item.
+model ScheduleBlock {
+  id         String   @id @default(uuid())
+  roleId     String
+  goalId     String?
+  day        DateTime @db.Date
+  hour       Int?
+  isPriority Boolean  @default(false)
+  title      String
+  createdAt  DateTime @default(now())
+
+  role Role  @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  goal Goal? @relation(fields: [goalId], references: [id], onDelete: SetNull)
+
+  @@index([roleId, day])
+  @@map("schedule_blocks")
+}
+
+// One row per role per year. votesLogged resets to 0 when a new year's row is created;
+// sealed rows are permanent and never deleted — they're the "veteran" record.
+model GrowthRing {
+  id          String    @id @default(uuid())
+  roleId      String
+  year        Int
+  votesLogged Int       @default(0)
+  sealed      Boolean   @default(false)
+  sealedAt    DateTime?
+
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, year])
+  @@map("growth_rings")
+}
+
+// Versioned so the yearly "revisit and re-sign" ritual keeps a full history
+// rather than overwriting the previous statement.
+model MissionStatement {
+  id                String   @id @default(uuid())
+  userId            String
+  contentEncrypted  Bytes
+  signedName        String
+  signedAt          DateTime @default(now())
+  version           Int
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, version])
+  @@map("mission_statements")
+}
