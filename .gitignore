@@ -46,3 +46,11 @@ AGENTS.md
 CLAUDE.md
 /.agents
 /.claude
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/

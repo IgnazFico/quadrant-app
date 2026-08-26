@@ -36,6 +36,8 @@ model User {
 model AuthKey {
   id                    String    @id @default(uuid())
   userId                String    @unique
+  saltPassword        Bytes
+  saltRecovery        Bytes
   wrappedKeyPassword    Bytes
   wrappedKeyRecovery    Bytes
   recoveryKeyIssuedAt   DateTime  @default(now())

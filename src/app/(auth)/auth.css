@@ -1,0 +1,18 @@
+@reference "tailwindcss";
+
+.auth-input {
+  @apply w-full rounded-[9px] border border-[#E5E1D8] bg-white px-3 py-2.5 text-sm text-[#1F2937] outline-none;
+}
+.auth-input:focus {
+  @apply border-[#F97316];
+}
+
+.auth-btn-primary {
+  @apply mt-1 rounded-[10px] bg-[#F97316] py-3 text-sm font-semibold text-white transition-colors;
+}
+.auth-btn-primary:hover {
+  @apply bg-[#EA6A0C];
+}
+.auth-btn-primary:disabled {
+  @apply bg-[#F0D9C6];
+}
