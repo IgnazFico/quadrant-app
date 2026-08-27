@@ -10,6 +10,11 @@ import { loginSchema } from "./validators";
  * key — that happens entirely in lib/crypto.ts, in the browser.
  */
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  secret:
+    process.env.AUTH_SECRET ??
+    process.env.NEXTAUTH_SECRET ??
+    process.env.BETTER_AUTH_SECRET,
+  trustHost: true,
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },
   providers: [
