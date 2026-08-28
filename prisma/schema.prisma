@@ -27,6 +27,7 @@ model User {
   devices           Device[]
   roles             Role[]
   missionStatements MissionStatement[]
+  activityDays ActivityDay[]
 
   @@map("users")
 }
@@ -159,4 +160,18 @@ model MissionStatement {
 
   @@unique([userId, version])
   @@map("mission_statements")
+}
+
+// One row per user per calendar day they opened the app. Deliberately NOT
+// a streak counter — the trigger is "7 separate days used," consecutive
+// or not, so we just count distinct rows rather than tracking consecutive-day logic.
+model ActivityDay {
+  id     String   @id @default(uuid())
+  userId String
+  date   DateTime @db.Date
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@map("activity_days")
 }
