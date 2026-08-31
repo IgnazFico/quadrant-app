@@ -5,10 +5,9 @@ export async function recordActivityToday(userId: string) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  await prisma.activityDay.upsert({
-    where: { userId_date: { userId, date: today } },
-    update: {},
-    create: { userId, date: today },
+  await prisma.activityDay.createMany({
+    data: [{ userId, date: today }],
+    skipDuplicates: true,
   });
 }
 
@@ -16,7 +15,9 @@ export async function getActiveDayCount(userId: string): Promise<number> {
   return prisma.activityDay.count({ where: { userId } });
 }
 
-export async function hasWrittenMissionStatement(userId: string): Promise<boolean> {
+export async function hasWrittenMissionStatement(
+  userId: string,
+): Promise<boolean> {
   const count = await prisma.missionStatement.count({ where: { userId } });
   return count > 0;
 }

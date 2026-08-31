@@ -12,3 +12,9 @@ export function startOfDay(d: Date = new Date()): Date {
   date.setHours(0, 0, 0, 0);
   return date;
 }
+
+export function addDays(d: Date, n: number): Date {
+  const date = new Date(d);
+  date.setDate(date.getDate() + n);
+  return date;
+}
