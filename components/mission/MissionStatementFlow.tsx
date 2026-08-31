@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useAuthStore } from "../../store/authStore";
 import { encryptField, toBase64 } from "../../lib/crypto";
+import Link from "next/link";
 
 type Screen =
   | "intro"
@@ -303,12 +304,12 @@ export function MissionStatementFlow() {
               Quadrant will surface this again next January — not to change it
               on the spot, but to see if it still sounds like you.
             </p>
-            <a
+            <Link
               href="/"
               className="w-full rounded-[10px] bg-[#F97316] py-3.5 text-center text-sm font-semibold text-white hover:bg-[#EA6A0C]"
             >
               Enter Quadrant
-            </a>
+            </Link>
           </div>
         )}
       </div>

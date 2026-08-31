@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { DOMAINS, domainLabel } from "../../lib/domains";
+import Link from "next/link";
 
 type Step = 1 | 2 | 3 | 4; // 4 = done
 
@@ -308,12 +309,12 @@ export function RoleOnboarding() {
 
         {step === 4 && (
           <div className="mt-8 flex justify-end">
-            <a
+            <Link
               href="/goals"
               className="rounded-[10px] bg-[#F97316] px-5 py-3 text-sm font-semibold text-white hover:bg-[#EA6A0C]"
             >
               Start setting goals
-            </a>
+            </Link>
           </div>
         )}
       </div>
