@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/seal-rings",
+      "schedule": "0 1 1 1 *"
+    }
+  ]
+}

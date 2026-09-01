@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "../../../../../lib/auth";
 import { prisma } from "../../../../../lib/prisma";
+import { castVote, retractVote } from "../../../../../lib/growthRing";
 
 async function loadOwnedGoal(id: string, userId: string) {
   const goal = await prisma.goal.findUnique({
@@ -45,6 +46,18 @@ export async function PATCH(
     where: { id: params.id },
     data: parsed.data,
   });
+
+  // Cast or retract a growth-ring vote based on the actual before/after
+  // transition — not just "is it DONE now", which would let someone farm
+  // votes by re-saving an already-done goal.
+  const wasDone = owned.status === "DONE";
+  const isDoneNow = goal.status === "DONE";
+  if (!wasDone && isDoneNow) {
+    await castVote(owned.roleId);
+  } else if (wasDone && !isDoneNow) {
+    await retractVote(owned.roleId);
+  }
+
   return NextResponse.json({ goal });
 }
 
@@ -62,9 +75,12 @@ export async function DELETE(
   if (!owned)
     return NextResponse.json({ error: "Goal not found" }, { status: 404 });
 
-  // Any ScheduleBlock referencing this goal keeps its title and just loses
-  // the link (onDelete: SetNull in the schema) — deleting a goal shouldn't
-  // silently erase someone's calendar history.
+  // A DONE goal being deleted still had its vote cast — retract it first
+  // so deleting a completed goal can't leave a phantom vote behind.
+  if (owned.status === "DONE") {
+    await retractVote(owned.roleId);
+  }
+
   await prisma.goal.delete({ where: { id: params.id } });
   return NextResponse.json({ ok: true });
 }

@@ -35,6 +35,12 @@ export async function GET() {
     label: r.label,
     domain: r.domain,
     isFeatured: r.isFeatured,
+    // Tenure is identity/time-based (how long you've held this role),
+    // deliberately independent of vote data — a role you added today is
+    // "Year 1" even before you've completed a single goal in it. This
+    // replaces the earlier date-math placeholder that inferred tenure
+    // from ring.year, which broke for roles with no ring row yet.
+    tenureYears: currentYear - r.createdAt.getFullYear() + 1,
     ring: r.growthRings[0]
       ? {
           year: r.growthRings[0].year,

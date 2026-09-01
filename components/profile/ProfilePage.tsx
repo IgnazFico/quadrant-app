@@ -6,16 +6,20 @@ import { domainColor } from "../../lib/domainColors";
 import { useAuthStore } from "../../store/authStore";
 import { decryptField, fromBase64 } from "../../lib/crypto";
 
-const VOTES_PER_RING = 6; // matches the growth-ring prototype's demo cadence
-
 type Ring = { year: number; votesLogged: number; sealed: boolean } | null;
 type RoleBadge = {
   id: string;
   label: string;
   domain: string;
   isFeatured: boolean;
+  tenureYears: number;
   ring: Ring;
 };
+
+// Purely a visual fill target so the ring reads as "making progress" —
+// sealing itself is time-based (year boundary), never vote-count-based.
+// See lib/growthRing.ts.
+const VOTES_PER_RING_VISUAL = 24;
 
 function ringSvg(color: string, progress: number, size: number) {
   const r = size / 2 - 3;
@@ -65,8 +69,6 @@ export function ProfilePage() {
   const masterKey = useAuthStore((s) => s.masterKey);
 
   useEffect(() => {
-    // Random heights generated client-side, after mount, to avoid any
-    // server/client render mismatch — purely decorative, no data behind it.
     setBarcode(Array.from({ length: 14 }, () => 8 + Math.random() * 14));
   }, []);
 
@@ -129,14 +131,14 @@ export function ProfilePage() {
   }
 
   const featured = roles.filter((r) => r.isFeatured).slice(0, 2);
-  const longestYear = roles.reduce(
-    (max, r) => Math.max(max, r.ring?.year ? currentTenure(r.ring.year) : 0),
+  const longestYears = roles.reduce(
+    (max, r) => Math.max(max, r.tenureYears),
     0,
   );
   const identityTitle =
     featured.length > 0
       ? featured
-          .map((r) => `${ordinalYear(r.ring)} ${r.label}`)
+          .map((r) => `${ordinal(r.tenureYears)} Year ${r.label}`)
           .join(" \u00b7 ")
       : "Set up your featured roles";
 
@@ -233,7 +235,7 @@ export function ProfilePage() {
                 <MetaField label="Active roles" value={String(roles.length)} />
                 <MetaField
                   label="Longest streak"
-                  value={longestYear > 0 ? `${longestYear} yrs` : "\u2014"}
+                  value={longestYears > 0 ? `${longestYears} yrs` : "\u2014"}
                 />
               </div>
 
@@ -260,7 +262,7 @@ export function ProfilePage() {
                           {r.label}
                         </div>
                         <div className="font-mono text-[8.5px] text-[#9CA3AF]">
-                          {ringLabel(r.ring)}
+                          Year {r.tenureYears}
                         </div>
                       </div>
                     </div>
@@ -370,7 +372,7 @@ export function ProfilePage() {
                     {r.label}
                   </div>
                   <div className="font-mono text-[9.5px] text-[#9CA3AF]">
-                    {ringLabel(r.ring)}
+                    Year {r.tenureYears}
                   </div>
                 </div>
               </button>
@@ -402,7 +404,7 @@ export function ProfilePage() {
           </svg>
           <span>
             Tap a badge below to feature it on the card front (up to 2). Ring
-            progress fills as goals are completed.
+            progress fills as goals are completed this year.
           </span>
         </div>
       </div>
@@ -424,24 +426,12 @@ function MetaField({ label, value }: { label: string; value: string }) {
 function ringProgress(ring: Ring): number {
   if (!ring) return 0;
   if (ring.sealed) return 1;
-  return Math.min(ring.votesLogged / VOTES_PER_RING, 1);
+  return Math.min(ring.votesLogged / VOTES_PER_RING_VISUAL, 1);
 }
 
-function ringLabel(ring: Ring): string {
-  if (!ring) return "New";
-  return `Year ${currentTenure(ring.year)}`;
-}
-
-// Placeholder tenure calc until the growth-ring sealing system (voting,
-// year rollover) is actually built — see README for what's missing.
-function currentTenure(year: number): number {
-  return Math.max(1, new Date().getFullYear() - year + 1);
-}
-
-function ordinalYear(ring: Ring): string {
-  const n = ring ? currentTenure(ring.year) : 1;
+function ordinal(n: number): string {
   const suffix = n === 1 ? "st" : n === 2 ? "nd" : n === 3 ? "rd" : "th";
-  return `${n}${suffix} Year`;
+  return `${n}${suffix}`;
 }
 
 function formatMonthYear(iso: string): string {
