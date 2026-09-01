@@ -385,6 +385,24 @@ export function ProfilePage() {
             </Link>
           </div>
         </section>
+        <Link
+          href="/year-review"
+          className="mt-4 flex items-center justify-between rounded-xl border border-[#ECE8DF] bg-white px-4 py-3.5 text-sm font-semibold text-[#1F2937] hover:bg-[#F3F4F6]"
+        >
+          Your year in Quadrant
+          <svg
+            viewBox="0 0 24 24"
+            width="16"
+            height="16"
+            fill="none"
+            stroke="#9CA3AF"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </Link>
 
         <div className="mt-4 flex gap-2 rounded-lg bg-[#F3F4F6] px-3 py-2.5 text-[11px] leading-relaxed text-[#9CA3AF]">
           <svg
