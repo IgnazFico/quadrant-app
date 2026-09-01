@@ -92,6 +92,7 @@ model Goal {
   role           Role            @relation(fields: [roleId], references: [id], onDelete: Cascade)
   reviewEntry    ReviewEntry?
   scheduleBlocks ScheduleBlock[]
+  completedAt DateTime?
 
   @@index([roleId, weekStart])
   @@map("goals")
