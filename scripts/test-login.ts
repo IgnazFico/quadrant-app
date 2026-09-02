@@ -2,7 +2,7 @@ import {
   deriveKey,
   fromBase64,
   unwrapMasterKey,
-} from "../lib/crypto.ts";
+} from "../lib/crypto";
 
 const email = "ignaz.fico@quadrant.com";
 const password = "Quadrant_079";

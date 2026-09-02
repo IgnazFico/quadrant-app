@@ -53,7 +53,7 @@ export function AuthForm() {
         setServerError("No account found with that email");
         return;
       }
-      const { saltPassword, wrappedKeyPassword } = await res.json();
+      const { saltPassword, wrappedKeyPassword, isNewUser } = await res.json();
 
       // 2. Derive the password key locally and try to unwrap the master key.
       //    A wrong password fails here, before any session is created.
@@ -77,7 +77,11 @@ export function AuthForm() {
 
       // 4. Keep the master key in memory only, for use during this session.
       setMasterKey(masterKey);
-      window.location.href = "/";
+      if (isNewUser) {
+        window.location.href = "/onboarding/roles";
+      } else {
+        window.location.href = "/goals";
+      }
     } catch (err: any) {
       setServerError(err?.message ?? "Incorrect email or password");
     }
@@ -133,7 +137,7 @@ export function AuthForm() {
     const email = signupForm.getValues("email");
     const password = signupForm.getValues("password");
     await signIn("credentials", { email, password, redirect: false });
-    window.location.href = "/";
+    window.location.href = "/onboarding/roles";
   }
 
   // Recovery code must be acknowledged before the user can proceed.

@@ -23,15 +23,16 @@ const patchSchema = z.object({
  *  prototype's behavior (the sheet never moves a block to a new cell). */
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await auth();
   if (!session?.user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
   const userId = (session.user as any).id as string;
+  const { id } = await params;
 
-  const owned = await loadOwnedBlock(params.id, userId);
+  const owned = await loadOwnedBlock(id, userId);
   if (!owned) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const json = await req.json();
@@ -53,7 +54,7 @@ export async function PATCH(
   }
 
   const block = await prisma.scheduleBlock.update({
-    where: { id: params.id },
+    where: { id },
     data: parsed.data,
     include: { role: true },
   });
@@ -63,17 +64,18 @@ export async function PATCH(
 
 export async function DELETE(
   _req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await auth();
   if (!session?.user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
   const userId = (session.user as any).id as string;
+  const { id } = await params;
 
-  const owned = await loadOwnedBlock(params.id, userId);
+  const owned = await loadOwnedBlock(id, userId);
   if (!owned) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  await prisma.scheduleBlock.delete({ where: { id: params.id } });
+  await prisma.scheduleBlock.delete({ where: { id } });
   return NextResponse.json({ ok: true });
 }

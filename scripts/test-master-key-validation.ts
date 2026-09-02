@@ -8,7 +8,7 @@ import {
   toBase64,
   unwrapMasterKey,
   wrapMasterKey,
-} from "../lib/crypto.ts";
+} from "../lib/crypto";
 
 function hasValidMasterKey(value: unknown): boolean {
   return value instanceof Uint8Array && value.length === 32;

@@ -25,7 +25,10 @@ export async function GET(req: Request) {
 
   const user = await prisma.user.findUnique({
     where: { email: parsed.data },
-    include: { authKey: true },
+    include: {
+      authKey: true,
+      _count: { select: { roles: true } },
+    },
   });
 
   if (!user || !user.authKey) {
@@ -37,5 +40,6 @@ export async function GET(req: Request) {
     wrappedKeyPassword: Buffer.from(user.authKey.wrappedKeyPassword).toString(
       "base64",
     ),
+    isNewUser: user._count.roles === 0,
   });
 }

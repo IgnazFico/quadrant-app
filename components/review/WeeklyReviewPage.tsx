@@ -168,7 +168,10 @@ export function WeeklyReviewPage() {
     setToast(
       `Review complete — ${carriedCount} goal${carriedCount === 1 ? "" : "s"} carried into next week`,
     );
-    setTimeout(() => setToast(null), 3200);
+    setTimeout(() => {
+      setToast(null);
+      window.location.href = "/goals";
+    }, 1500);
   }
 
   if (loading) {

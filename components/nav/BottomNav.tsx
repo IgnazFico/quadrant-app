@@ -23,8 +23,8 @@ const ITEMS = [
     ),
   },
   {
-    href: "/review",
-    label: "Review",
+    href: "/patterns",
+    label: "Patterns",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M3 3v18h18" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" />
@@ -54,7 +54,10 @@ export function BottomNav() {
   return (
     <nav className="fixed bottom-0 left-1/2 z-10 flex w-full max-w-[440px] -translate-x-1/2 gap-1 border-t border-[#ECE8DF] bg-white px-2 pb-[calc(10px+env(safe-area-inset-bottom))] pt-2.5">
       {ITEMS.map((item) => {
-        const active = pathname === item.href || pathname?.startsWith(item.href + "/");
+        const active =
+          pathname === item.href ||
+          pathname?.startsWith(item.href + "/") ||
+          (item.href === "/patterns" && (pathname === "/review" || pathname?.startsWith("/review/")));
         return (
           <Link
             key={item.href}

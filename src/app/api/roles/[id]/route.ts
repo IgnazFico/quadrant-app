@@ -10,15 +10,16 @@ const patchSchema = z.object({
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await auth();
   if (!session?.user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
   const userId = (session.user as any).id as string;
+  const { id } = await params;
 
-  const role = await prisma.role.findUnique({ where: { id: params.id } });
+  const role = await prisma.role.findUnique({ where: { id } });
   if (!role || role.userId !== userId) {
     return NextResponse.json({ error: "Role not found" }, { status: 404 });
   }
@@ -33,7 +34,7 @@ export async function PATCH(
   }
 
   const updated = await prisma.role.update({
-    where: { id: params.id },
+    where: { id },
     data: parsed.data,
   });
   return NextResponse.json({ role: updated });
