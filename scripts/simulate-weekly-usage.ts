@@ -105,10 +105,10 @@ async function runWeeklySimulation() {
         passwordHash,
         authKey: {
           create: {
-            saltPassword,
-            saltRecovery,
-            wrappedKeyPassword,
-            wrappedKeyRecovery,
+            saltPassword: Buffer.from(saltPassword),
+            saltRecovery: Buffer.from(saltRecovery),
+            wrappedKeyPassword: Buffer.from(wrappedKeyPassword),
+            wrappedKeyRecovery: Buffer.from(wrappedKeyRecovery),
           },
         },
       },
@@ -334,7 +334,7 @@ async function runWeeklySimulation() {
     await prisma.missionStatement.create({
       data: {
         userId: user.id,
-        contentEncrypted: encrypted,
+        contentEncrypted: Buffer.from(encrypted),
         signedName: "Simulated User",
         version: 1,
       },
@@ -404,7 +404,7 @@ async function runWeeklySimulation() {
       data: {
         goalId: missedGoal.id,
         choice: "CARRY",
-        reasonEncrypted,
+        reasonEncrypted: Buffer.from(reasonEncrypted),
       },
     });
 
