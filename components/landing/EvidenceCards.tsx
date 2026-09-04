@@ -26,6 +26,7 @@ const STATS_DATA: StatCardProps[] = [
     badgeBg: "bg-rose-100",
     badgeText: "text-rose-700",
     stat: "80%",
+    statColor: "text-rose-600",
     punchline: "Burned out before Day 1 of work.",
     brief: "Graduating college seniors reporting chronic burnout before their career begins.",
     fullExplanation:

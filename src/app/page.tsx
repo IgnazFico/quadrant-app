@@ -2,6 +2,8 @@ import Link from "next/link";
 import { auth } from "../../lib/auth";
 import { prisma } from "../../lib/prisma";
 import { EvidenceCards } from "../../components/landing/EvidenceCards";
+import { ParadigmComparison } from "../../components/landing/ParadigmComparison";
+import { FeatureShowcase } from "../../components/landing/FeatureShowcase";
 
 export default async function HomePage() {
   const session = await auth();
@@ -75,6 +77,12 @@ export default async function HomePage() {
               >
                 The Paradigm
               </Link>
+              <Link
+                href="#features"
+                className="hidden font-sans text-xs font-semibold uppercase tracking-wider text-[#6B7280] transition hover:text-[#1F2937] sm:block"
+              >
+                The Architecture
+              </Link>
 
               {session?.user ? (
                 <Link
@@ -121,8 +129,23 @@ export default async function HomePage() {
             {/* Main Headline with First-Render Entrance */}
             <h1 className="animate-headline mt-7 font-serif text-4xl font-extrabold leading-[1.08] tracking-tight text-[#1F2937] sm:text-6xl md:text-7xl lg:text-8xl">
               Doing more is not the same as{" "}
-              <span className="italic text-[#F97316] underline decoration-[#FDBA74] decoration-wavy decoration-2 underline-offset-8">
-                living well.
+              <span className="relative inline-block text-[#F97316]">
+                <span className="italic">living well.</span>
+                <svg
+                  className="absolute -bottom-2 left-0 h-2.5 w-full sm:-bottom-3 sm:h-3.5"
+                  viewBox="0 0 260 14"
+                  fill="none"
+                  preserveAspectRatio="none"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M 3 10 C 70 3, 190 3, 257 10"
+                    stroke="#F97316"
+                    strokeWidth="4"
+                    strokeLinecap="round"
+                    strokeOpacity="0.75"
+                  />
+                </svg>
               </span>
             </h1>
 
@@ -199,9 +222,7 @@ export default async function HomePage() {
         </section>
 
         {/* 
-          THE PARADIGM CONTRAST WITH THEMATIC CONTAINER TRANSITIONS
-          - Broken Way: Friction, tension, red/amber warning shift on hover.
-          - Quadrant Way: Radiant golden expansion, spaciousness, serene lift.
+          THE PARADIGM CONTRAST: CRUMBLING FRACTURED SYSTEM VS. INTERLOCKING ARCHITECTURE
         */}
         <section id="paradigm" className="relative px-5 py-20 sm:px-8 sm:py-28">
           <div className="mx-auto max-w-5xl">
@@ -218,169 +239,18 @@ export default async function HomePage() {
               </p>
             </div>
 
-            <div className="mt-14 grid grid-cols-1 gap-6 md:grid-cols-2">
-              {/* 
-                THE BROKEN CONVENTIONAL WAY
-                Transition represents friction & urgency overload:
-                Intensifies red warning border, shifts background, pulses warning cross.
-              */}
-              <div className="group relative rounded-3xl border border-red-200/80 bg-red-50/40 p-7 shadow-xs backdrop-blur-md transition-all duration-500 ease-out hover:-translate-y-1.5 hover:border-red-400 hover:bg-red-50/75 hover:shadow-2xl hover:shadow-red-500/10 sm:p-9">
-                <div className="flex items-center gap-2.5">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-red-100 text-sm font-bold text-red-600 transition-transform duration-300 group-hover:rotate-45 group-hover:scale-110">
-                    &times;
-                  </span>
-                  <h3 className="font-serif text-xl font-bold text-red-950 transition-colors group-hover:text-red-900">
-                    The Broken Conventional Way
-                  </h3>
-                </div>
-                <ul className="mt-6 space-y-4 text-sm text-[#4B5563]">
-                  <li className="flex items-start gap-3 transition-transform duration-300 group-hover:translate-x-1">
-                    <span className="font-mono font-bold text-red-500">
-                      &bull;
-                    </span>
-                    <div>
-                      <strong className="text-[#1F2937]">
-                        Flat Infinite To-Do Lists:
-                      </strong>
-                      <p className="mt-0.5 text-xs text-[#6B7280]">
-                        Laundry and your graduation thesis share the same
-                        screen. Your brain defaults to the easiest task while
-                        the important ones drown.
-                      </p>
-                    </div>
-                  </li>
-                  <li className="flex items-start gap-3 transition-transform duration-300 delay-75 group-hover:translate-x-1">
-                    <span className="font-mono font-bold text-red-500">
-                      &bull;
-                    </span>
-                    <div>
-                      <strong className="text-[#1F2937]">
-                        Fragile Habit Streaks:
-                      </strong>
-                      <p className="mt-0.5 text-xs text-[#6B7280]">
-                        40 days of discipline reset to Day 0 because of one sick
-                        Tuesday. Gamified shame that prompts users to quit
-                        entirely.
-                      </p>
-                    </div>
-                  </li>
-                  <li className="flex items-start gap-3 transition-transform duration-300 delay-100 group-hover:translate-x-1">
-                    <span className="font-mono font-bold text-red-500">
-                      &bull;
-                    </span>
-                    <div>
-                      <strong className="text-[#1F2937]">
-                        The Tyranny of the Urgent:
-                      </strong>
-                      <p className="mt-0.5 text-xs text-[#6B7280]">
-                        Whoever shouts loudest on Slack or email wins your
-                        entire day. You collapse at 6 PM having done nothing for
-                        yourself.
-                      </p>
-                    </div>
-                  </li>
-                  <li className="flex items-start gap-3 transition-transform duration-300 delay-150 group-hover:translate-x-1">
-                    <span className="font-mono font-bold text-red-500">
-                      &bull;
-                    </span>
-                    <div>
-                      <strong className="text-[#1F2937]">
-                        Surveillance & Ad Data Scraping:
-                      </strong>
-                      <p className="mt-0.5 text-xs text-[#6B7280]">
-                        Your personal goals, diaries, and insecurities stored in
-                        plaintext on corporate cloud servers to train ad
-                        targeting models.
-                      </p>
-                    </div>
-                  </li>
-                </ul>
-              </div>
-
-              {/* 
-                THE QUADRANT LIFE ARCHITECTURE WAY
-                Transition represents calm, spacious expansion & grounded mastery:
-                Elevates smoothly, radiant golden aura, checkmark blooms.
-              */}
-              <div className="group relative rounded-3xl border border-[#FED7AA]/90 bg-gradient-to-br from-[#FFFDF9] via-[#FFFBF5] to-[#FFF7ED] p-7 shadow-sm backdrop-blur-md transition-all duration-500 ease-out hover:-translate-y-2.5 hover:border-[#F97316] hover:shadow-2xl hover:shadow-orange-500/20 sm:p-9">
-                <div className="flex items-center gap-2.5">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#FFEDD5] text-sm font-bold text-[#F97316] shadow-xs transition-all duration-300 group-hover:scale-115 group-hover:bg-[#F97316] group-hover:text-white">
-                    &#10003;
-                  </span>
-                  <h3 className="font-serif text-xl font-bold text-[#1F2937]">
-                    The Quadrant Architecture
-                  </h3>
-                </div>
-                <ul className="mt-6 space-y-4 text-sm text-[#4B5563]">
-                  <li className="flex items-start gap-3 transition-transform duration-300 group-hover:translate-x-1">
-                    <span className="font-mono font-bold text-[#F97316]">
-                      &bull;
-                    </span>
-                    <div>
-                      <strong className="text-[#1F2937]">
-                        6 Distinct Identity Roles:
-                      </strong>
-                      <p className="mt-0.5 text-xs text-[#6B7280]">
-                        You are a Scholar, Athlete, Sibling, Friend, and
-                        Creator. You pick 2–3 Big Rocks per role each Monday
-                        morning so nothing gets left behind.
-                      </p>
-                    </div>
-                  </li>
-                  <li className="flex items-start gap-3 transition-transform duration-300 delay-75 group-hover:translate-x-1">
-                    <span className="font-mono font-bold text-[#F97316]">
-                      &bull;
-                    </span>
-                    <div>
-                      <strong className="text-[#1F2937]">
-                        Cumulative Annual Growth Rings:
-                      </strong>
-                      <p className="mt-0.5 text-xs text-[#6B7280]">
-                        Grow like a tree. Every finished goal logs a permanent
-                        vote toward your role&apos;s annual ring. At year-end,
-                        rings seal forever into your veteran record. No resets.
-                      </p>
-                    </div>
-                  </li>
-                  <li className="flex items-start gap-3 transition-transform duration-300 delay-100 group-hover:translate-x-1">
-                    <span className="font-mono font-bold text-[#F97316]">
-                      &bull;
-                    </span>
-                    <div>
-                      <strong className="text-[#1F2937]">
-                        Stephen Covey Quadrant II Planning:
-                      </strong>
-                      <p className="mt-0.5 text-xs text-[#6B7280]">
-                        Schedule high-importance, non-urgent priorities before
-                        reactive urgent noise can crowd your calendar.
-                      </p>
-                    </div>
-                  </li>
-                  <li className="flex items-start gap-3 transition-transform duration-300 delay-150 group-hover:translate-x-1">
-                    <span className="font-mono font-bold text-[#F97316]">
-                      &bull;
-                    </span>
-                    <div>
-                      <strong className="text-[#1F2937]">
-                        Zero-Knowledge Client-Side Privacy:
-                      </strong>
-                      <p className="mt-0.5 text-xs text-[#6B7280]">
-                        Encrypted locally in your browser using Libsodium and
-                        Argon2id. We cannot read your mission statements,
-                        reflections, or goals.
-                      </p>
-                    </div>
-                  </li>
-                </ul>
-              </div>
-            </div>
+            {/* Redesigned Paradigm Comparison (Broken/Crumbling vs. Interlocking Architecture) */}
+            <ParadigmComparison />
           </div>
         </section>
 
         {/* 
-          FEATURE SHOWCASE WITH INTERACTIVE THEMATIC TRANSITIONS
+          FEATURE SHOWCASE: FOCUS 100% ON HIGHLIGHTING THE EXAMPLE
         */}
-        <section className="relative border-t border-[#ECE8DF]/80 bg-[#FAF7F2]/70 px-5 py-20 backdrop-blur-sm sm:px-8 sm:py-28">
+        <section
+          id="features"
+          className="relative border-t border-[#ECE8DF]/80 bg-[#FAF7F2]/70 px-5 py-20 backdrop-blur-sm sm:px-8 sm:py-28"
+        >
           <div className="mx-auto max-w-5xl">
             <div className="max-w-2xl">
               <span className="font-mono text-xs font-bold uppercase tracking-wider text-[#F97316]">
@@ -389,162 +259,14 @@ export default async function HomePage() {
               <h2 className="mt-2 font-serif text-3xl font-bold tracking-tight text-[#1F2937] sm:text-4xl md:text-5xl">
                 An interface designed to keep you centered.
               </h2>
+              <p className="mt-2 text-sm text-[#6B7280]">
+                Explore the interactive examples below to see how Quadrant works
+                in real practice.
+              </p>
             </div>
 
-            <div className="mt-12 space-y-10">
-              {/* Feature 1: Role Architecture */}
-              <div className="group relative overflow-hidden rounded-3xl border border-[#ECE8DF] bg-white/80 p-6 shadow-xs backdrop-blur-md transition-all duration-500 hover:-translate-y-2 hover:border-blue-400 hover:shadow-xl sm:p-10">
-                <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
-                  <div className="max-w-md">
-                    <span className="rounded-md bg-[#EFF6FF] px-2.5 py-1 font-mono text-[10px] font-bold uppercase text-[#2563EB]">
-                      Feature 01
-                    </span>
-                    <h3 className="mt-2 font-serif text-2xl font-bold text-[#1F2937]">
-                      Role Architecture
-                    </h3>
-                    <p className="mt-2 text-sm leading-relaxed text-[#6B7280]">
-                      Assign your energy across your whole self. When you
-                      schedule for your health, mind, and relationships with the
-                      same gravity as your work, balance stops being accidental.
-                    </p>
-                  </div>
-                  <div className="w-full max-w-md space-y-2.5">
-                    <div className="flex items-center justify-between rounded-xl border-l-4 border-blue-500 bg-white p-3.5 shadow-sm ring-1 ring-black/5 transition-all duration-300 group-hover:translate-x-1.5 group-hover:shadow-md">
-                      <div>
-                        <span className="font-mono text-[10px] font-bold text-blue-600">
-                          CAREER // FOUNDER
-                        </span>
-                        <p className="text-sm font-semibold text-[#1F2937]">
-                          Ship zero-knowledge auth v2
-                        </p>
-                      </div>
-                      <span className="rounded bg-blue-50 px-2 py-0.5 font-mono text-[10px] text-blue-700">
-                        Quad II
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between rounded-xl border-l-4 border-emerald-500 bg-white p-3.5 shadow-sm ring-1 ring-black/5 transition-all duration-300 delay-75 group-hover:translate-x-1.5 group-hover:shadow-md">
-                      <div>
-                        <span className="font-mono text-[10px] font-bold text-emerald-600">
-                          HEALTH // ATHLETE
-                        </span>
-                        <p className="text-sm font-semibold text-[#1F2937]">
-                          3x Zone-2 Run (45 min)
-                        </p>
-                      </div>
-                      <span className="rounded bg-emerald-50 px-2 py-0.5 font-mono text-[10px] text-emerald-700">
-                        Vote +1
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between rounded-xl border-l-4 border-orange-500 bg-white p-3.5 shadow-sm ring-1 ring-black/5 transition-all duration-300 delay-100 group-hover:translate-x-1.5 group-hover:shadow-md">
-                      <div>
-                        <span className="font-mono text-[10px] font-bold text-orange-600">
-                          RELATIONSHIPS // SIBLING
-                        </span>
-                        <p className="text-sm font-semibold text-[#1F2937]">
-                          Sunday dinner & phone call
-                        </p>
-                      </div>
-                      <span className="rounded bg-orange-50 px-2 py-0.5 font-mono text-[10px] text-orange-700">
-                        Priority
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Feature 2: Annual Growth Rings (Smooth Rotating Scale on Container Hover) */}
-              <div className="group relative overflow-hidden rounded-3xl border border-[#ECE8DF] bg-white/80 p-6 shadow-xs backdrop-blur-md transition-all duration-500 hover:-translate-y-2 hover:border-[#F97316] hover:shadow-xl sm:p-10">
-                <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
-                  <div className="max-w-md">
-                    <span className="rounded-md bg-[#FFF7ED] px-2.5 py-1 font-mono text-[10px] font-bold uppercase text-[#EA580C]">
-                      Feature 02
-                    </span>
-                    <h3 className="mt-2 font-serif text-2xl font-bold text-[#1F2937]">
-                      Cumulative Annual Growth Rings
-                    </h3>
-                    <p className="mt-2 text-sm leading-relaxed text-[#6B7280]">
-                      A tree records rainy seasons and dry seasons alike. It
-                      never resets to zero. Your completed goals deposit votes
-                      toward your annual growth rings, sealed every December 31
-                      into an indelible identity record.
-                    </p>
-                  </div>
-                  <div className="flex w-full max-w-md items-center justify-center rounded-2xl bg-white/95 p-6 shadow-sm ring-1 ring-black/5 transition-all duration-300 group-hover:shadow-md">
-                    <div className="flex items-center gap-6">
-                      <div
-                        className="relative flex h-24 w-24 items-center justify-center rounded-full p-[3.5px] shadow-inner transition-transform duration-700 ease-out group-hover:scale-110 group-hover:rotate-12"
-                        style={{
-                          background:
-                            "conic-gradient(#F97316 0deg, #F97316 270deg, #F3F4F6 270deg, #F3F4F6 360deg)",
-                        }}
-                      >
-                        <div className="flex h-full w-full items-center justify-center rounded-full bg-white shadow-xs">
-                          <span className="font-serif text-xl font-bold text-[#1F2937]">
-                            2026
-                          </span>
-                        </div>
-                      </div>
-                      <div className="space-y-1 text-left">
-                        <div className="font-mono text-xs font-bold uppercase text-[#F97316] transition-colors group-hover:text-[#EA580C]">
-                          RINGS STATUS: ACTIVE
-                        </div>
-                        <div className="font-serif text-lg font-bold text-[#1F2937]">
-                          Founder &bull; Year 3
-                        </div>
-                        <div className="text-xs text-[#6B7280]">
-                          18 votes cumulative &bull; Permanently sealed at
-                          year-end
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Feature 3: Guilt-Free Sunday Review */}
-              <div className="group relative overflow-hidden rounded-3xl border border-[#ECE8DF] bg-white/80 p-6 shadow-xs backdrop-blur-md transition-all duration-500 hover:-translate-y-2 hover:border-emerald-400 hover:shadow-xl sm:p-10">
-                <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
-                  <div className="max-w-md">
-                    <span className="rounded-md bg-[#F0FDF4] px-2.5 py-1 font-mono text-[10px] font-bold uppercase text-[#16A34A]">
-                      Feature 03
-                    </span>
-                    <h3 className="mt-2 font-serif text-2xl font-bold text-[#1F2937]">
-                      The Honest Sunday Review
-                    </h3>
-                    <p className="mt-2 text-sm leading-relaxed text-[#6B7280]">
-                      Missed a goal? Good. Life happens. On Sunday, Quadrant
-                      prompts a brief reflection: Was it unrealistic? Did
-                      emergencies hit? You choose to Carry or Cancel without
-                      guilt or red warning bells.
-                    </p>
-                  </div>
-                  <div className="w-full max-w-md rounded-2xl bg-white/95 p-5 shadow-sm ring-1 ring-black/5 transition-all duration-300 group-hover:scale-[1.02] group-hover:shadow-md">
-                    <div className="border-b border-[#F3F4F6] pb-2 text-left">
-                      <span className="font-mono text-[10px] uppercase text-[#9CA3AF]">
-                        SUNDAY REFLECTION RITUAL
-                      </span>
-                      <p className="text-xs font-semibold text-[#1F2937]">
-                        Goal: Complete thesis chapter 4
-                      </p>
-                    </div>
-                    <div className="mt-3 text-left">
-                      <p className="text-xs italic text-[#6B7280]">
-                        &ldquo;Flu on Thursday; shifted focus to resting so I
-                        could show up Monday.&rdquo;
-                      </p>
-                    </div>
-                    <div className="mt-3 flex gap-2">
-                      <span className="flex-1 rounded-lg bg-[#F3F4F6] py-1.5 text-center font-mono text-[10px] font-bold text-[#4B5563] transition-colors hover:bg-gray-200">
-                        CANCEL WITHOUT GUILT
-                      </span>
-                      <span className="flex-1 rounded-lg bg-[#F97316] py-1.5 text-center font-mono text-[10px] font-bold text-white shadow-xs transition-colors hover:bg-[#EA6A0C]">
-                        CARRY TO NEXT WEEK
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            {/* Interactive Feature Showcase Focusing Entirely on the Feature Examples */}
+            <FeatureShowcase />
           </div>
         </section>
 
@@ -577,8 +299,8 @@ export default async function HomePage() {
                 className="w-full rounded-xl bg-[#F97316] px-8 py-4 font-sans text-base font-bold text-white shadow-xl shadow-orange-500/25 transition-all hover:bg-[#EA6A0C] hover:shadow-2xl hover:shadow-orange-500/35 hover:-translate-y-0.5 sm:w-auto"
               >
                 {session?.user
-                  ? `Enter Your Dashboard`
-                  : "Start Your Growth Rings Free"}
+                  ? "Enter Your Dashboard &rarr;"
+                  : "Start Your Growth Rings Free &rarr;"}
               </Link>
             </div>
 
