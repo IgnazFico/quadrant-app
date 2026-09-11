@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { domainColor } from "../../lib/domainColors";
+import { NotificationBell } from "../notifications/NotificationBell";
 
 type GoalStatus = "IN_PROGRESS" | "DONE" | "MISSED";
 type Goal = {
@@ -203,13 +204,16 @@ export function WeeklyGoalsPage() {
               Quadrant
             </span>
           </div>
-          <span className="font-mono text-[11px] text-[#9CA3AF]">
-            {new Date().toLocaleDateString("en-US", {
-              weekday: "long",
-              month: "short",
-              day: "numeric",
-            })}
-          </span>
+          <div className="flex items-center gap-1.5">
+            <span className="font-mono text-[11px] text-[#9CA3AF]">
+              {new Date().toLocaleDateString("en-US", {
+                weekday: "long",
+                month: "short",
+                day: "numeric",
+              })}
+            </span>
+            <NotificationBell />
+          </div>
         </div>
 
         <h1 className="mb-1 font-serif text-2xl font-semibold text-[#1F2937]">

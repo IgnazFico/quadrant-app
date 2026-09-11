@@ -1,20 +1,16 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=JetBrains+Mono:ital,wght@0,400..800;1,400..800&family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&display=swap');
 @import "tailwindcss";
 
 :root {
-  --background: #FFFDF9;
+  --background: #FAF7F2;
   --foreground: #1F2937;
-  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-serif: 'Fraunces', Georgia, Cambria, 'Times New Roman', serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-serif: var(--font-serif);
-  --font-mono: var(--font-mono);
+  --font-sans: var(--font-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-serif: var(--font-serif), Georgia, Cambria, 'Times New Roman', serif;
+  --font-mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
 }
 
 .font-serif {
@@ -35,42 +31,56 @@ body {
   font-family: var(--font-sans);
 }
 
-/* 3D Flip Card Utilities */
+/* 
+  High-Performance Ambient Gradient Canvas
+  Zero blur-kernel overhead, zero DOM nodes, 120 FPS hardware composited.
+*/
+.landing-ambient-canvas {
+  background-color: #FAF7F2;
+  background-image:
+    radial-gradient(ellipse 75% 45% at 50% -5%, rgba(249, 115, 22, 0.16), transparent 70%),
+    radial-gradient(circle 550px at 5% 35%, rgba(187, 247, 208, 0.15), transparent 65%),
+    radial-gradient(circle 600px at 95% 55%, rgba(253, 186, 116, 0.18), transparent 65%),
+    radial-gradient(ellipse 75% 40% at 50% 100%, rgba(249, 115, 22, 0.15), transparent 70%);
+  background-attachment: scroll;
+}
+
+/* 3D Flip Card Utilities (GPU Isolated) */
 .perspective-1000 {
   perspective: 1000px;
 }
 
 .preserve-3d {
   transform-style: preserve-3d;
+  will-change: transform;
 }
 
 .backface-hidden {
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
+  transform: translateZ(0);
 }
 
 .rotate-y-180 {
   transform: rotateY(180deg);
 }
 
-/* Entrance Animations on First Render */
+/* Entrance Animations on First Render (GPU Only: transform + opacity, NO filter blur) */
 @keyframes headline-reveal {
   0% {
     opacity: 0;
-    transform: translateY(32px) scale(0.97);
-    filter: blur(4px);
+    transform: translateY(24px) scale(0.98);
   }
   100% {
     opacity: 1;
     transform: translateY(0) scale(1);
-    filter: blur(0px);
   }
 }
 
 @keyframes fade-slide-up {
   0% {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(16px);
   }
   100% {
     opacity: 1;
@@ -78,48 +88,19 @@ body {
   }
 }
 
-@keyframes gradient-drift {
-  0%, 100% {
-    transform: translate(0px, 0px) scale(1);
-    opacity: 0.65;
-  }
-  50% {
-    transform: translate(25px, -15px) scale(1.08);
-    opacity: 0.85;
-  }
-}
-
-@keyframes gradient-drift-reverse {
-  0%, 100% {
-    transform: translate(0px, 0px) scale(1);
-    opacity: 0.55;
-  }
-  50% {
-    transform: translate(-30px, 20px) scale(1.12);
-    opacity: 0.75;
-  }
-}
-
 .animate-headline {
-  animation: headline-reveal 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: headline-reveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
 }
 
 .animate-eyebrow {
-  animation: fade-slide-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.1s backwards;
+  animation: fade-slide-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.08s backwards;
 }
 
 .animate-subheadline {
-  animation: fade-slide-up 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.3s backwards;
+  animation: fade-slide-up 0.75s cubic-bezier(0.16, 1, 0.3, 1) 0.2s backwards;
 }
 
 .animate-cta-fade {
-  animation: fade-slide-up 0.95s cubic-bezier(0.16, 1, 0.3, 1) 0.45s backwards;
-}
-
-.animate-gradient-drift {
-  animation: gradient-drift 18s ease-in-out infinite alternate;
-}
-
-.animate-gradient-drift-reverse {
-  animation: gradient-drift-reverse 22s ease-in-out infinite alternate;
+  animation: fade-slide-up 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.35s backwards;
 }

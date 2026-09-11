@@ -21,6 +21,7 @@ import {
   fromBase64,
 } from "../../lib/crypto";
 import { useAuthStore } from "../../store/authStore";
+import { useRouter } from "next/navigation";
 import { AssuranceNote } from "./AssuranceNote";
 import { PasswordStrength } from "./PasswordStrength";
 import { RecoveryCodeReveal } from "./RecoveryCodeReveal";
@@ -28,6 +29,7 @@ import { RecoveryCodeReveal } from "./RecoveryCodeReveal";
 type Tab = "login" | "signup";
 
 export function AuthForm() {
+  const router = useRouter();
   const [tab, setTab] = useState<Tab>("login");
   const [pendingRecoveryCode, setPendingRecoveryCode] = useState<string | null>(
     null,
@@ -75,13 +77,14 @@ export function AuthForm() {
         return;
       }
 
-      // 4. Keep the master key in memory only, for use during this session.
+      // 4. Keep the master key in memory and session storage for this tab session.
       setMasterKey(masterKey);
       if (isNewUser) {
-        window.location.href = "/onboarding/roles";
+        router.push("/onboarding/roles");
       } else {
-        window.location.href = "/goals";
+        router.push("/goals");
       }
+      router.refresh();
     } catch (err: any) {
       setServerError(err?.message ?? "Incorrect email or password");
     }
@@ -137,7 +140,8 @@ export function AuthForm() {
     const email = signupForm.getValues("email");
     const password = signupForm.getValues("password");
     await signIn("credentials", { email, password, redirect: false });
-    window.location.href = "/onboarding/roles";
+    router.push("/onboarding/roles");
+    router.refresh();
   }
 
   // Recovery code must be acknowledged before the user can proceed.

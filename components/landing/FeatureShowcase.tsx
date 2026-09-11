@@ -5,9 +5,11 @@ import { useState } from "react";
 export function FeatureShowcase() {
   // Feature 1 State: Active selected role & completed goals
   const [activeRoleId, setActiveRoleId] = useState<string>("career");
-  const [completedGoals, setCompletedGoals] = useState<Record<string, boolean>>({
-    health: true,
-  });
+  const [completedGoals, setCompletedGoals] = useState<Record<string, boolean>>(
+    {
+      health: true,
+    },
+  );
 
   function toggleGoal(id: string) {
     setCompletedGoals((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -20,11 +22,13 @@ export function FeatureShowcase() {
   function addSimulatedVote() {
     setIsSimulatingVote(true);
     setVotes((v) => (v >= 24 ? 18 : v + 1));
-    setTimeout(() => setIsSimulatingVote(false), 800);
+    setTimeout(() => setIsSimulatingVote(false), 500);
   }
 
   // Feature 3 State: Sunday Review interactive decision
-  const [reviewChoice, setReviewChoice] = useState<"IDLE" | "CARRY" | "CANCEL">("IDLE");
+  const [reviewChoice, setReviewChoice] = useState<"IDLE" | "CARRY" | "CANCEL">(
+    "IDLE",
+  );
 
   return (
     <div className="mt-12 space-y-12">
@@ -43,7 +47,9 @@ export function FeatureShowcase() {
               Role Architecture
             </h3>
             <p className="mt-2.5 text-sm leading-relaxed text-[#6B7280]">
-              Assign your energy across your whole self. When you schedule for your health, mind, and relationships with the same gravity as your work, balance stops being accidental.
+              Assign your energy across your whole self. When you schedule for
+              your health, mind, and relationships with the same gravity as your
+              work, balance stops being accidental.
             </p>
             <div className="mt-4 rounded-xl border border-blue-100 bg-blue-50/50 p-3">
               <div className="flex items-center justify-between font-mono text-[11px] font-semibold text-blue-900">
@@ -51,7 +57,8 @@ export function FeatureShowcase() {
                 <span className="uppercase text-blue-700">{activeRoleId}</span>
               </div>
               <p className="mt-1 text-xs text-blue-800/80">
-                Tap or hover each role on the right to see how Quadrant balances your life.
+                Tap or hover each role on the right to see how Quadrant balances
+                your life.
               </p>
             </div>
           </div>
@@ -82,7 +89,9 @@ export function FeatureShowcase() {
                   }`}
                   aria-label="Toggle career goal"
                 >
-                  {completedGoals.career && <span className="text-xs font-bold">&#10003;</span>}
+                  {completedGoals.career && (
+                    <span className="text-xs font-bold">&#10003;</span>
+                  )}
                 </button>
                 <div>
                   <span className="font-mono text-[10px] font-bold text-blue-600">
@@ -90,7 +99,9 @@ export function FeatureShowcase() {
                   </span>
                   <p
                     className={`text-sm font-semibold transition-colors ${
-                      completedGoals.career ? "text-gray-400 line-through" : "text-[#1F2937]"
+                      completedGoals.career
+                        ? "text-gray-400 line-through"
+                        : "text-[#1F2937]"
                     }`}
                   >
                     Ship zero-knowledge auth v2
@@ -126,7 +137,9 @@ export function FeatureShowcase() {
                   }`}
                   aria-label="Toggle health goal"
                 >
-                  {completedGoals.health && <span className="text-xs font-bold">&#10003;</span>}
+                  {completedGoals.health && (
+                    <span className="text-xs font-bold">&#10003;</span>
+                  )}
                 </button>
                 <div>
                   <span className="font-mono text-[10px] font-bold text-emerald-600">
@@ -134,7 +147,9 @@ export function FeatureShowcase() {
                   </span>
                   <p
                     className={`text-sm font-semibold transition-colors ${
-                      completedGoals.health ? "text-gray-400 line-through" : "text-[#1F2937]"
+                      completedGoals.health
+                        ? "text-gray-400 line-through"
+                        : "text-[#1F2937]"
                     }`}
                   >
                     3x Zone-2 Run (45 min)
@@ -170,7 +185,9 @@ export function FeatureShowcase() {
                   }`}
                   aria-label="Toggle relationships goal"
                 >
-                  {completedGoals.relationships && <span className="text-xs font-bold">&#10003;</span>}
+                  {completedGoals.relationships && (
+                    <span className="text-xs font-bold">&#10003;</span>
+                  )}
                 </button>
                 <div>
                   <span className="font-mono text-[10px] font-bold text-orange-600">
@@ -196,7 +213,9 @@ export function FeatureShowcase() {
             <div className="rounded-lg bg-[#FAF8F5] p-2.5">
               <div className="flex justify-between font-mono text-[10px] text-gray-500">
                 <span>3 Roles Covered This Week</span>
-                <span className="font-semibold text-[#1F2937]">100% Balanced</span>
+                <span className="font-semibold text-[#1F2937]">
+                  100% Balanced
+                </span>
               </div>
               <div className="mt-1.5 flex h-2 w-full overflow-hidden rounded-full bg-gray-200">
                 <div className="w-1/3 bg-blue-500 transition-all duration-500" />
@@ -223,7 +242,10 @@ export function FeatureShowcase() {
               Cumulative Annual Growth Rings
             </h3>
             <p className="mt-2.5 text-sm leading-relaxed text-[#6B7280]">
-              A tree records rainy seasons and dry seasons alike. It never resets to zero. Your completed goals deposit votes toward your annual growth rings, sealed every December 31 into an indelible identity record.
+              A tree records rainy seasons and dry seasons alike. It never
+              resets to zero. Your completed goals deposit votes toward your
+              annual growth rings, sealed every December 31 into an indelible
+              identity record.
             </p>
             <div className="mt-4">
               <button
@@ -232,7 +254,9 @@ export function FeatureShowcase() {
                 className="inline-flex items-center gap-2 rounded-xl bg-[#EA580C] px-4 py-2.5 font-mono text-xs font-bold text-white shadow-sm transition-all hover:bg-[#C2410C] hover:shadow active:scale-95"
               >
                 <span>+ Simulate Goal Completion</span>
-                <span className="rounded bg-white/20 px-1.5 py-0.5 text-[10px]">Vote +1</span>
+                <span className="rounded bg-white/20 px-1.5 py-0.5 text-[10px]">
+                  Vote +1
+                </span>
               </button>
             </div>
           </div>
@@ -240,22 +264,93 @@ export function FeatureShowcase() {
           {/* THE FEATURE EXAMPLE UI (Interactive Ring Console) */}
           <div className="flex w-full max-w-md flex-col items-center justify-center rounded-2xl border border-[#FED7AA]/70 bg-gradient-to-br from-[#FFFDF9] to-[#FFF7ED] p-6 shadow-sm">
             <div className="flex items-center gap-6">
-              {/* Dynamic Conic Ring */}
-              <div
-                className={`relative flex h-28 w-28 items-center justify-center rounded-full p-[4px] shadow-inner transition-transform duration-500 ${
-                  isSimulatingVote ? "scale-110 rotate-6" : ""
-                }`}
-                style={{
-                  background: `conic-gradient(#F97316 0deg, #F97316 ${
-                    (votes / 24) * 360
-                  }deg, #F3F4F6 ${(votes / 24) * 360}deg, #F3F4F6 360deg)`,
-                  transition: "background 0.4s ease, transform 0.3s ease",
-                }}
-              >
-                <div className="flex h-full w-full flex-col items-center justify-center rounded-full bg-white shadow-xs">
-                  <span className="font-serif text-xl font-black text-[#1F2937]">2026</span>
-                  <span className="font-mono text-[9px] font-bold text-[#EA580C]">
-                    {votes} VOTES
+              {/* Ultra-Smooth Hardware-Interpolated SVG Growth Ring */}
+              <div className="relative flex h-32 w-32 shrink-0 items-center justify-center">
+                {/* Expanding Tree-Ring Cambium Pulse Ripple */}
+                {isSimulatingVote && (
+                  <span className="pointer-events-none absolute inset-1 rounded-full border-2 border-[#F97316] opacity-60 animate-ping" />
+                )}
+
+                <svg
+                  className="h-full w-full -rotate-90 transform"
+                  viewBox="0 0 120 120"
+                  aria-hidden="true"
+                >
+                  <defs>
+                    <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#FB923C" />
+                      <stop offset="50%" stopColor="#F97316" />
+                      <stop offset="100%" stopColor="#EA580C" />
+                    </linearGradient>
+                  </defs>
+
+                  {/* Outer Faint Guide */}
+                  <circle
+                    cx="60"
+                    cy="60"
+                    r="56"
+                    stroke="#FED7AA"
+                    strokeWidth="1"
+                    strokeDasharray="2 4"
+                    fill="transparent"
+                    opacity="0.5"
+                  />
+
+                  {/* Base Track */}
+                  <circle
+                    cx="60"
+                    cy="60"
+                    r="47"
+                    stroke="#F3F4F6"
+                    strokeWidth="7"
+                    fill="transparent"
+                  />
+
+                  {/* Inner Prior-Year Veteran Ring (Year 1 & 2 Layer) */}
+                  <circle
+                    cx="60"
+                    cy="60"
+                    r="37"
+                    stroke="#FDBA74"
+                    strokeWidth="1.5"
+                    strokeDasharray="4 3"
+                    fill="transparent"
+                    opacity="0.7"
+                  />
+
+                  {/* Active Cumulative Progress Stroke (Butter-Smooth Subpixel Interpolation) */}
+                  <circle
+                    cx="60"
+                    cy="60"
+                    r="47"
+                    stroke="url(#ringGradient)"
+                    strokeWidth="7"
+                    strokeDasharray="295.31"
+                    strokeDashoffset={295.31 * (1 - votes / 24)}
+                    strokeLinecap="round"
+                    fill="transparent"
+                    style={{
+                      transition: "stroke-dashoffset 0.75s cubic-bezier(0.16, 1, 0.3, 1)",
+                    }}
+                  />
+                </svg>
+
+                {/* Center Core Display */}
+                <div
+                  className={`absolute flex flex-col items-center justify-center rounded-full bg-white shadow-xs transition-transform duration-300 ${
+                    isSimulatingVote ? "scale-105" : ""
+                  }`}
+                  style={{ width: "66px", height: "66px" }}
+                >
+                  <span className="font-serif text-lg font-black tracking-tight text-[#1F2937]">
+                    2026
+                  </span>
+                  <span
+                    className={`font-mono text-[9px] font-bold transition-colors duration-300 ${
+                      isSimulatingVote ? "text-[#C2410C]" : "text-[#EA580C]"
+                    }`}
+                  >
+                    {votes} / 24
                   </span>
                 </div>
               </div>
@@ -279,9 +374,15 @@ export function FeatureShowcase() {
             </div>
 
             {/* Live Vote Log Banner */}
-            <div className="mt-4 w-full rounded-lg border border-orange-200/80 bg-white/90 px-3 py-1.5 text-center font-mono text-[10.5px] text-[#EA580C]">
+            <div
+              className={`mt-4 w-full rounded-lg border px-3 py-1.5 text-center font-mono text-[10.5px] transition-all duration-300 ${
+                isSimulatingVote
+                  ? "border-[#EA580C] bg-[#FFF5EB] text-[#C2410C] shadow-xs"
+                  : "border-orange-200/80 bg-white/90 text-[#EA580C]"
+              }`}
+            >
               {isSimulatingVote
-                ? "🎉 +1 Vote Cast! Tree ring permanently expanded."
+                ? "🎉 +1 Vote Cast! Progress ring smoothly expanded."
                 : "Tap '+ Simulate Goal Completion' to test vote logging."}
             </div>
           </div>
@@ -303,10 +404,13 @@ export function FeatureShowcase() {
               The Honest Sunday Review
             </h3>
             <p className="mt-2.5 text-sm leading-relaxed text-[#6B7280]">
-              Missed a goal? Good. Life happens. On Sunday, Quadrant prompts a brief reflection: Was it unrealistic? Did emergencies hit? You choose to Carry or Cancel without guilt or red warning bells.
+              Missed a goal? Good. Life happens. On Sunday, Quadrant prompts a
+              brief reflection: Was it unrealistic? Did emergencies hit? You
+              choose to Carry or Cancel without guilt or red warning bells.
             </p>
             <p className="mt-3 font-mono text-xs text-[#16A34A]">
-              &rarr; Test both choices below to experience guilt-free weekly closure.
+              &rarr; Test both choices below to experience guilt-free weekly
+              closure.
             </p>
           </div>
 
@@ -333,7 +437,8 @@ export function FeatureShowcase() {
                     Your Honest Reason (Encrypted):
                   </span>
                   <p className="mt-0.5 text-xs italic text-[#4B5563]">
-                    &ldquo;Flu on Thursday; shifted focus to resting so I could show up healthy on Monday.&rdquo;
+                    &ldquo;Flu on Thursday; shifted focus to resting so I could
+                    show up healthy on Monday.&rdquo;
                   </p>
                 </div>
 
@@ -365,7 +470,8 @@ export function FeatureShowcase() {
                   Rolled into Next Week&apos;s Big Rocks
                 </p>
                 <p className="mt-1 text-xs text-gray-600">
-                  Clean slate. No streak broken. The honest reflection was saved as valuable wisdom.
+                  Clean slate. No streak broken. The honest reflection was saved
+                  as valuable wisdom.
                 </p>
                 <button
                   type="button"
@@ -386,7 +492,8 @@ export function FeatureShowcase() {
                   Removed Without Penalty
                 </p>
                 <p className="mt-1 text-xs text-gray-600">
-                  Priorities evolve. Energy reclaimed for what matters now. Zero shame, zero guilt.
+                  Priorities evolve. Energy reclaimed for what matters now. Zero
+                  shame, zero guilt.
                 </p>
                 <button
                   type="button"

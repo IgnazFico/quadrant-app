@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { domainColor } from "../../lib/domainColors";
 import { addDays, startOfWeek } from "../../lib/week";
+import { useRouter } from "next/navigation";
 import { useAuthStore } from "../../store/authStore";
 import {
   decryptField,
@@ -28,6 +29,7 @@ type Goal = {
 type Role = { id: string; label: string; domain: string; goals: Goal[] };
 
 export function WeeklyReviewPage() {
+  const router = useRouter();
   const [weekStart, setWeekStart] = useState(() => addDays(startOfWeek(), -7));
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
@@ -170,7 +172,8 @@ export function WeeklyReviewPage() {
     );
     setTimeout(() => {
       setToast(null);
-      window.location.href = "/goals";
+      router.push("/goals");
+      router.refresh();
     }, 1500);
   }
 

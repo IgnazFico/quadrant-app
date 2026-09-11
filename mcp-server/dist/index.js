@@ -177,11 +177,12 @@ server.tool("simulate_growth_ring_seal", "Simulates the year-end cron job that s
 // ---------------------------------------------------------------------------
 server.tool("inspect_database_metrics", "Returns counts and summary of active users, roles, goals, and sealed growth rings", {}, async () => {
     try {
-        const [usersCount, rolesCount, goalsCount, ringsCount] = await Promise.all([
+        const [usersCount, rolesCount, goalsCount, ringsCount, notifsCount] = await Promise.all([
             prisma.user.count(),
             prisma.role.count(),
             prisma.goal.count(),
             prisma.growthRing.count(),
+            prisma.notification.count(),
         ]);
         return {
             content: [
@@ -192,6 +193,7 @@ server.tool("inspect_database_metrics", "Returns counts and summary of active us
                         roles: rolesCount,
                         goals: goalsCount,
                         growthRings: ringsCount,
+                        notifications: notifsCount,
                     }, null, 2),
                 },
             ],
@@ -200,6 +202,93 @@ server.tool("inspect_database_metrics", "Returns counts and summary of active us
     catch (err) {
         return {
             content: [{ type: "text", text: `❌ Failed to inspect metrics: ${err.message}` }],
+            isError: true,
+        };
+    }
+});
+// ---------------------------------------------------------------------------
+// Tool 5: Seed Test Notification
+// ---------------------------------------------------------------------------
+server.tool("seed_test_notification", "Seeds a notification of a specified type for testing notification center UX", {
+    type: z.enum([
+        "MORNING_FOCUS",
+        "SUNDAY_RESET",
+        "SEVEN_DAY_MILESTONE",
+        "MONTHLY_CHECKIN",
+        "ROLE_MILESTONE",
+        "YEAR_END_REVIEW",
+        "BACKUP_KEY",
+    ]),
+    email: z.string().email().default("test.user@example.com"),
+    customMessage: z.string().optional(),
+}, async ({ type, email, customMessage }) => {
+    try {
+        const user = await prisma.user.findUnique({ where: { email } });
+        if (!user) {
+            return {
+                content: [{ type: "text", text: `❌ User with email ${email} not found. Run seed_test_scenario first.` }],
+                isError: true,
+            };
+        }
+        const templates = {
+            MORNING_FOCUS: {
+                title: "Morning Focus",
+                defaultMsg: "You have 2 priorities scheduled for today.",
+                link: "/schedule",
+            },
+            SUNDAY_RESET: {
+                title: "Sunday Reset",
+                defaultMsg: "Take 5 minutes to wrap up last week and clear your plate for tomorrow.",
+                link: "/weekly-review",
+            },
+            SEVEN_DAY_MILESTONE: {
+                title: "7-Day Milestone",
+                defaultMsg: "You've used Quadrant for 7 days. You can now write your Personal Constitution.",
+                link: "/mission-statement",
+            },
+            MONTHLY_CHECKIN: {
+                title: "Monthly Check-in",
+                defaultMsg: "Your monthly summary is ready. See where your focus went this month.",
+                link: "/patterns",
+            },
+            ROLE_MILESTONE: {
+                title: "Role Milestone",
+                defaultMsg: "25 votes recorded for Craft. Great job showing up.",
+                link: "/goals",
+            },
+            YEAR_END_REVIEW: {
+                title: "Year-End Review",
+                defaultMsg: "Your Year in Review is ready. See everything you built this year.",
+                link: "/year-review",
+            },
+            BACKUP_KEY: {
+                title: "Backup Key Reminder",
+                defaultMsg: "Keep your account safe: don't forget to save your recovery code.",
+                link: "/profile",
+            },
+        };
+        const tpl = templates[type];
+        const notification = await prisma.notification.create({
+            data: {
+                userId: user.id,
+                type: type,
+                title: tpl.title,
+                message: customMessage || tpl.defaultMsg,
+                link: tpl.link,
+            },
+        });
+        return {
+            content: [
+                {
+                    type: "text",
+                    text: `✅ Seeded notification "${tpl.title}" for ${email} (ID: ${notification.id})`,
+                },
+            ],
+        };
+    }
+    catch (err) {
+        return {
+            content: [{ type: "text", text: `❌ Seeding notification failed: ${err.message}` }],
             isError: true,
         };
     }

@@ -28,6 +28,7 @@ model User {
   roles             Role[]
   missionStatements MissionStatement[]
   activityDays ActivityDay[]
+  notifications Notification[]
 
   @@map("users")
 }
@@ -175,4 +176,31 @@ model ActivityDay {
 
   @@unique([userId, date])
   @@map("activity_days")
+}
+
+enum NotificationType {
+  MORNING_FOCUS
+  SUNDAY_RESET
+  SEVEN_DAY_MILESTONE
+  MONTHLY_CHECKIN
+  ROLE_MILESTONE
+  YEAR_END_REVIEW
+  BACKUP_KEY
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  link      String?
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@index([userId, type, createdAt])
+  @@map("notifications")
 }

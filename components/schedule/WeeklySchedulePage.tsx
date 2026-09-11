@@ -3,6 +3,7 @@
 import { Fragment, useEffect, useMemo, useState, useCallback } from "react";
 import { domainColor } from "../../lib/domainColors";
 import { startOfWeek, addDays } from "../../lib/week";
+import { NotificationBell } from "../notifications/NotificationBell";
 import "./schedule.css";
 
 type Goal = { id: string; title: string };
@@ -196,6 +197,7 @@ export function WeeklySchedulePage() {
                 <polyline points="9 18 15 12 9 6" />
               </svg>
             </button>
+            <NotificationBell />
           </div>
         </div>
 

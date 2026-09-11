@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { domainColor } from "../../lib/domainColors";
+import { NotificationBell } from "../notifications/NotificationBell";
 import { useAuthStore } from "../../store/authStore";
 import { decryptField, fromBase64 } from "../../lib/crypto";
 
@@ -145,16 +146,19 @@ export function ProfilePage() {
   return (
     <div className="flex justify-center bg-[#FFF9F2] px-[18px] pb-24 pt-5">
       <div className="w-full max-w-[440px]">
-        <div className="mb-4 flex items-center gap-2">
-          <div className="grid h-4 w-4 grid-cols-2 grid-rows-2 gap-[2px]">
-            <span className="rounded-[2px] bg-[#F3F4F6]" />
-            <span className="rounded-[2px] bg-[#F97316]" />
-            <span className="rounded-[2px] bg-[#F3F4F6]" />
-            <span className="rounded-[2px] bg-[#F3F4F6]" />
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="grid h-4 w-4 grid-cols-2 grid-rows-2 gap-[2px]">
+              <span className="rounded-[2px] bg-[#F3F4F6]" />
+              <span className="rounded-[2px] bg-[#F97316]" />
+              <span className="rounded-[2px] bg-[#F3F4F6]" />
+              <span className="rounded-[2px] bg-[#F3F4F6]" />
+            </div>
+            <span className="font-serif text-[15px] font-semibold text-[#9CA3AF]">
+              Quadrant
+            </span>
           </div>
-          <span className="font-serif text-[15px] font-semibold text-[#9CA3AF]">
-            Quadrant
-          </span>
+          <NotificationBell />
         </div>
 
         <h1 className="mb-1 font-serif text-2xl font-semibold text-[#1F2937]">
