@@ -8,7 +8,7 @@ export default async function MissionStatementPage() {
   if (!session?.user) {
     redirect("/login");
   }
-  const userId = (session.user as any).id as string;
+  const userId = session.user.id;
 
   // Already written — nothing to force here, send them back into the app.
   if (await hasWrittenMissionStatement(userId)) {

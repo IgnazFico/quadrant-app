@@ -7,7 +7,7 @@ export async function POST() {
   if (!session?.user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
-  const userId = (session.user as any).id as string;
+  const userId = session.user.id;
   await recordActivityToday(userId);
   return NextResponse.json({ ok: true });
 }

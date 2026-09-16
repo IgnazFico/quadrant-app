@@ -17,7 +17,7 @@ export default async function AppLayout({
     redirect("/login");
   }
 
-  const userId = (session.user as any).id as string;
+  const userId = session.user.id;
   const headersList = await headers();
   const pathname = headersList.get("x-pathname") || "";
 

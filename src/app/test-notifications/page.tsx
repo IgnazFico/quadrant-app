@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { NotificationBell } from "../../../components/notifications/NotificationBell";
 
 type NotificationItem = {
@@ -67,6 +68,10 @@ const NOTIFICATION_CATALOG = [
 ];
 
 export default function StandaloneTestNotificationsPage() {
+  if (process.env.NODE_ENV === "production") {
+    notFound();
+  }
+
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);

@@ -1,8 +1,17 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../../../../lib/prisma";
 import { emailSchema } from "../../../../../lib/validators";
+import { getSyntheticRecoveryChallenge } from "../../../../../lib/syntheticAuth";
 
-/** GET /api/auth/recover-challenge?email=... — same idea as login-challenge, but for the recovery code path. */
+/**
+ * GET /api/auth/recover-challenge?email=...
+ *
+ * Returns saltRecovery and wrappedKeyRecovery for the account recovery flow.
+ *
+ * Account Enumeration Protection:
+ * Returns deterministic synthetic recovery challenge blobs for non-existent
+ * emails so that account registration status cannot be enumerated.
+ */
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const email = url.searchParams.get("email") ?? "";
@@ -18,7 +27,7 @@ export async function GET(req: Request) {
   });
 
   if (!user || !user.authKey) {
-    return NextResponse.json({ error: "No account found" }, { status: 404 });
+    return NextResponse.json(getSyntheticRecoveryChallenge(parsed.data));
   }
 
   return NextResponse.json({

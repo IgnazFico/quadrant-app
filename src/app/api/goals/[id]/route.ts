@@ -21,7 +21,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (!session?.user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
-  const userId = (session.user as any).id as string;
+  const userId = session.user.id;
   const { id } = await params;
 
   const owned = await loadOwnedGoal(id, userId);
@@ -58,7 +58,7 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
   if (!session?.user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
-  const userId = (session.user as any).id as string;
+  const userId = session.user.id;
   const { id } = await params;
 
   const owned = await loadOwnedGoal(id, userId);

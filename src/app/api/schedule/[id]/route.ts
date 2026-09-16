@@ -29,7 +29,7 @@ export async function PATCH(
   if (!session?.user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
-  const userId = (session.user as any).id as string;
+  const userId = session.user.id;
   const { id } = await params;
 
   const owned = await loadOwnedBlock(id, userId);
@@ -70,7 +70,7 @@ export async function DELETE(
   if (!session?.user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
-  const userId = (session.user as any).id as string;
+  const userId = session.user.id;
   const { id } = await params;
 
   const owned = await loadOwnedBlock(id, userId);

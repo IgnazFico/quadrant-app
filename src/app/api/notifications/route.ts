@@ -13,7 +13,7 @@ import {
 async function getUserId(): Promise<string | null> {
   const session = await auth();
   if (session?.user) {
-    return (session.user as any).id as string;
+    return session.user.id;
   }
   if (process.env.NODE_ENV !== "production") {
     const devUser = await prisma.user.findFirst();

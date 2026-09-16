@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { domainColor } from "../../lib/domainColors";
 import { useAuthStore } from "../../store/authStore";
 import { decryptField, fromBase64 } from "../../lib/crypto";
@@ -76,6 +76,9 @@ export function YearInReviewPage() {
   const [activeChapter, setActiveChapter] = useState("momentum");
   const masterKey = useAuthStore((s) => s.masterKey);
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
+  const registerSection = useCallback((id: string, el: HTMLElement | null) => {
+    sectionRefs.current[id] = el;
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -208,7 +211,7 @@ export function YearInReviewPage() {
         {/* MOMENTUM */}
         <Chapter
           id="momentum"
-          sectionRefs={sectionRefs}
+          registerSection={registerSection}
           n={1}
           title="The shape of your year"
           sub="Before the roles and the reasons — just the raw numbers."
@@ -263,7 +266,7 @@ export function YearInReviewPage() {
         {/* ROLES */}
         <Chapter
           id="roles"
-          sectionRefs={sectionRefs}
+          registerSection={registerSection}
           n={2}
           title="Where the effort actually went"
           sub="Not every role grows at the same pace — here's how this year broke down."
@@ -335,7 +338,7 @@ export function YearInReviewPage() {
         {/* INTEGRITY */}
         <Chapter
           id="integrity"
-          sectionRefs={sectionRefs}
+          registerSection={registerSection}
           n={3}
           title="The honest parts count too"
           sub="A record of the truth-telling, not just the wins."
@@ -386,7 +389,7 @@ export function YearInReviewPage() {
         {/* MISSION */}
         <Chapter
           id="mission"
-          sectionRefs={sectionRefs}
+          registerSection={registerSection}
           n={4}
           title="Did it match what you wrote?"
           sub="Your mission statement, next to how this year actually went."
@@ -420,7 +423,7 @@ export function YearInReviewPage() {
         {/* IDENTITY */}
         <Chapter
           id="identity"
-          sectionRefs={sectionRefs}
+          registerSection={registerSection}
           n={5}
           title="In a phrase"
           sub="Based on where your goals actually landed this year, not where you meant them to."
@@ -439,7 +442,7 @@ export function YearInReviewPage() {
         {/* RINGS */}
         <Chapter
           id="rings"
-          sectionRefs={sectionRefs}
+          registerSection={registerSection}
           n={6}
           title="Your rings, together"
           sub="Every role's growth ring, side by side — the closest thing to a portrait of your year."
@@ -452,7 +455,7 @@ export function YearInReviewPage() {
         {/* CLOSE */}
         <Chapter
           id="close"
-          sectionRefs={sectionRefs}
+          registerSection={registerSection}
           n={7}
           title="Taking this into next year"
           sub="What's carrying forward, and one thing worth sitting with."
@@ -576,14 +579,14 @@ function YearSwitcher({
 
 function Chapter({
   id,
-  sectionRefs,
+  registerSection,
   n,
   title,
   sub,
   children,
 }: {
   id: string;
-  sectionRefs: React.MutableRefObject<Record<string, HTMLElement | null>>;
+  registerSection: (id: string, el: HTMLElement | null) => void;
   n: number;
   title: string;
   sub: string;
@@ -593,7 +596,7 @@ function Chapter({
     <section
       id={id}
       ref={(el) => {
-        sectionRefs.current[id] = el;
+        registerSection(id, el);
       }}
       className="yr-reveal scroll-mt-14 px-[22px] py-10"
     >

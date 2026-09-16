@@ -9,7 +9,7 @@ export async function GET(req: Request) {
   if (!session?.user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
-  const userId = (session.user as any).id as string;
+  const userId = session.user.id;
 
   const url = new URL(req.url);
   const param = url.searchParams.get("weekStart");

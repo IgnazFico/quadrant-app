@@ -31,3 +31,29 @@ test("signup shows recovery code", async ({ page }) => {
   const codeText = await reveal.textContent();
   expect(codeText).toMatch(/[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}/);
 });
+
+test("login challenge returns synthetic salt for unknown email (anti-enumeration)", async ({
+  request,
+}) => {
+  const fakeEmail = `nonexistent-${Date.now()}@example.com`;
+  const res = await request.get(`/api/auth/login-challenge?email=${encodeURIComponent(fakeEmail)}`);
+
+  expect(res.status()).toBe(200);
+  const data = await res.json();
+  expect(data.saltPassword).toBeDefined();
+  expect(data.wrappedKeyPassword).toBeDefined();
+  expect(data.isNewUser).toBe(false);
+});
+
+test("recover challenge returns synthetic recovery salt for unknown email (anti-enumeration)", async ({
+  request,
+}) => {
+  const fakeEmail = `nonexistent-${Date.now()}@example.com`;
+  const res = await request.get(`/api/auth/recover-challenge?email=${encodeURIComponent(fakeEmail)}`);
+
+  expect(res.status()).toBe(200);
+  const data = await res.json();
+  expect(data.saltRecovery).toBeDefined();
+  expect(data.wrappedKeyRecovery).toBeDefined();
+});
+

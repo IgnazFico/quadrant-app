@@ -10,7 +10,7 @@ export default async function HomePage() {
   let userTarget = "/login";
 
   if (session?.user) {
-    const userId = (session.user as any).id as string;
+    const userId = session.user.id;
     const roleCount = await prisma.role.count({ where: { userId } });
     userTarget = roleCount === 0 ? "/onboarding/roles" : "/goals";
   }

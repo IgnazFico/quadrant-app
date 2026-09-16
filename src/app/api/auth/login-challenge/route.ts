@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../../../../lib/prisma";
 import { emailSchema } from "../../../../../lib/validators";
+import { getSyntheticLoginChallenge } from "../../../../../lib/syntheticAuth";
 
 /**
  * GET /api/auth/login-challenge?email=...
@@ -9,10 +10,10 @@ import { emailSchema } from "../../../../../lib/validators";
  * Both are useless without the user's password, so it's safe to return
  * them before authentication succeeds.
  *
- * NOTE: as written this reveals whether an email is registered (a 404 vs
- * a 200). For production, return a deterministic fake salt/blob for
- * unknown emails instead, so the response shape can't be used to enumerate
- * accounts.
+ * Account Enumeration Protection:
+ * For unknown or unregistered emails, returns a deterministic synthetic salt
+ * and wrapped key blob, ensuring the response status (200), timing, and shape
+ * remain indistinguishable from registered accounts.
  */
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -32,7 +33,7 @@ export async function GET(req: Request) {
   });
 
   if (!user || !user.authKey) {
-    return NextResponse.json({ error: "No account found" }, { status: 404 });
+    return NextResponse.json(getSyntheticLoginChallenge(parsed.data));
   }
 
   return NextResponse.json({

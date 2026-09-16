@@ -13,7 +13,7 @@ const seedSchema = z.object({
 async function getUserId(): Promise<string | null> {
   const session = await auth();
   if (session?.user) {
-    return (session.user as any).id as string;
+    return session.user.id;
   }
   if (process.env.NODE_ENV !== "production") {
     const devUser = await prisma.user.findFirst();
@@ -23,6 +23,10 @@ async function getUserId(): Promise<string | null> {
 }
 
 export async function POST(req: Request) {
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "Endpoint disabled in production" }, { status: 404 });
+  }
+
   const userId = await getUserId();
   if (!userId) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });

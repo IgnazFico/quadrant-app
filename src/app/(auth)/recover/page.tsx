@@ -24,6 +24,7 @@ export default function RecoverPage() {
   const [error, setError] = useState<string | null>(null);
   const [masterKey, setMasterKey] = useState<Uint8Array | null>(null);
   const [email, setEmail] = useState("");
+  const [verificationToken, setVerificationToken] = useState<string | null>(null);
 
   const identifyForm = useForm({ resolver: zodResolver(recoverStartSchema) });
   const passwordForm = useForm({ resolver: zodResolver(recoverFinishSchema) });
@@ -31,14 +32,25 @@ export default function RecoverPage() {
   async function onIdentify(data: { email: string; recoveryCode: string }) {
     setError(null);
     try {
-      const res = await fetch(
-        `/api/auth/recover-challenge?email=${encodeURIComponent(data.email)}`,
-      );
-      if (!res.ok) {
-        setError("No account found with that email");
+      const [challengeRes, tokenRes] = await Promise.all([
+        fetch(`/api/auth/recover-challenge?email=${encodeURIComponent(data.email)}`),
+        fetch("/api/auth/recover-request", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: data.email }),
+        }),
+      ]);
+
+      if (!challengeRes.ok) {
+        setError("That recovery code doesn't match this account");
         return;
       }
-      const { saltRecovery, wrappedKeyRecovery } = await res.json();
+      const { saltRecovery, wrappedKeyRecovery } = await challengeRes.json();
+
+      if (tokenRes.ok) {
+        const tokenData = await tokenRes.json();
+        if (tokenData.token) setVerificationToken(tokenData.token);
+      }
 
       const salt = await fromBase64(saltRecovery);
       const recoveryKey = await deriveKey(data.recoveryCode.trim(), salt);
@@ -71,6 +83,7 @@ export default function RecoverPage() {
           newPassword: data.newPassword,
           saltPassword: await toBase64(saltPassword),
           wrappedKeyPassword: await toBase64(wrappedKeyPassword),
+          ...(verificationToken ? { verificationToken } : {}),
         }),
       });
 

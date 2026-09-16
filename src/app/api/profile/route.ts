@@ -7,7 +7,7 @@ export async function GET() {
   if (!session?.user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
-  const userId = (session.user as any).id as string;
+  const userId = session.user.id;
   const currentYear = new Date().getFullYear();
 
   const [user, roles, latestStatement] = await Promise.all([

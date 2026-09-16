@@ -85,8 +85,8 @@ export function AuthForm() {
         router.push("/goals");
       }
       router.refresh();
-    } catch (err: any) {
-      setServerError(err?.message ?? "Incorrect email or password");
+    } catch {
+      setServerError("Incorrect email or password");
     }
   }
 
