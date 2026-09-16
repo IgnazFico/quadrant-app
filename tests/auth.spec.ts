@@ -19,8 +19,8 @@ test("signup shows recovery code", async ({ page }) => {
   );
 
   // Fill form and submit
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(password);
+  await page.locator('input[type="email"]').fill(email);
+  await page.locator('input[type="password"]').fill(password);
   await page.getByRole("button", { name: "Create account" }).nth(1).click();
 
   // Wait for the recovery code reveal to appear.
