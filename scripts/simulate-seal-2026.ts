@@ -24,11 +24,11 @@ async function simulateSeal2026() {
     },
   });
 
-  console.log(`Found ${roles.length} roles across ${new Set(roles.map((r) => r.userId)).size} user(s).`);
+  console.log(`Found ${roles.length} roles across ${new Set(roles.map((r: any) => r.userId)).size} user(s).`);
 
   // 2. Ensure each role has a 2026 growth ring record before year sealing
   for (const role of roles) {
-    const doneGoalsCount = role.goals.filter((g) => g.status === "DONE").length;
+    const doneGoalsCount = role.goals.filter((g: any) => g.status === "DONE").length;
     await prisma.growthRing.upsert({
       where: {
         roleId_year: {
@@ -87,7 +87,7 @@ async function simulateSeal2026() {
 
   console.log(`=== Sealed Growth Rings Summary (Year ${targetYear}) ===`);
   console.table(
-    sealedRings.map((ring) => ({
+    sealedRings.map((ring: any) => ({
       User: ring.role.user.email,
       Domain: ring.role.domain,
       Role: ring.role.label,

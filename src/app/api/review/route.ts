@@ -36,9 +36,9 @@ export async function GET(req: Request) {
     },
   });
 
-  const serialized = roles.map((r) => ({
+  const serialized = roles.map((r: any) => ({
     ...r,
-    goals: r.goals.map((g) => ({
+    goals: r.goals.map((g: any) => ({
       ...g,
       reviewEntry: g.reviewEntry
         ? {

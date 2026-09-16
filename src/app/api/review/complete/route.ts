@@ -41,7 +41,7 @@ export async function POST(req: Request) {
   });
 
   const unresolvedMissed = goals.filter(
-    (g) => g.status !== "DONE" && !g.reviewEntry,
+    (g: any) => g.status !== "DONE" && !g.reviewEntry,
   );
   if (unresolvedMissed.length > 0) {
     return NextResponse.json(
@@ -54,14 +54,14 @@ export async function POST(req: Request) {
   }
 
   const toCarry = goals.filter(
-    (g) =>
+    (g: any) =>
       (g.status === "DONE" && g.carryForward) ||
       g.reviewEntry?.choice === "CARRY",
   );
 
   const currentWeek = startOfWeek();
   const created = await prisma.$transaction(
-    toCarry.map((g) =>
+    toCarry.map((g: any) =>
       prisma.goal.create({
         data: { roleId: g.roleId, title: g.title, weekStart: currentWeek },
       }),

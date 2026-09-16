@@ -30,7 +30,7 @@ export async function GET() {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  const rolesOut = roles.map((r) => ({
+  const rolesOut = roles.map((r: any) => ({
     id: r.id,
     label: r.label,
     domain: r.domain,

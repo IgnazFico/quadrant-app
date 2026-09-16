@@ -3,10 +3,18 @@ import { z } from "zod";
 import { auth } from "../../../../../lib/auth";
 import { prisma } from "../../../../../lib/prisma";
 import { seedManualNotification } from "../../../../../lib/notifications";
-import { NotificationType } from "@prisma/client";
+import type { NotificationType } from "@prisma/client";
 
 const seedSchema = z.object({
-  type: z.nativeEnum(NotificationType),
+  type: z.enum([
+    "MORNING_FOCUS",
+    "SUNDAY_RESET",
+    "SEVEN_DAY_MILESTONE",
+    "MONTHLY_CHECKIN",
+    "ROLE_MILESTONE",
+    "YEAR_END_REVIEW",
+    "BACKUP_KEY",
+  ]) as z.ZodType<NotificationType>,
   message: z.string().optional(),
 });
 

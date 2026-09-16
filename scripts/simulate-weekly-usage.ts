@@ -381,7 +381,7 @@ async function runWeeklySimulation() {
       include: { reviewEntry: true },
     });
 
-    const unresolved = goals.filter((g) => g.status !== "DONE" && !g.reviewEntry);
+    const unresolved = goals.filter((g: any) => g.status !== "DONE" && !g.reviewEntry);
     if (unresolved.length === 0) throw new Error("Expected at least 1 unresolved goal for negative test");
 
     // Attempting completion without reflection is rejected

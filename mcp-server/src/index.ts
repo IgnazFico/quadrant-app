@@ -44,7 +44,7 @@ server.tool(
     scenario: z.enum(["mission_gate_ready", "unreviewed_goals_ready", "clean_user"]),
     email: z.string().email().default("test.user@example.com"),
   },
-  async ({ scenario, email }) => {
+  async ({ scenario, email }: { scenario: string; email: string }) => {
     try {
       // Clean up previous test user
       await prisma.user.deleteMany({ where: { email } });
@@ -134,7 +134,7 @@ server.tool(
     testFile: z.string().optional().describe("Specific test file, e.g. tests/auth.spec.ts"),
     headed: z.boolean().default(false),
   },
-  async ({ testFile, headed }) => {
+  async ({ testFile, headed }: { testFile?: string; headed?: boolean }) => {
     try {
       const testTarget = testFile ? testFile : "";
       const headedFlag = headed ? "--headed" : "";
@@ -148,18 +148,13 @@ server.tool(
         content: [
           {
             type: "text",
-            text: `Playwright Test Output:\n\n${stdout || stderr}`,
+            text: `Playwright Suite Executed:\n\n${stdout || stderr || "Test execution completed."}`,
           },
         ],
       };
     } catch (err: any) {
       return {
-        content: [
-          {
-            type: "text",
-            text: `Playwright Test Execution Failed:\n\n${err.stdout || err.stderr || err.message}`,
-          },
-        ],
+        content: [{ type: "text", text: `Playwright Suite Failed:\n\n${err?.stdout || err?.message || String(err)}` }],
         isError: true,
       };
     }
@@ -175,7 +170,7 @@ server.tool(
   {
     targetYear: z.number().default(new Date().getFullYear()),
   },
-  async ({ targetYear }) => {
+  async ({ targetYear }: { targetYear: number }) => {
     try {
       const result = await prisma.growthRing.updateMany({
         where: {
@@ -268,7 +263,7 @@ server.tool(
     email: z.string().email().default("test.user@example.com"),
     customMessage: z.string().optional(),
   },
-  async ({ type, email, customMessage }) => {
+  async ({ type, email, customMessage }: { type: any; email: string; customMessage?: string }) => {
     try {
       const user = await prisma.user.findUnique({ where: { email } });
       if (!user) {
