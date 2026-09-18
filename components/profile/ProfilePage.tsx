@@ -6,6 +6,7 @@ import { domainColor } from "../../lib/domainColors";
 import { NotificationBell } from "../notifications/NotificationBell";
 import { useAuthStore } from "../../store/authStore";
 import { decryptField, fromBase64 } from "../../lib/crypto";
+import { FeedbackModal } from "../feedback/FeedbackModal";
 
 type Ring = { year: number; votesLogged: number; sealed: boolean } | null;
 type RoleBadge = {
@@ -68,6 +69,7 @@ export function ProfilePage() {
   } | null>(null);
   const [barcode, setBarcode] = useState<number[]>([]);
   const masterKey = useAuthStore((s) => s.masterKey);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
 
   useEffect(() => {
     setBarcode(Array.from({ length: 14 }, () => 8 + Math.random() * 14));
@@ -407,6 +409,34 @@ export function ProfilePage() {
             <polyline points="9 18 15 12 9 6" />
           </svg>
         </Link>
+
+        <button
+          type="button"
+          onClick={() => setShowFeedbackModal(true)}
+          className="mt-3 flex w-full items-center justify-between rounded-xl border border-[#ECE8DF] bg-white px-4 py-3.5 text-sm font-semibold text-[#1F2937] transition hover:bg-[#F3F4F6]"
+        >
+          <span className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-[#F97316]" />
+            Beta Feedback & Friction Report
+          </span>
+          <svg
+            viewBox="0 0 24 24"
+            width="16"
+            height="16"
+            fill="none"
+            stroke="#9CA3AF"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </button>
+
+        <FeedbackModal
+          isOpen={showFeedbackModal}
+          onClose={() => setShowFeedbackModal(false)}
+        />
 
         <div className="mt-4 flex gap-2 rounded-lg bg-[#F3F4F6] px-3 py-2.5 text-[11px] leading-relaxed text-[#9CA3AF]">
           <svg
