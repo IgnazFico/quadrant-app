@@ -21,46 +21,43 @@ export default async function HomePage() {
       {
         "@type": "SoftwareApplication",
         "@id": "https://quadrant.com/#software",
-        "name": "Quadrant",
-        "applicationCategory": "ProductivityApplication",
-        "operatingSystem": "All",
-        "offers": {
+        name: "Quadrant",
+        applicationCategory: "ProductivityApplication",
+        operatingSystem: "All",
+        offers: {
           "@type": "Offer",
-          "price": "0",
-          "priceCurrency": "USD",
+          price: "0",
+          priceCurrency: "USD",
         },
-        "description":
+        description:
           "Quadrant is an anti-burnout life architecture application replacing toxic streak resets with cumulative annual growth rings and role-based planning.",
       },
       {
         "@type": "FAQPage",
         "@id": "https://quadrant.com/#faq",
-        "mainEntity": [
+        mainEntity: [
           {
             "@type": "Question",
-            "name": "How does Quadrant eliminate habit streak guilt?",
-            "acceptedAnswer": {
+            name: "How does Quadrant eliminate habit streak guilt?",
+            acceptedAnswer: {
               "@type": "Answer",
-              "text":
-                "Quadrant replaces fragile streaks with Cumulative Annual Growth Rings. When you complete a goal, you log a permanent vote toward your role's annual ring. Missing a day never resets your progress to zero.",
+              text: "Quadrant replaces fragile streaks with Cumulative Annual Growth Rings. When you complete a goal, you log a permanent vote toward your role's annual ring. Missing a day never resets your progress to zero.",
             },
           },
           {
             "@type": "Question",
-            "name": "What is the Quadrant II planning method?",
-            "acceptedAnswer": {
+            name: "What is the Quadrant II planning method?",
+            acceptedAnswer: {
               "@type": "Answer",
-              "text":
-                "Rooted in Stephen Covey's time management matrix, Quadrant II focuses on tasks that are highly important but not urgent (health, relationships, craft). Quadrant schedules these Big Rocks before reactive urgent fires crowd the day.",
+              text: "Rooted in Stephen Covey's time management matrix, Quadrant II focuses on tasks that are highly important but not urgent (health, relationships, craft). Quadrant schedules these Big Rocks before reactive urgent fires crowd the day.",
             },
           },
           {
             "@type": "Question",
-            "name": "Is Quadrant end-to-end encrypted?",
-            "acceptedAnswer": {
+            name: "Is Quadrant end-to-end encrypted?",
+            acceptedAnswer: {
               "@type": "Answer",
-              "text":
-                "Yes. Quadrant utilizes zero-knowledge client-side encryption via Libsodium and Argon2id key derivation. Your goals and reflections are encrypted in your browser before saving.",
+              text: "Yes. Quadrant utilizes zero-knowledge client-side encryption via Libsodium and Argon2id key derivation. Your goals and reflections are encrypted in your browser before saving.",
             },
           },
         ],
@@ -87,7 +84,10 @@ export default async function HomePage() {
       {/* Sticky Header Navigation */}
       <header className="sticky top-0 z-40 border-b border-[#ECE8DF]/70 bg-[#FAF7F2]/85 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8">
-          <Link href="/" className="flex items-center gap-2.5 transition-opacity hover:opacity-90">
+          <Link
+            href="/"
+            className="flex items-center gap-2.5 transition-opacity hover:opacity-90"
+          >
             <div className="grid h-6 w-6 grid-cols-2 grid-rows-2 gap-[2.5px] rounded-[5px] bg-[#FFF0E0] p-1 shadow-xs ring-1 ring-[#F97316]/20">
               <span className="rounded-[1.5px] bg-[#E5E7EB]" />
               <span className="rounded-[1.5px] bg-[#F97316]" />
@@ -184,15 +184,17 @@ export default async function HomePage() {
 
           {/* Welcoming Subheadline */}
           <p className="animate-subheadline mx-auto mt-8 max-w-3xl font-sans text-lg font-medium leading-relaxed text-[#4B5563] sm:text-xl md:text-2xl">
-            The culture spent a decade glorifying 14-hour hustle streaks and 50-task to-do lists.
-            Now the science and the boardroom agree:{" "}
+            The culture spent a decade glorifying 14-hour hustle streaks and
+            50-task to-do lists. Now the science and the boardroom agree:{" "}
             <strong className="font-semibold text-[#1F2937]">
               chronic urgency isn’t ambition—it’s just bad life design.
             </strong>
           </p>
 
           <p className="animate-subheadline mx-auto mt-3.5 max-w-2xl font-sans text-sm leading-relaxed text-[#6B7280] sm:text-base">
-            Quadrant organizes your week by human identity roles, protects your Quadrant II priorities before reactive fires hit, and replaces broken streak guilt with cumulative annual growth rings.
+            Quadrant organizes your week by human identity roles, protects your
+            Quadrant II priorities before reactive fires hit, and replaces
+            broken streak guilt with cumulative annual growth rings.
           </p>
 
           {/* Action CTAs */}
@@ -222,7 +224,10 @@ export default async function HomePage() {
       </section>
 
       {/* Bite-Sized Evidence Section with Interactive 3D Flip Cards */}
-      <section id="evidence" className="relative border-y border-[#ECE8DF]/80 bg-white/40 px-5 py-20 sm:px-8 sm:py-28">
+      <section
+        id="evidence"
+        className="relative border-y border-[#ECE8DF]/80 bg-white/40 px-5 py-20 sm:px-8 sm:py-28"
+      >
         <div className="mx-auto max-w-6xl">
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 rounded-md bg-[#FFF0E0] px-2.5 py-1 font-mono text-[11px] font-bold uppercase tracking-wider text-[#F97316]">
@@ -232,8 +237,11 @@ export default async function HomePage() {
               The world caught up to what Quadrant was built on.
             </h2>
             <p className="mt-3 font-sans text-base font-medium text-[#6B7280] sm:text-lg">
-              You aren’t lazy. You were given tools designed to manage factory widgets instead of multi-dimensional human lives.{" "}
-              <span className="font-semibold text-[#1F2937]">Hover or tap any card to reveal the evidence behind the stat:</span>
+              You aren’t lazy. You were given tools designed to manage factory
+              widgets instead of multi-dimensional human lives.{" "}
+              <span className="font-semibold text-[#1F2937]">
+                Hover or tap any card to reveal the evidence behind the stat:
+              </span>
             </p>
           </div>
 
@@ -263,7 +271,10 @@ export default async function HomePage() {
       </section>
 
       {/* Feature Showcase: Highlighting the Feature Examples Directly */}
-      <section id="features" className="relative border-t border-[#ECE8DF]/80 bg-white/50 px-5 py-20 sm:px-8 sm:py-28">
+      <section
+        id="features"
+        className="relative border-t border-[#ECE8DF]/80 bg-white/50 px-5 py-20 sm:px-8 sm:py-28"
+      >
         <div className="mx-auto max-w-5xl">
           <div className="max-w-2xl">
             <span className="font-mono text-xs font-bold uppercase tracking-wider text-[#F97316]">
@@ -273,7 +284,8 @@ export default async function HomePage() {
               An interface designed to keep you centered.
             </h2>
             <p className="mt-2 text-sm text-[#6B7280]">
-              Explore the interactive examples below to see how Quadrant works in real practice.
+              Explore the interactive examples below to see how Quadrant works
+              in real practice.
             </p>
           </div>
 
@@ -292,11 +304,15 @@ export default async function HomePage() {
           <h2 className="mt-6 font-serif text-3xl font-black leading-tight tracking-tight text-[#1F2937] sm:text-5xl md:text-6xl">
             You don&apos;t need another to-do list.
             <br />
-            <span className="text-[#F97316]">You need a life architecture.</span>
+            <span className="text-[#F97316]">
+              You need a life architecture.
+            </span>
           </h2>
 
           <p className="mx-auto mt-6 max-w-2xl font-sans text-base leading-relaxed text-[#4B5563] sm:text-lg">
-            Stop waiting for Friday to finally feel like a human being. Start your week by deciding who you are, what matters, and where your real energy belongs.
+            Stop waiting for Friday to finally feel like a human being. Start
+            your week by deciding who you are, what matters, and where your real
+            energy belongs.
           </p>
 
           <div className="mt-9 flex flex-col items-center justify-center gap-4 sm:flex-row">
@@ -304,12 +320,15 @@ export default async function HomePage() {
               href={session?.user ? userTarget : "/login"}
               className="w-full rounded-xl bg-[#F97316] px-8 py-4 font-sans text-base font-bold text-white shadow-xl shadow-orange-500/25 transition-all hover:bg-[#EA6A0C] hover:shadow-2xl hover:shadow-orange-500/35 hover:-translate-y-0.5 sm:w-auto"
             >
-              {session?.user ? "Enter Your Dashboard &rarr;" : "Start Your Growth Rings Free &rarr;"}
+              {session?.user
+                ? "Enter Your Dashboard"
+                : "Start Your Growth Rings Free"}
             </Link>
           </div>
 
           <p className="mt-4 font-mono text-xs text-[#9CA3AF]">
-            Zero credit card required &bull; Client-side encrypted &bull; Built for humans
+            Zero credit card required &bull; Client-side encrypted &bull; Built
+            for humans
           </p>
         </div>
       </section>
@@ -324,14 +343,22 @@ export default async function HomePage() {
               <span className="rounded-[1px] bg-[#E5E7EB]" />
               <span className="rounded-[1px] bg-[#E5E7EB]" />
             </div>
-            <span className="font-serif font-bold text-[#374151]">Quadrant</span>
+            <span className="font-serif font-bold text-[#374151]">
+              Quadrant
+            </span>
             <span>&bull;</span>
             <span>Doing more isn&apos;t the same as living well.</span>
           </div>
           <div className="flex items-center gap-5">
-            <Link href="/login" className="hover:text-[#1F2937]">Log In</Link>
-            <Link href="/login" className="hover:text-[#1F2937]">Create Account</Link>
-            <Link href="#evidence" className="hover:text-[#1F2937]">Citations & Data</Link>
+            <Link href="/login" className="hover:text-[#1F2937]">
+              Log In
+            </Link>
+            <Link href="/login" className="hover:text-[#1F2937]">
+              Create Account
+            </Link>
+            <Link href="#evidence" className="hover:text-[#1F2937]">
+              Citations & Data
+            </Link>
           </div>
         </div>
       </footer>
