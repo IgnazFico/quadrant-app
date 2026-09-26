@@ -2,7 +2,7 @@
 
 import { Fragment, useEffect, useMemo, useState, useCallback } from "react";
 import { domainColor } from "../../lib/domainColors";
-import { startOfWeek, addDays } from "../../lib/week";
+import { startOfWeek, addDays, dayKey, toDateKey } from "../../lib/week";
 import { NotificationBell } from "../notifications/NotificationBell";
 import "./schedule.css";
 
@@ -27,9 +27,6 @@ function fmtHour(h: number) {
   const h12 = h % 12 === 0 ? 12 : h % 12;
   return `${h12} ${period}`;
 }
-function dayKey(d: Date) {
-  return d.toISOString().slice(0, 10);
-}
 
 type SheetState =
   | { mode: "block"; dayIndex: number; hour: number; existing: Block | null }
@@ -46,14 +43,14 @@ export function WeeklySchedulePage() {
     () => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)),
     [weekStart],
   );
-  const todayKey = dayKey(new Date());
+  const todayKey = toDateKey(new Date());
 
   const load = useCallback(async (ws: Date) => {
     setLoading(true);
     try {
       const [goalsRes, weekRes] = await Promise.all([
         fetch("/api/goals"),
-        fetch(`/api/schedule/week?weekStart=${ws.toISOString().slice(0, 10)}`),
+        fetch(`/api/schedule/week?weekStart=${dayKey(ws)}`),
       ]);
       const goalsBody = await goalsRes.json();
       const weekBody = await weekRes.json();

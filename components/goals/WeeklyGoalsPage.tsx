@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import { domainColor } from "../../lib/domainColors";
 import { NotificationBell } from "../notifications/NotificationBell";
+import { startOfDay, dayKey } from "../../lib/week";
 
 type GoalStatus = "IN_PROGRESS" | "DONE" | "MISSED";
 type Goal = {
@@ -39,6 +41,7 @@ export function WeeklyGoalsPage() {
   const [formGoalId, setFormGoalId] = useState<string>("");
   const [formCustomTitle, setFormCustomTitle] = useState("");
   const [formTime, setFormTime] = useState("09:00");
+  const [scheduleError, setScheduleError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -148,6 +151,7 @@ export function WeeklyGoalsPage() {
     setFormRoleId(roleId);
     setFormGoalId(goalId ?? "");
     setFormOpen(true);
+    setScheduleError(null);
   }
 
   async function submitScheduleForm() {
@@ -166,13 +170,19 @@ export function WeeklyGoalsPage() {
         goalId: goal ? goal.id : null,
         hour: h,
         title,
+        day: dayKey(startOfDay()),
       }),
     });
-    if (!res.ok) return;
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      setScheduleError(body.error ?? "Couldn't save the schedule block.");
+      return;
+    }
     const { block } = await res.json();
     setBlocks((prev) => [...prev, block].sort((a, b) => a.hour - b.hour));
     setFormOpen(false);
     setFormCustomTitle("");
+    setScheduleError(null);
   }
 
   const totalGoals = roles.reduce((a, r) => a + r.goals.length, 0);
@@ -232,9 +242,17 @@ export function WeeklyGoalsPage() {
         {/* TODAY */}
         <section className="mb-7">
           <div className="mb-3 flex items-baseline justify-between">
-            <h2 className="font-serif text-base font-semibold text-[#1F2937]">
-              Today
-            </h2>
+            <div className="flex items-baseline gap-2">
+              <h2 className="font-serif text-base font-semibold text-[#1F2937]">
+                Today
+              </h2>
+              <Link
+                href="/schedule"
+                className="font-mono text-[11px] text-[#F97316] hover:text-[#EA6A0C]"
+              >
+                View full schedule
+              </Link>
+            </div>
             <span className="font-mono text-[11px] text-[#9CA3AF]">
               {blocks.length > 0 ? `${blocks.length} scheduled` : ""}
             </span>
@@ -295,6 +313,11 @@ export function WeeklyGoalsPage() {
             </button>
           ) : (
             <div className="mt-2.5 flex flex-col gap-2 rounded-lg bg-white p-3">
+              {scheduleError && (
+                <p className="rounded-lg bg-[#FDECEC] px-3 py-2 text-xs text-[#C0392B]">
+                  {scheduleError}
+                </p>
+              )}
               <div className="flex gap-2">
                 <select
                   value={formRoleId}

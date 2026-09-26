@@ -17,7 +17,16 @@ test.describe("Quadrant Live Production User Session & Dashboard", () => {
     await page.waitForURL("**/goals", { timeout: 20000 });
     expect(page.url()).toContain("/goals");
 
-    // 5. Verify the dashboard renders user's seeded roles and goals
+    // 5. Wait for the page to finish loading data from /api/goals & /api/schedule
+    await page.waitForFunction(
+      () => {
+        const el = document.body;
+        return !el || (!el.textContent?.includes("Loading your week") && !el.textContent?.includes("Couldn't load your week"));
+      },
+      { timeout: 15000 }
+    );
+
+    // 6. Verify the dashboard renders user's seeded roles and goals
     await expect(page.getByText(/Software Architect|Physical Vitality/i).first()).toBeVisible({
       timeout: 10000,
     });

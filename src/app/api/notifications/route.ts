@@ -12,7 +12,7 @@ import {
 
 async function getUserId(): Promise<string | null> {
   const session = await auth();
-  if (session?.user) {
+  if (session?.user?.id) {
     return session.user.id;
   }
   if (process.env.NODE_ENV !== "production") {

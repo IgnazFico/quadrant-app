@@ -5,10 +5,25 @@ export async function recordActivityToday(userId: string) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  await prisma.activityDay.createMany({
-    data: [{ userId, date: today }],
-    skipDuplicates: true,
-  });
+  // Verify the user still exists before writing — prevents FK violations
+  // from stale JWTs after database resets.
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) return;
+
+  try {
+    await prisma.activityDay.createMany({
+      data: [{ userId, date: today }],
+      skipDuplicates: true,
+    });
+  } catch (err) {
+    // Defensive: if a stale userId somehow slips past the check above
+    // (e.g. race condition or DB replication lag), swallow the FK error
+    // so the ping endpoint still returns 200 and the app stays usable.
+    if (err instanceof Error && err.message.includes("ForeignKeyConstraintViolation")) {
+      return;
+    }
+    throw err;
+  }
 }
 
 export async function getActiveDayCount(userId: string): Promise<number> {

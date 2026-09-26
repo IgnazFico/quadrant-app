@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { domainColor } from "../../lib/domainColors";
 import { addDays, startOfWeek } from "../../lib/week";
 import { useRouter } from "next/navigation";
@@ -31,6 +31,7 @@ type Role = { id: string; label: string; domain: string; goals: Goal[] };
 export function WeeklyReviewPage() {
   const router = useRouter();
   const [weekStart, setWeekStart] = useState(() => addDays(startOfWeek(), -7));
+  const [fetchedWeekStart, setFetchedWeekStart] = useState<string | null>(null);
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +40,24 @@ export function WeeklyReviewPage() {
     goal: Goal;
   } | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [weekOptions, setWeekOptions] = useState<{ value: string; label: string }[]>([]);
   const masterKey = useAuthStore((s) => s.masterKey);
+  const masterKeyRef = useRef(masterKey);
+  masterKeyRef.current = masterKey;
+
+  // Build a list of recent weeks for the dropdown selector
+  useEffect(() => {
+    const options: { value: string; label: string }[] = [];
+    for (let i = 0; i < 12; i++) {
+      const ws = addDays(startOfWeek(), -i * 7);
+      const we = addDays(ws, 6);
+      options.push({
+        value: ws.toISOString().slice(0, 10),
+        label: `${ws.toLocaleDateString("en-US", { month: "short", day: "numeric" })} – ${we.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`,
+      });
+    }
+    setWeekOptions(options);
+  }, []);
 
   const load = useCallback(
     async (ws: Date) => {
@@ -49,25 +67,29 @@ export function WeeklyReviewPage() {
         const res = await fetch(
           `/api/review?weekStart=${ws.toISOString().slice(0, 10)}`,
         );
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(body.error ?? `HTTP ${res.status}`);
+        }
         const body = await res.json();
         const withReasons: Role[] = await Promise.all(
-          body.roles.map(async (r: Role) => ({
-            ...r,
-            goals: await Promise.all(
+          body.roles.map(async (r: Role) => {
+            const goalsWithReasons = await Promise.all(
               r.goals.map(async (g) => {
-                if (!g.reviewEntry || !masterKey) return g;
+                if (!g.reviewEntry || !masterKeyRef.current) return g;
                 try {
                   const reason = await decryptField(
                     await fromBase64(g.reviewEntry.reasonEncrypted),
-                    masterKey,
+                    masterKeyRef.current,
                   );
                   return { ...g, reviewEntry: { ...g.reviewEntry, reason } };
                 } catch {
                   return g;
                 }
               }),
-            ),
-          })),
+            );
+            return { ...r, goals: goalsWithReasons };
+          }),
         );
         setRoles(withReasons);
       } catch {
@@ -76,12 +98,26 @@ export function WeeklyReviewPage() {
         setLoading(false);
       }
     },
-    [masterKey],
+    [],
   );
 
   useEffect(() => {
+    const key = weekStart.toISOString().slice(0, 10);
+    if (key === fetchedWeekStart) return;
+    setFetchedWeekStart(key);
     load(weekStart);
-  }, [weekStart, load]);
+  }, [weekStart]);
+
+  const goToPreviousWeek = () => {
+    setWeekStart(addDays(weekStart, -7));
+  };
+
+  const goToNextWeek = () => {
+    const next = addDays(weekStart, 7);
+    if (next <= startOfWeek()) {
+      setWeekStart(next);
+    }
+  };
 
   const allGoals = roles.flatMap((r) => r.goals);
   const doneCount = allGoals.filter((g) => g.status === "DONE").length;
@@ -200,17 +236,36 @@ export function WeeklyReviewPage() {
               Quadrant
             </span>
           </div>
-          <span className="font-mono text-[11px] text-[#9CA3AF]">
-            {weekStart.toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-            })}{" "}
-            &ndash;{" "}
-            {addDays(weekStart, 6).toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-            })}
-          </span>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={goToPreviousWeek}
+              className="rounded-lg border border-[#E5E1D8] px-2 py-1 text-[11px] font-medium text-[#6B7280] hover:bg-[#F3F4F6] disabled:opacity-40"
+              disabled={loading}
+              aria-label="Previous week"
+            >
+              &larr;
+            </button>
+            <select
+              value={weekStart.toISOString().slice(0, 10)}
+              onChange={(e) => setWeekStart(new Date(e.target.value))}
+              className="rounded-lg border border-[#E5E1D8] bg-white px-2 py-1 text-[11px] font-mono text-[#9CA3AF] focus:border-[#FB923C] outline-none"
+              aria-label="Select week"
+            >
+              {weekOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={goToNextWeek}
+              className="rounded-lg border border-[#E5E1D8] px-2 py-1 text-[11px] font-medium text-[#6B7280] hover:bg-[#F3F4F6] disabled:opacity-40"
+              disabled={loading || weekStart.getTime() >= startOfWeek().getTime()}
+              aria-label="Next week"
+            >
+              &rarr;
+            </button>
+          </div>
         </div>
 
         <h1 className="mb-1 font-serif text-2xl font-semibold text-[#1F2937]">

@@ -5,7 +5,7 @@ import { getPatterns } from "../../../../lib/patterns";
 /** GET /api/patterns?year=2026&month=8 — defaults to the current month. */
 export async function GET(req: Request) {
   const session = await auth();
-  if (!session?.user) {
+  if (!session?.user?.id) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
   const userId = session.user.id;

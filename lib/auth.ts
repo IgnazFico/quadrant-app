@@ -44,7 +44,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return token;
     },
     async session({ session, token }) {
-      if (session.user && token.userId) session.user.id = token.userId as string;
+      if (session.user && token.userId) {
+        // Re-verify the user still exists in the database.
+        // Prevents stale JWTs from deleted users from creating zombie sessions.
+        const user = await prisma.user.findUnique({
+          where: { id: token.userId as string },
+        });
+        if (user) {
+          session.user.id = user.id;
+          session.user.email = user.email;
+        } else {
+          // User no longer exists — wipe the id so guards reject the session.
+          // (Not setting it is not enough: session.user.id already carries the
+          // stale value from the original authorize() call.)
+          // Cast to any to bypass strict typing — runtime behavior is correct.
+          (session.user as any).id = undefined;
+          (session.user as any).email = undefined;
+        }
+      }
       return session;
     },
   },
