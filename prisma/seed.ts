@@ -97,11 +97,13 @@ async function main() {
           email: TEST_EMAIL,
           passwordHash,
           authKey: {
+            // Prisma 7 Bytes fields are Uint8Array<ArrayBuffer>; libsodium returns
+            // Uint8Array<ArrayBufferLike>. new Uint8Array() copies into a plain ArrayBuffer.
             create: {
-              saltPassword,
-              saltRecovery,
-              wrappedKeyPassword,
-              wrappedKeyRecovery,
+              saltPassword: new Uint8Array(saltPassword),
+              saltRecovery: new Uint8Array(saltRecovery),
+              wrappedKeyPassword: new Uint8Array(wrappedKeyPassword),
+              wrappedKeyRecovery: new Uint8Array(wrappedKeyRecovery),
               recoveryKeyIssuedAt: new Date(),
             },
           },

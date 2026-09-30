@@ -7,6 +7,9 @@ export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
     path: "prisma/migrations",
+    // Prisma 7 reads the seed command from here (package.json#prisma.seed is Prisma 6).
+    // Same script CI calls directly via `npm run seed`.
+    seed: "tsx prisma/seed.ts",
   },
   datasource: {
     url: process.env["DIRECT_URL"] || process.env["DATABASE_URL"],
