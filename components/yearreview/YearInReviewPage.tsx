@@ -2,12 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { domainColor } from "../../lib/domainColors";
+import { YourSky } from "../constellation/YourSky";
+import type { RoleConstellation } from "../../types/constellation";
 import { useAuthStore } from "../../store/authStore";
 import { decryptField, fromBase64 } from "../../lib/crypto";
 import { useSearchParams } from "next/navigation";
 import "./yearreview.css";
-
-const VOTES_PER_RING_VISUAL = 24; // same visual-only target used on the profile page
 
 type RoleStat = {
   roleId: string;
@@ -39,13 +39,8 @@ type YearReview = {
     cancelledCount: number;
   };
   identity: { title: string; domainCounts: Record<string, number> };
-  rings: {
-    roleId: string;
-    label: string;
-    domain: string;
-    votesLogged: number;
-    sealed: boolean;
-  }[];
+  // GROWTH-RING-REDESIGN: was `rings` (vote counts); now each role's monthly stars.
+  sky: RoleConstellation[];
   missionStatement: {
     signedName: string;
     signedAt: string;
@@ -59,7 +54,7 @@ const CHAPTERS = [
   { id: "integrity", label: "Honesty" },
   { id: "mission", label: "Mission" },
   { id: "identity", label: "Identity" },
-  { id: "rings", label: "Rings" },
+  { id: "rings", label: "Sky" }, // GROWTH-RING-REDESIGN: id kept so anchors still work
   { id: "close", label: "Next year" },
 ];
 
@@ -167,7 +162,7 @@ export function YearInReviewPage() {
     roleInsights,
     integrity,
     identity,
-    rings,
+    sky,
     missionStatement,
   } = data;
 
@@ -444,11 +439,18 @@ export function YearInReviewPage() {
           id="rings"
           registerSection={registerSection}
           n={6}
-          title="Your rings, together"
-          sub="Every role's growth ring, side by side — the closest thing to a portrait of your year."
+          title="Your sky, together"
+          sub="Every role's constellation, one quadrant each — the closest thing to a portrait of your year."
         >
+          {/* GROWTH-RING-REDESIGN: was <RingPortrait rings={rings} /> */}
           <div className="flex items-center justify-center py-5">
-            <RingPortrait rings={rings} />
+            <YourSky
+              key={year}
+              sky={sky}
+              year={year}
+              currentYear={new Date().getFullYear()}
+              currentMonth={new Date().getMonth()}
+            />
           </div>
         </Chapter>
 
@@ -676,59 +678,5 @@ function EmptyRoleNote({ text }: { text: string }) {
     <p className="mb-3 rounded-xl border border-dashed border-[#E5E1D8] bg-white p-4 text-[12.5px] text-[#C9CBCF]">
       {text}
     </p>
-  );
-}
-
-function RingPortrait({ rings }: { rings: YearReview["rings"] }) {
-  if (rings.length === 0)
-    return <p className="text-sm text-[#C9CBCF]">No roles yet to show here.</p>;
-
-  const gap = 14;
-  const baseRadius = 20;
-  const strokeWidth = 8;
-  const outer = baseRadius + rings.length * gap + strokeWidth;
-  const size = outer * 2 + 20;
-
-  return (
-    <svg
-      viewBox={`${-outer - 10} ${-outer - 10} ${size} ${size}`}
-      width={Math.min(size, 280)}
-      height={Math.min(size, 280)}
-    >
-      {rings.map((r, i) => {
-        const radius = baseRadius + i * gap;
-        const c = 2 * Math.PI * radius;
-        const progress = r.sealed
-          ? 1
-          : Math.min(r.votesLogged / VOTES_PER_RING_VISUAL, 1);
-        const offset = c * (1 - progress);
-        return (
-          <g key={r.roleId}>
-            <circle
-              r={radius}
-              fill="none"
-              stroke="#F3F4F6"
-              strokeWidth={strokeWidth}
-            />
-            <circle
-              r={radius}
-              fill="none"
-              stroke={domainColor(r.domain)}
-              strokeWidth={strokeWidth}
-              strokeLinecap="round"
-              strokeDasharray={c}
-              strokeDashoffset={offset}
-              transform="rotate(-90)"
-            />
-          </g>
-        );
-      })}
-      <g transform="translate(-11,-11)">
-        <rect x="0" y="0" width="10" height="10" rx="2" fill="#F3F4F6" />
-        <rect x="12" y="0" width="10" height="10" rx="2" fill="#F97316" />
-        <rect x="0" y="12" width="10" height="10" rx="2" fill="#F3F4F6" />
-        <rect x="12" y="12" width="10" height="10" rx="2" fill="#F3F4F6" />
-      </g>
-    </svg>
   );
 }

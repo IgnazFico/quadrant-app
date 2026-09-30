@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "../../../../lib/auth";
 import { prisma } from "../../../../lib/prisma";
+import { getRoleConstellations } from "../../../../lib/constellation";
 
 export async function GET() {
   const session = await auth();
@@ -10,7 +11,7 @@ export async function GET() {
   const userId = session.user.id;
   const currentYear = new Date().getFullYear();
 
-  const [user, roles, latestStatement] = await Promise.all([
+  const [user, roles, latestStatement, constellations] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
       select: { email: true, createdAt: true },
@@ -18,13 +19,15 @@ export async function GET() {
     prisma.role.findMany({
       where: { userId },
       orderBy: [{ isFeatured: "desc" }, { createdAt: "asc" }],
-      include: { growthRings: { where: { year: currentYear } } },
     }),
     prisma.missionStatement.findFirst({
       where: { userId },
       orderBy: { version: "desc" },
     }),
+    // GROWTH-RING-REDESIGN: the badge is this year's constellation only.
+    getRoleConstellations(userId, { currentYearOnly: true }),
   ]);
+  const constellationByRole = new Map(constellations.map((c) => [c.roleId, c]));
 
   if (!user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -41,13 +44,13 @@ export async function GET() {
     // replaces the earlier date-math placeholder that inferred tenure
     // from ring.year, which broke for roles with no ring row yet.
     tenureYears: currentYear - r.createdAt.getFullYear() + 1,
-    ring: r.growthRings[0]
-      ? {
-          year: r.growthRings[0].year,
-          votesLogged: r.growthRings[0].votesLogged,
-          sealed: r.growthRings[0].sealed,
-        }
-      : null,
+    // GROWTH-RING-REDESIGN: replaces `ring: {votesLogged, sealed}`. Twelve
+    // monthly scores for the current year; vote counts stay server-side.
+    constellation: constellationByRole.get(r.id)?.years[0] ?? {
+      year: currentYear,
+      months: new Array(12).fill(null),
+      sealed: false,
+    },
   }));
 
   return NextResponse.json({

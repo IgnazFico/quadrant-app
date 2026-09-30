@@ -2,58 +2,23 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { domainColor } from "../../lib/domainColors";
+import { constellationTint } from "../../lib/domainColors";
 import { NotificationBell } from "../notifications/NotificationBell";
 import { useAuthStore } from "../../store/authStore";
 import { decryptField, fromBase64 } from "../../lib/crypto";
 import { FeedbackModal } from "../feedback/FeedbackModal";
+import { YearBadge } from "../constellation/YearBadge";
+import type { YearScores } from "../../types/constellation";
 
-type Ring = { year: number; votesLogged: number; sealed: boolean } | null;
+// GROWTH-RING-REDESIGN: the role badge is this year's constellation (was a flat progress ring).
 type RoleBadge = {
   id: string;
   label: string;
   domain: string;
   isFeatured: boolean;
   tenureYears: number;
-  ring: Ring;
+  constellation: YearScores;
 };
-
-// Purely a visual fill target so the ring reads as "making progress" —
-// sealing itself is time-based (year boundary), never vote-count-based.
-// See lib/growthRing.ts.
-const VOTES_PER_RING_VISUAL = 24;
-
-function ringSvg(color: string, progress: number, size: number) {
-  const r = size / 2 - 3;
-  const c = 2 * Math.PI * r;
-  const offset = c * (1 - progress);
-  const cx = size / 2;
-  const cy = size / 2;
-  return (
-    <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size}>
-      <circle
-        cx={cx}
-        cy={cy}
-        r={r}
-        fill="none"
-        stroke="#F3F4F6"
-        strokeWidth="3"
-      />
-      <circle
-        cx={cx}
-        cy={cy}
-        r={r}
-        fill="none"
-        stroke={color}
-        strokeWidth="3"
-        strokeLinecap="round"
-        strokeDasharray={c}
-        strokeDashoffset={offset}
-        transform={`rotate(-90 ${cx} ${cy})`}
-      />
-    </svg>
-  );
-}
 
 export function ProfilePage() {
   const [flipped, setFlipped] = useState(false);
@@ -133,6 +98,7 @@ export function ProfilePage() {
     );
   }
 
+  const currentMonth = new Date().getMonth();
   const featured = roles.filter((r) => r.isFeatured).slice(0, 2);
   const longestYears = roles.reduce(
     (max, r) => Math.max(max, r.tenureYears),
@@ -257,11 +223,14 @@ export function ProfilePage() {
                       className="flex flex-1 items-center gap-1.5 rounded-lg bg-[#F3F4F6] px-2.5 py-1.5"
                     >
                       <div className="shrink-0">
-                        {ringSvg(
-                          domainColor(r.domain),
-                          ringProgress(r.ring),
-                          22,
-                        )}
+                        <YearBadge
+                          months={r.constellation.months}
+                          tint={constellationTint(r.domain)}
+                          size={34}
+                          sealed={r.constellation.sealed}
+                          currentMonth={currentMonth}
+                          label={r.label}
+                        />
                       </div>
                       <div className="min-w-0">
                         <div className="truncate text-[10.5px] font-semibold leading-tight">
@@ -372,7 +341,14 @@ export function ProfilePage() {
                     : "border-[#ECE8DF] bg-white"
                 }`}
               >
-                {ringSvg(domainColor(r.domain), ringProgress(r.ring), 30)}
+                <YearBadge
+                  months={r.constellation.months}
+                  tint={constellationTint(r.domain)}
+                  size={44}
+                  sealed={r.constellation.sealed}
+                  currentMonth={currentMonth}
+                  label={r.label}
+                />
                 <div className="min-w-0">
                   <div className="truncate text-[12.5px] font-semibold text-[#1F2937]">
                     {r.label}
@@ -455,8 +431,8 @@ export function ProfilePage() {
             <line x1="12" y1="16" x2="12.01" y2="16" />
           </svg>
           <span>
-            Tap a badge below to feature it on the card front (up to 2). Ring
-            progress fills as goals are completed this year.
+            Tap a badge below to feature it on the card front (up to 2). Each
+            star is a month of this year; it brightens as you finish your goals.
           </span>
         </div>
       </div>
@@ -473,12 +449,6 @@ function MetaField({ label, value }: { label: string; value: string }) {
       </b>
     </div>
   );
-}
-
-function ringProgress(ring: Ring): number {
-  if (!ring) return 0;
-  if (ring.sealed) return 1;
-  return Math.min(ring.votesLogged / VOTES_PER_RING_VISUAL, 1);
 }
 
 function ordinal(n: number): string {

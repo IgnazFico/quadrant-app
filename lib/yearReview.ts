@@ -1,4 +1,5 @@
 import { prisma } from "./prisma";
+import { getRoleConstellations } from "./constellation";
 
 const MONTH_NAMES = [
   "January",
@@ -51,7 +52,6 @@ export async function getYearReview(userId: string, year: number) {
     where: { userId },
     include: {
       goals: { where: { weekStart: { gte: start, lt: end } } },
-      growthRings: { where: { year } },
     },
   });
 
@@ -191,14 +191,11 @@ export async function getYearReview(userId: string, year: number) {
     ? topDomains.map((d) => DOMAIN_ADJECTIVE[d] ?? d).join(", ")
     : "Still finding your pattern";
 
-  // ---------------- rings portrait ----------------
-  const rings = roles.map((r) => ({
-    roleId: r.id,
-    label: r.label,
-    domain: r.domain,
-    votesLogged: r.growthRings[0]?.votesLogged ?? 0,
-    sealed: r.growthRings[0]?.sealed ?? false,
-  }));
+  // ---------------- sky portrait ----------------
+  // GROWTH-RING-REDESIGN: replaces the per-role vote-count rings. Each role's
+  // monthly stars for every year up to the one being reviewed.
+  const constellations = await getRoleConstellations(userId, { upToYear: year });
+  const sky = constellations.filter((c) => c.years.length > 0);
 
   const latestStatement = await prisma.missionStatement.findFirst({
     where: { userId },
@@ -225,7 +222,7 @@ export async function getYearReview(userId: string, year: number) {
     },
     integrity: { reflectedCount, carriedCount, cancelledCount },
     identity: { title: identityTitle, domainCounts },
-    rings,
+    sky,
     missionStatement: latestStatement
       ? {
           signedName: latestStatement.signedName,
