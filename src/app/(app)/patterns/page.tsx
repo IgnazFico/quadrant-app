@@ -1,5 +1,5 @@
-import { PatternsPage } from "../../../../components/patterns/PatternsPage";
+import { ReflectPage } from "../../../../components/reflect/ReflectPage";
 
 export default function Patterns() {
-  return <PatternsPage />;
+  return <ReflectPage variant="patterns" />;
 }

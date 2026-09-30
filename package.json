@@ -13,13 +13,10 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate:deploy": "prisma migrate deploy"
   },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
-  },
   "dependencies": {
     "@hookform/resolvers": "^5.7.1",
-    "@prisma/adapter-pg": "^7.9.1",
-    "@prisma/client": "^7.9.1",
+    "@prisma/adapter-pg": "7.9.1",
+    "@prisma/client": "7.9.1",
     "bcryptjs": "^3.0.3",
     "libsodium-wrappers-sumo": "^0.8.4",
     "next": "^16.3.6",
@@ -41,9 +38,10 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "babel-plugin-react-compiler": "1.0.0",
+    "dotenv": "17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.3.0",
-    "prisma": "^6.19.3",
+    "prisma": "7.9.1",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
     "typescript": "^5"

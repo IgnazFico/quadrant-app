@@ -44,12 +44,16 @@ export async function GET() {
     // replaces the earlier date-math placeholder that inferred tenure
     // from ring.year, which broke for roles with no ring row yet.
     tenureYears: currentYear - r.createdAt.getFullYear() + 1,
-    // GROWTH-RING-REDESIGN: replaces `ring: {votesLogged, sealed}`. Twelve
-    // monthly scores for the current year; vote counts stay server-side.
-    constellation: constellationByRole.get(r.id)?.years[0] ?? {
-      year: currentYear,
-      months: new Array(12).fill(null),
-      sealed: false,
+    // GROWTH-RING-REDESIGN: replaces `ring: {votesLogged, sealed}`. Goals
+    // finished in each month of this year, plus this role's own busiest month
+    // to size the stars against. Vote counts stay server-side.
+    constellation: {
+      ...(constellationByRole.get(r.id)?.years[0] ?? {
+        year: currentYear,
+        months: new Array(12).fill(0),
+        sealed: false,
+      }),
+      peak: constellationByRole.get(r.id)?.peak ?? 1,
     },
   }));
 

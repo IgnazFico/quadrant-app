@@ -1,16 +1,16 @@
-// GROWTH-RING-REDESIGN: pure drawing helpers shared by YearBadge and RoleSky.
-import type { MonthScores } from "../../types/constellation";
+// GROWTH-RING-REDESIGN: pure drawing helpers shared by YearBadge and the year ceremony.
+//
+// Everything here measures showing up: a star's size is how many goals were
+// finished that month against the person's OWN busiest month. There is no
+// target, no ratio, and no "hard" or "lean" month - a quiet month is just quiet.
 
 export const TAU = Math.PI * 2;
 
-/** Below this a month is "hard": hollow grey star. */
-export const HARD = 0.32;
-/** From this a month is "strong": sparkle and wide glow. */
-export const STRONG = 0.6;
+/** From this share of the person's own peak (after sqrt) a star also sparkles. */
+export const SPARKLE_AT = 0.7;
 
 export const WHITE = "#FFFFFF";
-export const BASE = "#DDD5C4"; // quiet / future dots
-export const GREY = "#9A9385"; // hard months
+export const BASE = "#DDD5C4"; // quiet and not-yet months
 export const ORBIT = "#CFC6B2";
 
 export const r1 = (n: number) => Math.round(n * 10) / 10;
@@ -50,43 +50,64 @@ export function monthAngle(j: number): number {
 }
 
 /** Small deterministic hand-drawn wobble in [-0.5, 0.5). */
-export function jitter(year: number, j: number): number {
-  const s = Math.sin(year * 12.9898 + j * 78.233) * 43758.5453;
+export function jitter(seed: number, j: number): number {
+  const s = Math.sin(seed * 12.9898 + j * 78.233) * 43758.5453;
   return s - Math.floor(s) - 0.5;
 }
 
-export function average(months: MonthScores): number {
-  const known = months.filter((m): m is number => m != null);
-  return known.length ? known.reduce((a, b) => a + b, 0) / known.length : 0.6;
+/** 0 for a quiet month; otherwise 0..1 against the person's own busiest month. */
+export function intensity(count: number, peak: number): number {
+  if (count <= 0) return 0;
+  return Math.min(1, Math.sqrt(count / Math.max(1, peak)));
 }
 
-/** Strength of a year tints its stars: strong years glow green-full, lean years fade. */
-export function yearColor(tint: string, months: MonthScores): string {
-  return mix(tint, WHITE, (1 - average(months)) * 0.45);
+export type Star = {
+  /** month index 0..11 */
+  j: number;
+  x: number;
+  y: number;
+  /** intensity 0..1; 0 = quiet month */
+  t: number;
+  count: number;
+  lit: boolean;
+};
+
+/**
+ * Twelve stars around an orbit. A month that was fuller sits further out, so
+ * every year draws a shape of its own; a quiet month rests on the orbit itself.
+ */
+export function orbitStars(
+  months: number[],
+  peak: number,
+  radius: number,
+  amp: number,
+  seed = 0,
+): Star[] {
+  return months.map((count, j) => {
+    const t = intensity(count, peak);
+    const a = monthAngle(j) + jitter(seed, j) * 0.1;
+    const r = radius + (t > 0 ? (amp * (t - 0.5)) / 0.5 : 0);
+    return { j, x: r * Math.cos(a), y: r * Math.sin(a), t, count, lit: t > 0 };
+  });
 }
 
-export function lastLit(months: MonthScores): number {
-  for (let j = 11; j >= 0; j--) if (months[j] != null) return j;
-  return -1;
+/** Number of months with at least one finished goal. */
+export function monthsShownUp(months: number[]): number {
+  return months.filter((c) => c > 0).length;
+}
+
+export function describeYear(months: number[]): string {
+  const n = monthsShownUp(months);
+  if (n === 0) return "no finished goals yet";
+  return `showed up in ${n} ${n === 1 ? "month" : "months"}`;
 }
 
 /**
  * The month whose star should pulse: the current calendar month while it has
  * no finished goals yet, otherwise the one after it. Only for an open year.
  */
-export function nextMonth(
-  months: MonthScores,
-  currentMonth: number,
-): number | null {
+export function nextMonth(months: number[], currentMonth: number): number | null {
   const now = Math.min(11, Math.max(0, currentMonth));
-  const idx = months[now] == null ? now : now + 1;
-  return idx <= 11 && months[idx] == null ? idx : null;
-}
-
-export function describeYear(months: MonthScores): string {
-  const known = months.filter((m): m is number => m != null);
-  if (known.length === 0) return "no finished goals yet";
-  const strong = known.filter((m) => m >= STRONG).length;
-  const hard = known.filter((m) => m < HARD).length;
-  return `${known.length} of 12 months lit, ${strong} strong, ${hard} hard`;
+  const idx = months[now] > 0 ? now + 1 : now;
+  return idx <= 11 ? idx : null;
 }

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CARD_ORDER, CARD_THEME, renderPatternCard, type PatternsData } from "./cardContent";
+import { CARD_ORDER, CARD_THEME, renderPatternCard } from "./cardContent";
+import type { PatternsState } from "../../hooks/usePatterns";
 
 /**
  * Approximate rendered height of the global <BottomNav /> (pt-2.5 + 19px
@@ -13,21 +14,12 @@ import { CARD_ORDER, CARD_THEME, renderPatternCard, type PatternsData } from "./
  */
 const NAV_CLEARANCE = "64px";
 
-export function PatternsPage() {
-  const [data, setData] = useState<PatternsData | null>(null);
-  const [loading, setLoading] = useState(true);
+export function PatternsPage({ patterns }: { patterns: PatternsState }) {
+  const { data, loading } = patterns;
   const containerRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<(HTMLElement | null)[]>([]);
   const [visible, setVisible] = useState<Set<number>>(new Set([0]));
   const [activeIndex, setActiveIndex] = useState(0);
-
-  useEffect(() => {
-    (async () => {
-      const res = await fetch("/api/patterns");
-      if (res.ok) setData(await res.json());
-      setLoading(false);
-    })();
-  }, []);
 
   useEffect(() => {
     if (!data) return;

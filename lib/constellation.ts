@@ -1,17 +1,14 @@
 import { prisma } from "./prisma";
-import type {
-  MonthScores,
-  RoleConstellation,
-  YearScores,
-} from "../types/constellation";
+import type { RoleConstellation, YearStars } from "../types/constellation";
 
-// GROWTH-RING-REDESIGN: monthly scores behind the constellation badge and sky.
+// GROWTH-RING-REDESIGN: monthly stars behind the constellation badge and sky.
 //
-// A month's score is DONE / (DONE + MISSED) for goals whose `weekStart` falls
-// in that month (UTC, matching lib/yearReview.ts). IN_PROGRESS goals are left
-// out so a week that is still open never drags a month down; a month with no
-// finished goals is null. Vote counts (lib/growthRing.ts) still drive
-// milestones and are deliberately not used here.
+// A month's value is how many goals were FINISHED in it, by `completedAt` (UTC,
+// matching `busiestMonth` in lib/yearReview.ts). It is a count of showing up,
+// never a success rate: missed goals and open goals do not enter into it, and
+// there is no target. The visuals scale each role against its own busiest
+// month (`peak`). Vote counts (lib/growthRing.ts) still drive milestones and
+// the "showed up N times" copy.
 
 type Options = {
   /** Last year to include (default: this year). */
@@ -19,8 +16,6 @@ type Options = {
   /** Only `upToYear`, one entry per role, for the badge. */
   currentYearOnly?: boolean;
 };
-
-const emptyMonths = (): MonthScores => new Array(12).fill(null);
 
 export async function getRoleConstellations(
   userId: string,
@@ -36,22 +31,19 @@ export async function getRoleConstellations(
   });
   if (roles.length === 0) return [];
 
-  const firstYear = opts.currentYearOnly
-    ? upTo
-    : Math.min(...roles.map((r) => r.createdAt.getUTCFullYear()));
+  const firstYear = Math.min(...roles.map((r) => r.createdAt.getUTCFullYear()));
 
-  const [grouped, rings] = await Promise.all([
-    prisma.goal.groupBy({
-      by: ["roleId", "weekStart", "status"],
+  const [done, rings] = await Promise.all([
+    prisma.goal.findMany({
       where: {
         role: { userId },
-        status: { in: ["DONE", "MISSED"] },
-        weekStart: {
+        status: "DONE",
+        completedAt: {
           gte: new Date(Date.UTC(firstYear, 0, 1)),
           lt: new Date(Date.UTC(upTo + 1, 0, 1)),
         },
       },
-      _count: { _all: true },
+      select: { roleId: true, completedAt: true },
     }),
     prisma.growthRing.findMany({
       where: { role: { userId }, year: { gte: firstYear, lte: upTo } },
@@ -59,19 +51,16 @@ export async function getRoleConstellations(
     }),
   ]);
 
-  // roleId -> year -> month -> tallies
-  const tally = new Map<string, Map<number, { done: number; missed: number }[]>>();
-  for (const g of grouped) {
-    const year = g.weekStart.getUTCFullYear();
-    const month = g.weekStart.getUTCMonth();
-    const byYear = tally.get(g.roleId) ?? new Map();
-    const months =
-      byYear.get(year) ??
-      Array.from({ length: 12 }, () => ({ done: 0, missed: 0 }));
-    if (g.status === "DONE") months[month].done += g._count._all;
-    else months[month].missed += g._count._all;
+  // roleId -> year -> twelve monthly counts
+  const counts = new Map<string, Map<number, number[]>>();
+  for (const g of done) {
+    if (!g.completedAt) continue;
+    const year = g.completedAt.getUTCFullYear();
+    const byYear = counts.get(g.roleId) ?? new Map<number, number[]>();
+    const months = byYear.get(year) ?? new Array(12).fill(0);
+    months[g.completedAt.getUTCMonth()] += 1;
     byYear.set(year, months);
-    tally.set(g.roleId, byYear);
+    counts.set(g.roleId, byYear);
   }
 
   const sealedRows = new Set(
@@ -79,36 +68,26 @@ export async function getRoleConstellations(
   );
 
   return roles.map((role) => {
-    const byYear = tally.get(role.id);
+    const byYear = counts.get(role.id);
     const dataYears = byYear ? [...byYear.keys()] : [];
-    const start = opts.currentYearOnly
-      ? upTo
-      : Math.min(role.createdAt.getUTCFullYear(), ...dataYears);
+    const start = Math.min(role.createdAt.getUTCFullYear(), ...dataYears);
 
-    const years: YearScores[] = [];
-    for (let year = start; year <= upTo; year++) {
-      const tallies = byYear?.get(year);
-      const months: MonthScores = tallies
-        ? tallies.map((t) => {
-            const finished = t.done + t.missed;
-            return finished === 0
-              ? null
-              : Math.round((t.done / finished) * 100) / 100;
-          })
-        : emptyMonths();
+    // Peak spans the role's whole history, so a badge drawn for this year alone
+    // still measures against the person's own busiest month, not just this year's.
+    let peak = 1;
+    byYear?.forEach((months) => months.forEach((c) => (peak = Math.max(peak, c))));
+
+    const years: YearStars[] = [];
+    for (let year = opts.currentYearOnly ? upTo : start; year <= upTo; year++) {
+      if (year < start) continue; // the role did not exist yet
       years.push({
         year,
-        months,
+        months: byYear?.get(year) ?? new Array(12).fill(0),
         // The seal cron can lag, but a year that has ended is closed regardless.
         sealed: year < thisYear || sealedRows.has(`${role.id}:${year}`),
       });
     }
 
-    return {
-      roleId: role.id,
-      label: role.label,
-      domain: role.domain,
-      years,
-    };
+    return { roleId: role.id, label: role.label, domain: role.domain, peak, years };
   });
 }

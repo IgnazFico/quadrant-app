@@ -1,24 +1,23 @@
 // GROWTH-RING-REDESIGN: the role badge. One orbit, this year only, replacing ringSvg.
-import type { MonthScores } from "../../types/constellation";
 import {
   BASE,
-  GREY,
-  HARD,
   ORBIT,
-  STRONG,
+  SPARKLE_AT,
+  WHITE,
   circ,
   describeYear,
-  monthAngle,
   mix,
   nextMonth,
+  orbitStars,
   star4,
-  WHITE,
-  yearColor,
 } from "./geometry";
 import "./constellation.css";
 
 type Props = {
-  months: MonthScores;
+  /** Goals finished in each month of this year. */
+  months: number[];
+  /** This role's own busiest month; stars are sized against it. */
+  peak: number;
   /** Star colour, usually constellationTint(domain). */
   tint: string;
   size: number;
@@ -32,6 +31,7 @@ type Props = {
 
 export function YearBadge({
   months,
+  peak,
   tint,
   size,
   sealed = false,
@@ -42,45 +42,29 @@ export function YearBadge({
   const u = 200 / size; // one screen pixel in viewBox units
   const base = small ? 40 : 34;
   const amp = small ? 8 : 12;
-  const main = yearColor(tint, months);
-  const lineColor = mix(main, WHITE, 0.35);
+  const lineColor = mix(tint, WHITE, 0.35);
   const next = sealed ? null : nextMonth(months, currentMonth);
-
-  const pos = (j: number, v: number | null) => {
-    const r = base + (amp * ((v ?? 0.55) - 0.55)) / 0.45;
-    const a = monthAngle(j);
-    return { x: r * Math.cos(a), y: r * Math.sin(a) };
-  };
+  const stars = orbitStars(months, peak, base, amp);
 
   let dots = "";
-  let greyDots = "";
   let halo = "";
   let quiet = "";
-  let embers = "";
-  const sparks: { d: string; delay: number }[] = [];
-  const lit: { x: number; y: number }[] = [];
+  const sparks: { d: string; j: number }[] = [];
+  const lit = stars.filter((s) => s.lit);
 
-  months.forEach((v, j) => {
-    if (v == null) {
-      if (j === next) return; // drawn as the pulsing marker below
-      const { x, y } = pos(j, null);
-      if (!small) quiet += circ(x, y, Math.max(0.9, u * 0.8));
+  stars.forEach((s) => {
+    if (!s.lit) {
+      if (s.j === next) return; // drawn as the pulsing marker below
+      if (!small) quiet += circ(s.x, s.y, Math.max(0.9, u * 0.8));
       return;
     }
-    const { x, y } = pos(j, v);
-    lit.push({ x, y });
     const rs = Math.max(
-      (2.6 + 3.4 * v) * (small ? 0.9 : 1),
-      u * (small ? 0.95 : 1.2) * (0.75 + 0.5 * v),
+      (2.4 + 3.6 * s.t) * (small ? 0.9 : 1),
+      u * (small ? 0.95 : 1.2) * (0.75 + 0.5 * s.t),
     );
-    if (v < HARD) {
-      if (small) greyDots += circ(x, y, rs * 0.85);
-      else embers += circ(x, y, rs * 0.95);
-      return;
-    }
-    dots += circ(x, y, rs);
-    if (!small) halo += circ(x, y, rs * (v >= STRONG ? 2.6 : 2));
-    if (!small && v >= STRONG) sparks.push({ d: star4(x, y, rs * 2.5), delay: j });
+    dots += circ(s.x, s.y, rs);
+    if (!small) halo += circ(s.x, s.y, rs * (s.t >= SPARKLE_AT ? 2.6 : 2));
+    if (!small && s.t >= SPARKLE_AT) sparks.push({ d: star4(s.x, s.y, rs * 2.5), j: s.j });
   });
 
   const lines =
@@ -90,7 +74,15 @@ export function YearBadge({
         (sealed && lit.length >= 3 ? "Z" : "")
       : "";
 
-  const nextPos = next != null ? pos(next, null) : null;
+  const nextStar = next != null ? stars[next] : null;
+  const nextPos =
+    nextStar != null
+      ? {
+          x: base * Math.cos(Math.atan2(nextStar.y, nextStar.x)),
+          y: base * Math.sin(Math.atan2(nextStar.y, nextStar.x)),
+        }
+      : null;
+
   const ticks = small
     ? ""
     : [
@@ -126,19 +118,13 @@ export function YearBadge({
         />
       )}
       {ticks && (
-        <path
-          d={ticks}
-          fill="none"
-          stroke={BASE}
-          strokeWidth={1}
-          vectorEffect="non-scaling-stroke"
-        />
+        <path d={ticks} fill="none" stroke={BASE} strokeWidth={1} vectorEffect="non-scaling-stroke" />
       )}
       {sealed && lit.length >= 3 && (
         <circle
           r={base + amp + 8}
           fill="none"
-          stroke={main}
+          stroke={tint}
           strokeOpacity={0.28}
           strokeWidth={3}
           vectorEffect="non-scaling-stroke"
@@ -155,28 +141,18 @@ export function YearBadge({
           vectorEffect="non-scaling-stroke"
         />
       )}
-      {halo && <path d={halo} fill={main} fillOpacity={0.17} />}
+      {halo && <path d={halo} fill={tint} fillOpacity={0.17} />}
       {quiet && <path d={quiet} fill={BASE} />}
-      {dots && <path d={dots} fill={main} />}
-      {greyDots && <path d={greyDots} fill={GREY} />}
+      {dots && <path d={dots} fill={tint} />}
       {sparks.map((s) => (
         <path
-          key={s.delay}
+          key={s.j}
           d={s.d}
-          fill={main}
+          fill={tint}
           className="cn-twinkle"
-          style={{ animationDelay: `${s.delay * 0.35}s` }}
+          style={{ animationDelay: `${s.j * 0.35}s` }}
         />
       ))}
-      {embers && (
-        <path
-          d={embers}
-          fill="none"
-          stroke={GREY}
-          strokeWidth={1.3}
-          vectorEffect="non-scaling-stroke"
-        />
-      )}
       {nextPos && (
         <circle
           className="cn-pulse"
@@ -184,7 +160,7 @@ export function YearBadge({
           cy={nextPos.y}
           r={small ? 1.5 * u : 3.2}
           fill="none"
-          stroke={main}
+          stroke={tint}
           strokeWidth={1.2}
           vectorEffect="non-scaling-stroke"
         />

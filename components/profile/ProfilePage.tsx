@@ -4,91 +4,19 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { constellationTint } from "../../lib/domainColors";
 import { NotificationBell } from "../notifications/NotificationBell";
-import { useAuthStore } from "../../store/authStore";
-import { decryptField, fromBase64 } from "../../lib/crypto";
 import { FeedbackModal } from "../feedback/FeedbackModal";
 import { YearBadge } from "../constellation/YearBadge";
-import type { YearScores } from "../../types/constellation";
+import type { ProfileData, RoleBadge } from "../../hooks/useProfile";
 
-// GROWTH-RING-REDESIGN: the role badge is this year's constellation (was a flat progress ring).
-type RoleBadge = {
-  id: string;
-  label: string;
-  domain: string;
-  isFeatured: boolean;
-  tenureYears: number;
-  constellation: YearScores;
-};
-
-export function ProfilePage() {
+export function ProfilePage({ profile }: { profile: ProfileData }) {
+  const { loading, user, roles, statementSnippet, statementMeta, toggleFeatured } = profile;
   const [flipped, setFlipped] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<{ email: string; createdAt: string } | null>(
-    null,
-  );
-  const [roles, setRoles] = useState<RoleBadge[]>([]);
-  const [statementSnippet, setStatementSnippet] = useState<string | null>(null);
-  const [statementMeta, setStatementMeta] = useState<{
-    signedName: string;
-    signedAt: string;
-  } | null>(null);
   const [barcode, setBarcode] = useState<number[]>([]);
-  const masterKey = useAuthStore((s) => s.masterKey);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
 
   useEffect(() => {
     setBarcode(Array.from({ length: 14 }, () => 8 + Math.random() * 14));
   }, []);
-
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      const res = await fetch("/api/profile");
-      if (!res.ok) {
-        setLoading(false);
-        return;
-      }
-      const body = await res.json();
-      setUser(body.user);
-      setRoles(body.roles);
-
-      if (body.missionStatement) {
-        setStatementMeta({
-          signedName: body.missionStatement.signedName,
-          signedAt: body.missionStatement.signedAt,
-        });
-        if (masterKey) {
-          try {
-            const full = await decryptField(
-              await fromBase64(body.missionStatement.contentEncrypted),
-              masterKey,
-            );
-            setStatementSnippet(
-              full.length > 140 ? full.slice(0, 140).trim() + "\u2026" : full,
-            );
-          } catch {
-            setStatementSnippet(null);
-          }
-        }
-      }
-      setLoading(false);
-    })();
-  }, [masterKey]);
-
-  async function toggleFeatured(role: RoleBadge) {
-    const currentlyFeatured = roles.filter((r) => r.isFeatured);
-    if (!role.isFeatured && currentlyFeatured.length >= 2) return; // cap at 2, matching the prototype
-
-    const next = !role.isFeatured;
-    setRoles((prev) =>
-      prev.map((r) => (r.id === role.id ? { ...r, isFeatured: next } : r)),
-    );
-    await fetch(`/api/roles/${role.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ isFeatured: next }),
-    });
-  }
 
   if (loading) {
     return (
@@ -222,9 +150,11 @@ export function ProfilePage() {
                       key={r.id}
                       className="flex flex-1 items-center gap-1.5 rounded-lg bg-[#F3F4F6] px-2.5 py-1.5"
                     >
+                      {/* GROWTH-RING-REDESIGN: featured-role constellation on the ID card (was ringSvg) */}
                       <div className="shrink-0">
                         <YearBadge
                           months={r.constellation.months}
+                          peak={r.constellation.peak}
                           tint={constellationTint(r.domain)}
                           size={34}
                           sealed={r.constellation.sealed}
@@ -341,8 +271,10 @@ export function ProfilePage() {
                     : "border-[#ECE8DF] bg-white"
                 }`}
               >
+                {/* GROWTH-RING-REDESIGN: role badge constellation (was ringSvg) */}
                 <YearBadge
                   months={r.constellation.months}
+                  peak={r.constellation.peak}
                   tint={constellationTint(r.domain)}
                   size={44}
                   sealed={r.constellation.sealed}
@@ -369,7 +301,7 @@ export function ProfilePage() {
         </section>
         <Link
           href="/year-review"
-          className="mt-4 flex items-center justify-between rounded-xl border border-[#ECE8DF] bg-white px-4 py-3.5 text-sm font-semibold text-[#1F2937] hover:bg-[#F3F4F6]"
+          className="mt-4 flex w-full items-center justify-between rounded-xl border border-[#ECE8DF] bg-white px-4 py-3.5 text-sm font-semibold text-[#1F2937] hover:bg-[#F3F4F6]"
         >
           Your year in Quadrant
           <svg
@@ -432,7 +364,7 @@ export function ProfilePage() {
           </svg>
           <span>
             Tap a badge below to feature it on the card front (up to 2). Each
-            star is a month of this year; it brightens as you finish your goals.
+            star is a month of this year, and it brightens as you finish goals.
           </span>
         </div>
       </div>
@@ -440,7 +372,7 @@ export function ProfilePage() {
   );
 }
 
-function MetaField({ label, value }: { label: string; value: string }) {
+export function MetaField({ label, value }: { label: string; value: string }) {
   return (
     <div className="font-mono text-[9px] text-[#B7B2A7]">
       {label}
@@ -462,3 +394,5 @@ function formatMonthYear(iso: string): string {
     year: "numeric",
   });
 }
+
+export type { RoleBadge };

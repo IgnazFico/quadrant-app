@@ -6,8 +6,9 @@ import path from "path";
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 const databaseUrl = process.env.DATABASE_URL;
-const adapter = databaseUrl ? new PrismaPg({ connectionString: databaseUrl }) : undefined;
-const prisma = adapter ? new PrismaClient({ adapter }) : new PrismaClient();
+// Prisma 7 has no built-in engine connection: the client needs a driver adapter.
+if (!databaseUrl) throw new Error("DATABASE_URL is not set (checked ../.env)");
+const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: databaseUrl }) });
 
 async function simulateSeal2026() {
   const targetYear = 2026;

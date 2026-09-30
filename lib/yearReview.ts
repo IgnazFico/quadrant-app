@@ -26,32 +26,32 @@ const DOMAIN_ADJECTIVE: Record<string, string> = {
   values: "Values-Led",
 };
 
-// A role needs at least this many goals in the year to be eligible for
-// "most consistent" — otherwise a role with one lucky goal (100%) would
-// always win over a role that showed up every week.
-const MIN_GOALS_FOR_CONSISTENCY = 6;
-
 function yearRange(year: number) {
   return {
     start: new Date(Date.UTC(year, 0, 1)),
     end: new Date(Date.UTC(year + 1, 0, 1)),
-    midYear: new Date(Date.UTC(year, 6, 1)), // July 1 — splits H1/H2 for "most improved"
   };
 }
 
-function completionRate(goals: { status: string }[]): number | null {
-  if (goals.length === 0) return null;
-  const done = goals.filter((g) => g.status === "DONE").length;
-  return done / goals.length;
-}
-
+/**
+ * Data for the year-end ceremony (/year-review).
+ *
+ * Deliberately measures *showing up*, never success rate: no completion
+ * percentage, no role rankings (most improved / most consistent /
+ * quietest were removed along with the old chapter layout). The only
+ * goal counts left are in `momentum` and are shown in the optional
+ * "numbers" back matter after the ceremony ends.
+ */
 export async function getYearReview(userId: string, year: number) {
-  const { start, end, midYear } = yearRange(year);
+  const { start, end } = yearRange(year);
 
   const roles = await prisma.role.findMany({
-    where: { userId },
+    // A role created after this year didn't exist yet, so it isn't part of it.
+    where: { userId, createdAt: { lt: end } },
+    orderBy: { createdAt: "asc" }, // the user's own order; roles are never ranked
     include: {
       goals: { where: { weekStart: { gte: start, lt: end } } },
+      growthRings: { where: { year } },
     },
   });
 
@@ -61,115 +61,32 @@ export async function getYearReview(userId: string, year: number) {
   );
 
   // ---------------- momentum ----------------
-  const totalGoals = allGoals.length;
-  const completedCount = completedGoals.length;
-  const overallRate = totalGoals
-    ? Math.round((completedCount / totalGoals) * 100)
-    : 0;
-
   const activeDays = await prisma.activityDay.count({
     where: { userId, date: { gte: start, lt: end } },
   });
 
+  // Weeks the user sat down and planned: distinct weeks that have any goal.
+  const weeksPlanned = new Set(
+    allGoals.map((g) => g.weekStart.toISOString().slice(0, 10)),
+  ).size;
+
   const monthCounts = new Array(12).fill(0);
   completedGoals.forEach((g) => monthCounts[g.completedAt!.getUTCMonth()]++);
-  const hasAnyMonth = monthCounts.some((c) => c > 0);
-  const busiestMonth = hasAnyMonth
+  const busiestMonth = monthCounts.some((c) => c > 0)
     ? MONTH_NAMES[monthCounts.indexOf(Math.max(...monthCounts))]
     : null;
 
-  const sortedByDate = [...completedGoals].sort(
+  const first = [...completedGoals].sort(
     (a, b) => a.completedAt!.getTime() - b.completedAt!.getTime(),
-  );
-  const firstCompleted = sortedByDate[0]
-    ? { title: sortedByDate[0].title, date: sortedByDate[0].completedAt }
+  )[0];
+  const firstCompleted = first
+    ? { title: first.title, date: first.completedAt! }
     : null;
-  const mostRecentCompleted = sortedByDate.length
-    ? {
-        title: sortedByDate[sortedByDate.length - 1].title,
-        date: sortedByDate[sortedByDate.length - 1].completedAt,
-      }
-    : null;
-
-  // ---------------- role insights ----------------
-  let mostImproved: any = null;
-  for (const r of roles) {
-    const h1Goals = r.goals.filter(
-      (g) => g.weekStart >= start && g.weekStart < midYear,
-    );
-    const h2Goals = r.goals.filter(
-      (g) => g.weekStart >= midYear && g.weekStart < end,
-    );
-    const h1Rate = completionRate(h1Goals);
-    const h2Rate = completionRate(h2Goals);
-    if (h1Rate === null || h2Rate === null) continue; // needs goals in both halves to compare
-
-    const delta = h2Rate - h1Rate;
-    if (!mostImproved || delta > mostImproved.deltaRaw) {
-      mostImproved = {
-        roleId: r.id,
-        label: r.label,
-        domain: r.domain,
-        before: Math.round(h1Rate * 100),
-        after: Math.round(h2Rate * 100),
-        delta: Math.round(delta * 100),
-        deltaRaw: delta,
-      };
-    }
-  }
-  if (mostImproved) delete mostImproved.deltaRaw;
-
-  let mostConsistent: any = null;
-  for (const r of roles) {
-    if (r.goals.length < MIN_GOALS_FOR_CONSISTENCY) continue;
-    const rate = completionRate(r.goals)!;
-    if (!mostConsistent || rate > mostConsistent.rateRaw) {
-      mostConsistent = {
-        roleId: r.id,
-        label: r.label,
-        domain: r.domain,
-        completionRate: Math.round(rate * 100),
-        goalCount: r.goals.length,
-        rateRaw: rate,
-      };
-    }
-  }
-  if (mostConsistent) delete mostConsistent.rateRaw;
-
-  let longestHeld: any = null;
-  for (const r of roles) {
-    const tenureYears = year - r.createdAt.getFullYear() + 1;
-    if (tenureYears < 1) continue; // role didn't exist yet in this year
-    if (!longestHeld || tenureYears > longestHeld.tenureYears) {
-      longestHeld = {
-        roleId: r.id,
-        label: r.label,
-        domain: r.domain,
-        tenureYears,
-      };
-    }
-  }
-
-  let quietest: any = null;
-  for (const r of roles) {
-    if (r.goals.length === 0) continue; // no goals at all isn't "quiet", it's inactive — leave it out
-    if (!quietest || r.goals.length < quietest.goalCount) {
-      quietest = {
-        roleId: r.id,
-        label: r.label,
-        domain: r.domain,
-        goalCount: r.goals.length,
-      };
-    }
-  }
-
-  const newThisYear = roles
-    .filter((r) => r.createdAt.getUTCFullYear() === year)
-    .map((r) => ({ roleId: r.id, label: r.label, domain: r.domain }));
 
   // ---------------- integrity ----------------
   const reviewEntries = await prisma.reviewEntry.findMany({
     where: { goal: { weekStart: { gte: start, lt: end }, role: { userId } } },
+    select: { choice: true },
   });
   const reflectedCount = reviewEntries.length;
   const carriedCount = reviewEntries.filter((e) => e.choice === "CARRY").length;
@@ -187,49 +104,56 @@ export async function getYearReview(userId: string, year: number) {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 2)
     .map(([domain]) => domain);
+  // null = no pattern yet; the ceremony says "It was the one where you began."
   const identityTitle = topDomains.length
     ? topDomains.map((d) => DOMAIN_ADJECTIVE[d] ?? d).join(", ")
-    : "Still finding your pattern";
+    : null;
 
-  // ---------------- sky portrait ----------------
-  // GROWTH-RING-REDESIGN: replaces the per-role vote-count rings. Each role's
-  // monthly stars for every year up to the one being reviewed.
-  const constellations = await getRoleConstellations(userId, { upToYear: year });
-  const sky = constellations.filter((c) => c.years.length > 0);
+  // ---------------- rings ----------------
+  // GROWTH-RING-REDESIGN: alongside the vote count, each role's twelve monthly
+  // star counts (goals finished per month) and its own busiest month.
+  const constellations = new Map(
+    (await getRoleConstellations(userId, { upToYear: year, currentYearOnly: true })).map(
+      (c) => [c.roleId, c],
+    ),
+  );
+  const rings = roles.map((r) => ({
+    roleId: r.id,
+    label: r.label,
+    domain: r.domain,
+    months: constellations.get(r.id)?.years[0]?.months ?? new Array(12).fill(0),
+    peak: constellations.get(r.id)?.peak ?? 1,
+    votesLogged: r.growthRings[0]?.votesLogged ?? 0,
+    sealed: r.growthRings[0]?.sealed ?? false,
+    newThisYear: r.createdAt.getUTCFullYear() === year,
+  }));
 
-  const latestStatement = await prisma.missionStatement.findFirst({
-    where: { userId },
+  // The statement as it stood during this year (not one signed later).
+  const statement = await prisma.missionStatement.findFirst({
+    where: { userId, signedAt: { lt: end } },
     orderBy: { version: "desc" },
   });
 
   return {
     year,
     momentum: {
-      totalGoals,
-      completedGoals: completedCount,
-      completionRate: overallRate,
+      totalGoals: allGoals.length,
+      completedGoals: completedGoals.length,
       activeDays,
+      weeksPlanned,
       busiestMonth,
       firstCompleted,
-      mostRecentCompleted,
-    },
-    roleInsights: {
-      mostImproved,
-      mostConsistent,
-      longestHeld,
-      quietest,
-      newThisYear,
     },
     integrity: { reflectedCount, carriedCount, cancelledCount },
     identity: { title: identityTitle, domainCounts },
-    sky,
-    missionStatement: latestStatement
+    rings,
+    missionStatement: statement
       ? {
-          signedName: latestStatement.signedName,
-          signedAt: latestStatement.signedAt,
-          contentEncrypted: Buffer.from(
-            latestStatement.contentEncrypted,
-          ).toString("base64"),
+          signedName: statement.signedName,
+          signedAt: statement.signedAt,
+          contentEncrypted: Buffer.from(statement.contentEncrypted).toString(
+            "base64",
+          ),
         }
       : null,
   };
