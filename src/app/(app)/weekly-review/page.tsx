@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "../../../../lib/auth";
-import { WeeklyReviewPage } from "../../../../components/review/WeeklyReviewPage";
+import { ReflectPage } from "../../../../components/reflect/ReflectPage";
 
 export default async function WeeklyReviewRoute() {
   const session = await auth();
@@ -8,5 +8,5 @@ export default async function WeeklyReviewRoute() {
     redirect("/login");
   }
 
-  return <WeeklyReviewPage />;
+  return <ReflectPage variant="review" />;
 }

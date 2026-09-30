@@ -36,7 +36,7 @@ export default defineConfig({
   projects: [
     {
       name: 'smoke',
-      testMatch: ['**/*.spec.ts', '!live-login.spec.ts', '!week-desktop.spec.ts', '!weekly-review-loop.spec.ts'],
+      testMatch: ['**/*.spec.ts', '!live-login.spec.ts', '!week-desktop.spec.ts', '!weekly-review-loop.spec.ts', '!reflect-desktop.spec.ts', '!identity-desktop.spec.ts', '!year-review-ceremony.spec.ts'],
       use: { ...devices['Desktop Chrome'] },
       fullyParallel: true,
       workers: process.env.CI ? 1 : undefined,

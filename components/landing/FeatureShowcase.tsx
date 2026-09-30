@@ -264,6 +264,7 @@ export function FeatureShowcase() {
           {/* THE FEATURE EXAMPLE UI (Interactive Ring Console) */}
           <div className="flex w-full max-w-md flex-col items-center justify-center rounded-2xl border border-[#FED7AA]/70 bg-gradient-to-br from-[#FFFDF9] to-[#FFF7ED] p-6 shadow-sm">
             <div className="flex items-center gap-6">
+              {/* GROWTH-RING-REDESIGN: landing-page interactive growth ring demo */}
               {/* Ultra-Smooth Hardware-Interpolated SVG Growth Ring */}
               <div className="relative flex h-32 w-32 shrink-0 items-center justify-center">
                 {/* Expanding Tree-Ring Cambium Pulse Ripple */}

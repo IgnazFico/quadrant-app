@@ -4,26 +4,19 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { domainColor } from "../../lib/domainColors";
 import { NotificationBell } from "../notifications/NotificationBell";
-import { useAuthStore } from "../../store/authStore";
-import { decryptField, fromBase64 } from "../../lib/crypto";
 import { FeedbackModal } from "../feedback/FeedbackModal";
+import type { ProfileData, Ring, RoleBadge } from "../../hooks/useProfile";
 
-type Ring = { year: number; votesLogged: number; sealed: boolean } | null;
-type RoleBadge = {
-  id: string;
-  label: string;
-  domain: string;
-  isFeatured: boolean;
-  tenureYears: number;
-  ring: Ring;
-};
-
+// GROWTH-RING-REDESIGN: ringSvg / ringProgress / VOTES_PER_RING_VISUAL are the
+// app's shared role-ring visual (Profile + Identity). Slated for redesign;
+// find every ring visual with: grep -rn "GROWTH-RING-REDESIGN"
+//
 // Purely a visual fill target so the ring reads as "making progress" —
 // sealing itself is time-based (year boundary), never vote-count-based.
 // See lib/growthRing.ts.
 const VOTES_PER_RING_VISUAL = 24;
 
-function ringSvg(color: string, progress: number, size: number) {
+export function ringSvg(color: string, progress: number, size: number) {
   const r = size / 2 - 3;
   const c = 2 * Math.PI * r;
   const offset = c * (1 - progress);
@@ -55,75 +48,15 @@ function ringSvg(color: string, progress: number, size: number) {
   );
 }
 
-export function ProfilePage() {
+export function ProfilePage({ profile }: { profile: ProfileData }) {
+  const { loading, user, roles, statementSnippet, statementMeta, toggleFeatured } = profile;
   const [flipped, setFlipped] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<{ email: string; createdAt: string } | null>(
-    null,
-  );
-  const [roles, setRoles] = useState<RoleBadge[]>([]);
-  const [statementSnippet, setStatementSnippet] = useState<string | null>(null);
-  const [statementMeta, setStatementMeta] = useState<{
-    signedName: string;
-    signedAt: string;
-  } | null>(null);
   const [barcode, setBarcode] = useState<number[]>([]);
-  const masterKey = useAuthStore((s) => s.masterKey);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
 
   useEffect(() => {
     setBarcode(Array.from({ length: 14 }, () => 8 + Math.random() * 14));
   }, []);
-
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      const res = await fetch("/api/profile");
-      if (!res.ok) {
-        setLoading(false);
-        return;
-      }
-      const body = await res.json();
-      setUser(body.user);
-      setRoles(body.roles);
-
-      if (body.missionStatement) {
-        setStatementMeta({
-          signedName: body.missionStatement.signedName,
-          signedAt: body.missionStatement.signedAt,
-        });
-        if (masterKey) {
-          try {
-            const full = await decryptField(
-              await fromBase64(body.missionStatement.contentEncrypted),
-              masterKey,
-            );
-            setStatementSnippet(
-              full.length > 140 ? full.slice(0, 140).trim() + "\u2026" : full,
-            );
-          } catch {
-            setStatementSnippet(null);
-          }
-        }
-      }
-      setLoading(false);
-    })();
-  }, [masterKey]);
-
-  async function toggleFeatured(role: RoleBadge) {
-    const currentlyFeatured = roles.filter((r) => r.isFeatured);
-    if (!role.isFeatured && currentlyFeatured.length >= 2) return; // cap at 2, matching the prototype
-
-    const next = !role.isFeatured;
-    setRoles((prev) =>
-      prev.map((r) => (r.id === role.id ? { ...r, isFeatured: next } : r)),
-    );
-    await fetch(`/api/roles/${role.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ isFeatured: next }),
-    });
-  }
 
   if (loading) {
     return (
@@ -256,6 +189,7 @@ export function ProfilePage() {
                       key={r.id}
                       className="flex flex-1 items-center gap-1.5 rounded-lg bg-[#F3F4F6] px-2.5 py-1.5"
                     >
+                      {/* GROWTH-RING-REDESIGN: featured-role ring on the ID card */}
                       <div className="shrink-0">
                         {ringSvg(
                           domainColor(r.domain),
@@ -372,6 +306,7 @@ export function ProfilePage() {
                     : "border-[#ECE8DF] bg-white"
                 }`}
               >
+                {/* GROWTH-RING-REDESIGN: role badge ring */}
                 {ringSvg(domainColor(r.domain), ringProgress(r.ring), 30)}
                 <div className="min-w-0">
                   <div className="truncate text-[12.5px] font-semibold text-[#1F2937]">
@@ -393,7 +328,7 @@ export function ProfilePage() {
         </section>
         <Link
           href="/year-review"
-          className="mt-4 flex items-center justify-between rounded-xl border border-[#ECE8DF] bg-white px-4 py-3.5 text-sm font-semibold text-[#1F2937] hover:bg-[#F3F4F6]"
+          className="mt-4 flex w-full items-center justify-between rounded-xl border border-[#ECE8DF] bg-white px-4 py-3.5 text-sm font-semibold text-[#1F2937] hover:bg-[#F3F4F6]"
         >
           Your year in Quadrant
           <svg
@@ -464,7 +399,7 @@ export function ProfilePage() {
   );
 }
 
-function MetaField({ label, value }: { label: string; value: string }) {
+export function MetaField({ label, value }: { label: string; value: string }) {
   return (
     <div className="font-mono text-[9px] text-[#B7B2A7]">
       {label}
@@ -475,7 +410,8 @@ function MetaField({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ringProgress(ring: Ring): number {
+/** GROWTH-RING-REDESIGN: progress arc fill for ringSvg (0..1). */
+export function ringProgress(ring: Ring): number {
   if (!ring) return 0;
   if (ring.sealed) return 1;
   return Math.min(ring.votesLogged / VOTES_PER_RING_VISUAL, 1);
@@ -492,3 +428,5 @@ function formatMonthYear(iso: string): string {
     year: "numeric",
   });
 }
+
+export type { RoleBadge };
