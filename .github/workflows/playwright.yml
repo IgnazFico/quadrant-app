@@ -1,27 +1,111 @@
 name: Playwright Tests
+
 on:
-  push:
-    branches: [ main, master ]
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
+  workflow_dispatch:
+    inputs:
+      run_e2e:
+        description: 'Run full E2E suite (including live-login.spec.ts)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+
 jobs:
   test:
-    timeout-minutes: 60
+    timeout-minutes: 30
     runs-on: ubuntu-latest
+    env:
+      # Staging database — the Next.js dev server (spun up by Playwright's
+      # webServer config) connects to this DB. Must point at the same staging
+      # Neon DB that Vercel Preview deployments use, so the seeded test user
+      # (ignaz.fico@quadrant.com) is available.
+      DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+      DIRECT_URL: ${{ secrets.STAGING_DIRECT_URL }}
+
+      # Auth + crypto secrets the app needs at runtime.
+      # Must match the values configured as Preview env vars on Vercel.
+      AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+      NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+      BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+      FAKE_SALT_SECRET: ${{ secrets.FAKE_SALT_SECRET }}
+      FAKE_KEY_SECRET: ${{ secrets.FAKE_KEY_SECRET }}
+      CRON_SECRET: ${{ secrets.CRON_SECRET }}
+
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-node@v4
-      with:
-        node-version: lts/*
-    - name: Install dependencies
-      run: npm ci
-    - name: Install Playwright Browsers
-      run: npx playwright install --with-deps
-    - name: Run Playwright tests
-      run: npx playwright test
-    - uses: actions/upload-artifact@v4
-      if: ${{ !cancelled() }}
-      with:
-        name: playwright-report
-        path: playwright-report/
-        retention-days: 30
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+
+      - name: Seed staging database
+        # Idempotent — skips if the test user already exists.
+        # Creates the test user + dashboard data for the current week,
+        # so live-login.spec.ts can authenticate and see content.
+        run: npm run seed
+
+      - name: Run Playwright tests
+        # PR runs: smoke project only (excludes live-login.spec.ts which needs
+        # a seeded DB with a real user). The full E2E suite is available via
+        # workflow_dispatch.
+        run: npx playwright test --project=smoke
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+
+  # Full E2E suite — runs on demand via workflow_dispatch.
+  # Requires a seeded staging database with the test user and current-week
+  # dashboard data. Triggered manually from the Actions tab.
+  e2e:
+    name: Full E2E Suite
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.run_e2e == 'true'
+    env:
+      DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+      DIRECT_URL: ${{ secrets.STAGING_DIRECT_URL }}
+      AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+      NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+      BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+      FAKE_SALT_SECRET: ${{ secrets.FAKE_SALT_SECRET }}
+      FAKE_KEY_SECRET: ${{ secrets.FAKE_KEY_SECRET }}
+      CRON_SECRET: ${{ secrets.CRON_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+
+      - name: Seed staging database
+        run: npm run seed
+
+      - name: Run full E2E suite
+        run: npx playwright test --project=e2e
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report-e2e
+          path: playwright-report/
+          retention-days: 30

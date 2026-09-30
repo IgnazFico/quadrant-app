@@ -1,5 +1,5 @@
-import { WeeklyGoalsPage } from "../../../../components/goals/WeeklyGoalsPage";
+import { WeekPage } from "../../../../components/week/WeekPage";
 
 export default function GoalsPage() {
-  return <WeeklyGoalsPage />;
+  return <WeekPage variant="goals" />;
 }

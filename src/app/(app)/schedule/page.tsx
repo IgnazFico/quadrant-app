@@ -1,5 +1,5 @@
-import { WeeklySchedulePage } from "../../../../components/schedule/WeeklySchedulePage";
+import { WeekPage } from "../../../../components/week/WeekPage";
 
 export default function SchedulePage() {
-  return <WeeklySchedulePage />;
+  return <WeekPage variant="schedule" />;
 }

@@ -1,27 +1,10 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { domainColor } from "../../lib/domainColors";
 import { NotificationBell } from "../notifications/NotificationBell";
-import { startOfDay, dayKey } from "../../lib/week";
-
-type GoalStatus = "IN_PROGRESS" | "DONE" | "MISSED";
-type Goal = {
-  id: string;
-  title: string;
-  status: GoalStatus;
-  carryForward: boolean;
-};
-type Role = { id: string; label: string; domain: string; goals: Goal[] };
-type Block = {
-  id: string;
-  hour: number;
-  title: string;
-  roleId: string;
-  goalId: string | null;
-  role: Role;
-};
+import type { WeekData } from "../../hooks/useWeek";
 
 function formatHour(h: number) {
   const period = h >= 12 ? "PM" : "AM";
@@ -29,12 +12,27 @@ function formatHour(h: number) {
   return `${h12}:00 ${period}`;
 }
 
-export function WeeklyGoalsPage() {
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [blocks, setBlocks] = useState<Block[]>([]);
+/** `week` is owned by a parent (see components/week/WeekPage.tsx) so the
+ *  mobile and desktop views of the same route share one fetch/mutation
+ *  source instead of each calling useWeek() independently. */
+export function WeeklyGoalsPage({ week }: { week: WeekData }) {
+  const {
+    roles,
+    todayBlocks,
+    loading,
+    error,
+    toggleGoal,
+    editGoalTitleLocal,
+    commitGoalTitle,
+    deleteGoal,
+    addGoal,
+    deleteBlock,
+    scheduleForToday,
+  } = week;
+
   const [openRoleId, setOpenRoleId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Lazily default the expanded role to the first one once roles arrive.
+  if (!openRoleId && roles[0]) setOpenRoleId(roles[0].id);
 
   const [formOpen, setFormOpen] = useState(false);
   const [formRoleId, setFormRoleId] = useState("");
@@ -42,110 +40,6 @@ export function WeeklyGoalsPage() {
   const [formCustomTitle, setFormCustomTitle] = useState("");
   const [formTime, setFormTime] = useState("09:00");
   const [scheduleError, setScheduleError] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const [goalsRes, scheduleRes] = await Promise.all([
-        fetch("/api/goals"),
-        fetch("/api/schedule"),
-      ]);
-      if (!goalsRes.ok || !scheduleRes.ok) throw new Error();
-      const goalsBody = await goalsRes.json();
-      const scheduleBody = await scheduleRes.json();
-      setRoles(goalsBody.roles);
-      setBlocks(scheduleBody.blocks);
-      if (!openRoleId && goalsBody.roles[0])
-        setOpenRoleId(goalsBody.roles[0].id);
-    } catch {
-      setError("Couldn't load your week — try refreshing.");
-    } finally {
-      setLoading(false);
-    }
-  }, [openRoleId]);
-
-  useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  async function toggleGoal(goal: Goal, roleId: string) {
-    const nextStatus: GoalStatus =
-      goal.status === "DONE" ? "IN_PROGRESS" : "DONE";
-    setRoles((prev) =>
-      prev.map((r) =>
-        r.id === roleId
-          ? {
-              ...r,
-              goals: r.goals.map((g) =>
-                g.id === goal.id ? { ...g, status: nextStatus } : g,
-              ),
-            }
-          : r,
-      ),
-    );
-    await fetch(`/api/goals/${goal.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: nextStatus }),
-    });
-  }
-
-  async function editGoalTitle(goalId: string, roleId: string, title: string) {
-    setRoles((prev) =>
-      prev.map((r) =>
-        r.id === roleId
-          ? {
-              ...r,
-              goals: r.goals.map((g) =>
-                g.id === goalId ? { ...g, title } : g,
-              ),
-            }
-          : r,
-      ),
-    );
-  }
-
-  async function commitGoalTitle(goalId: string, title: string) {
-    await fetch(`/api/goals/${goalId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title }),
-    });
-  }
-
-  async function deleteGoal(goalId: string, roleId: string) {
-    setRoles((prev) =>
-      prev.map((r) =>
-        r.id === roleId
-          ? { ...r, goals: r.goals.filter((g) => g.id !== goalId) }
-          : r,
-      ),
-    );
-    setBlocks((prev) => prev.filter((b) => b.goalId !== goalId));
-    await fetch(`/api/goals/${goalId}`, { method: "DELETE" });
-  }
-
-  async function addGoal(roleId: string, title: string) {
-    const res = await fetch("/api/goals", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ roleId, title }),
-    });
-    if (!res.ok) return;
-    const { goal } = await res.json();
-    setRoles((prev) =>
-      prev.map((r) =>
-        r.id === roleId ? { ...r, goals: [...r.goals, goal] } : r,
-      ),
-    );
-  }
-
-  async function removeBlock(id: string) {
-    setBlocks((prev) => prev.filter((b) => b.id !== id));
-    await fetch(`/api/schedule/${id}`, { method: "DELETE" });
-  }
 
   function openScheduleForm(roleId: string, goalId?: string) {
     setFormRoleId(roleId);
@@ -162,24 +56,16 @@ export function WeeklyGoalsPage() {
     if (!title) return;
 
     const [h] = formTime.split(":").map(Number);
-    const res = await fetch("/api/schedule", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        roleId: role.id,
-        goalId: goal ? goal.id : null,
-        hour: h,
-        title,
-        day: dayKey(startOfDay()),
-      }),
+    const result = await scheduleForToday({
+      roleId: role.id,
+      goalId: goal ? goal.id : null,
+      hour: h,
+      title,
     });
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      setScheduleError(body.error ?? "Couldn't save the schedule block.");
+    if (!result.ok) {
+      setScheduleError(result.error);
       return;
     }
-    const { block } = await res.json();
-    setBlocks((prev) => [...prev, block].sort((a, b) => a.hour - b.hour));
     setFormOpen(false);
     setFormCustomTitle("");
     setScheduleError(null);
@@ -254,20 +140,20 @@ export function WeeklyGoalsPage() {
               </Link>
             </div>
             <span className="font-mono text-[11px] text-[#9CA3AF]">
-              {blocks.length > 0 ? `${blocks.length} scheduled` : ""}
+              {todayBlocks.length > 0 ? `${todayBlocks.length} scheduled` : ""}
             </span>
           </div>
 
           <div className="rounded-[14px] bg-[#F3F4F6] px-3.5 pb-1.5 pt-3.5">
-            {blocks.length === 0 ? (
+            {todayBlocks.length === 0 ? (
               <p className="px-1 pb-3.5 text-[13px] text-[#9CA3AF]">
                 Nothing scheduled yet — pull a goal into today below.
               </p>
             ) : (
-              blocks.map((b) => (
+              todayBlocks.map((b) => (
                 <div key={b.id} className="mb-3 flex gap-2.5">
                   <span className="w-11 shrink-0 pt-0.5 font-mono text-[11px] text-[#6B7280]">
-                    {formatHour(b.hour)}
+                    {b.hour != null ? formatHour(b.hour) : ""}
                   </span>
                   <div
                     className="flex flex-1 items-center justify-between gap-2 rounded-lg border-l-[3px] bg-white px-3 py-2.5"
@@ -282,7 +168,7 @@ export function WeeklyGoalsPage() {
                       </div>
                     </div>
                     <button
-                      onClick={() => removeBlock(b.id)}
+                      onClick={() => deleteBlock(b.id)}
                       className="text-[#C9CBCF] hover:text-[#9CA3AF]"
                     >
                       <svg
@@ -454,7 +340,7 @@ export function WeeklyGoalsPage() {
                         <input
                           value={g.title}
                           onChange={(e) =>
-                            editGoalTitle(g.id, role.id, e.target.value)
+                            editGoalTitleLocal(g.id, role.id, e.target.value)
                           }
                           onBlur={(e) => commitGoalTitle(g.id, e.target.value)}
                           className={`flex-1 bg-transparent p-0.5 text-[13.5px] ${
@@ -502,7 +388,11 @@ export function WeeklyGoalsPage() {
                         </button>
                       </div>
                     ))}
-                    <AddGoalRow onAdd={(title) => addGoal(role.id, title)} />
+                    <AddGoalRow
+                      onAdd={(title) => {
+                        void addGoal(role.id, title);
+                      }}
+                    />
                   </div>
                 )}
               </div>

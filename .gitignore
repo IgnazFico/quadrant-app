@@ -12,6 +12,7 @@
 
 # testing
 /coverage
+/web-prototype
 
 # next.js
 /.next/
@@ -55,3 +56,6 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+.vercel
+.env*

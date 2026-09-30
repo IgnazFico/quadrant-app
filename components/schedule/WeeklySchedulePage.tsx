@@ -1,23 +1,11 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useState, useCallback } from "react";
+import { Fragment, useState } from "react";
 import { domainColor } from "../../lib/domainColors";
-import { startOfWeek, addDays, dayKey, toDateKey } from "../../lib/week";
+import { dayKey } from "../../lib/week";
 import { NotificationBell } from "../notifications/NotificationBell";
+import type { WeekData, Role, ScheduleBlock } from "../../hooks/useWeek";
 import "./schedule.css";
-
-type Goal = { id: string; title: string };
-type Role = { id: string; label: string; domain: string; goals: Goal[] };
-type Block = {
-  id: string;
-  day: string;
-  hour: number | null;
-  isPriority: boolean;
-  title: string;
-  roleId: string;
-  goalId: string | null;
-  role: { id: string; label: string; domain: string };
-};
 
 const HOURS = Array.from({ length: 16 }, (_, i) => i + 6); // 6..21
 const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -29,64 +17,38 @@ function fmtHour(h: number) {
 }
 
 type SheetState =
-  | { mode: "block"; dayIndex: number; hour: number; existing: Block | null }
-  | { mode: "priority"; dayIndex: number; existing: Block | null };
+  | { mode: "block"; dayIndex: number; hour: number; existing: ScheduleBlock | null }
+  | { mode: "priority"; dayIndex: number; existing: ScheduleBlock | null };
 
-export function WeeklySchedulePage() {
-  const [weekStart, setWeekStart] = useState(() => startOfWeek());
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [blocks, setBlocks] = useState<Block[]>([]);
-  const [loading, setLoading] = useState(true);
+/** `week` is owned by a parent (see components/week/WeekPage.tsx) so the
+ *  mobile and desktop views of the same route share one fetch/mutation
+ *  source instead of each calling useWeek() independently. */
+export function WeeklySchedulePage({ week }: { week: WeekData }) {
+  const {
+    days,
+    todayKey,
+    roles,
+    loading,
+    timedBlockFor,
+    prioritiesFor,
+    createBlock,
+    updateBlock,
+    deleteBlock,
+    goToPreviousWeek,
+    goToNextWeek,
+  } = week;
+
   const [sheet, setSheet] = useState<SheetState | null>(null);
-
-  const days = useMemo(
-    () => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)),
-    [weekStart],
-  );
-  const todayKey = toDateKey(new Date());
-
-  const load = useCallback(async (ws: Date) => {
-    setLoading(true);
-    try {
-      const [goalsRes, weekRes] = await Promise.all([
-        fetch("/api/goals"),
-        fetch(`/api/schedule/week?weekStart=${dayKey(ws)}`),
-      ]);
-      const goalsBody = await goalsRes.json();
-      const weekBody = await weekRes.json();
-      setRoles(goalsBody.roles);
-      setBlocks(weekBody.blocks);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    load(weekStart);
-  }, [weekStart, load]);
-
-  function blocksFor(dayIndex: number, hour: number) {
-    const key = dayKey(days[dayIndex]);
-    return (
-      blocks.find(
-        (b) => !b.isPriority && b.hour === hour && b.day.slice(0, 10) === key,
-      ) ?? null
-    );
-  }
-  function prioritiesFor(dayIndex: number) {
-    const key = dayKey(days[dayIndex]);
-    return blocks.filter((b) => b.isPriority && b.day.slice(0, 10) === key);
-  }
 
   function openBlockCell(dayIndex: number, hour: number) {
     setSheet({
       mode: "block",
       dayIndex,
       hour,
-      existing: blocksFor(dayIndex, hour),
+      existing: timedBlockFor(dayIndex, hour),
     });
   }
-  function openPriority(dayIndex: number, existing: Block | null = null) {
+  function openPriority(dayIndex: number, existing: ScheduleBlock | null = null) {
     setSheet({ mode: "priority", dayIndex, existing });
   }
 
@@ -97,39 +59,32 @@ export function WeeklySchedulePage() {
   ) {
     if (!sheet) return;
     if (sheet.existing) {
-      const res = await fetch(`/api/schedule/${sheet.existing.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ roleId, goalId, title }),
+      await updateBlock(sheet.existing.id, { roleId, goalId, title });
+    } else if (sheet.mode === "block") {
+      await createBlock({
+        roleId,
+        goalId,
+        title,
+        day: days[sheet.dayIndex],
+        hour: sheet.hour,
+        isPriority: false,
       });
-      if (res.ok) {
-        const { block } = await res.json();
-        setBlocks((prev) => prev.map((b) => (b.id === block.id ? block : b)));
-      }
     } else {
-      const day = dayKey(days[sheet.dayIndex]);
-      const body =
-        sheet.mode === "block"
-          ? { roleId, goalId, title, day, hour: sheet.hour, isPriority: false }
-          : { roleId, goalId, title, day, isPriority: true };
-      const res = await fetch("/api/schedule", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+      await createBlock({
+        roleId,
+        goalId,
+        title,
+        day: days[sheet.dayIndex],
+        hour: null,
+        isPriority: true,
       });
-      if (res.ok) {
-        const { block } = await res.json();
-        setBlocks((prev) => [...prev, block]);
-      }
     }
     setSheet(null);
   }
 
   async function deleteSheet() {
     if (!sheet?.existing) return;
-    const id = sheet.existing.id;
-    setBlocks((prev) => prev.filter((b) => b.id !== id));
-    await fetch(`/api/schedule/${id}`, { method: "DELETE" });
+    await deleteBlock(sheet.existing.id);
     setSheet(null);
   }
 
@@ -150,7 +105,7 @@ export function WeeklySchedulePage() {
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setWeekStart((w) => addDays(w, -7))}
+              onClick={goToPreviousWeek}
               className="flex h-[26px] w-[26px] items-center justify-center rounded-md border border-[#E5E1D8] bg-white text-[#6B7280] hover:bg-[#F3F4F6]"
             >
               <svg
@@ -178,7 +133,7 @@ export function WeeklySchedulePage() {
               })}
             </span>
             <button
-              onClick={() => setWeekStart((w) => addDays(w, 7))}
+              onClick={goToNextWeek}
               className="flex h-[26px] w-[26px] items-center justify-center rounded-md border border-[#E5E1D8] bg-white text-[#6B7280] hover:bg-[#F3F4F6]"
             >
               <svg
@@ -281,7 +236,7 @@ export function WeeklySchedulePage() {
                     {fmtHour(h)}
                   </div>
                   {days.map((d, i) => {
-                    const block = blocksFor(i, h);
+                    const block = timedBlockFor(i, h);
                     return (
                       <div
                         key={`${h}-${i}`}

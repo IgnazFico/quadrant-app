@@ -30,7 +30,11 @@ type Role = { id: string; label: string; domain: string; goals: Goal[] };
 
 export function WeeklyReviewPage() {
   const router = useRouter();
-  const [weekStart, setWeekStart] = useState(() => addDays(startOfWeek(), -7));
+  // Null means "not yet resolved" — the initial load asks the server for
+  // the correct default (the OLDEST unresolved past week, matching the
+  // layout's gate) instead of assuming "last week", since a user can be
+  // behind on more than one week. See lib/weeklyReviewGate.ts.
+  const [weekStart, setWeekStartState] = useState<Date | null>(null);
   const [fetchedWeekStart, setFetchedWeekStart] = useState<string | null>(null);
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,6 +48,10 @@ export function WeeklyReviewPage() {
   const masterKey = useAuthStore((s) => s.masterKey);
   const masterKeyRef = useRef(masterKey);
   masterKeyRef.current = masterKey;
+
+  function setWeekStart(d: Date) {
+    setWeekStartState(d);
+  }
 
   // Build a list of recent weeks for the dropdown selector
   useEffect(() => {
@@ -60,18 +68,24 @@ export function WeeklyReviewPage() {
   }, []);
 
   const load = useCallback(
-    async (ws: Date) => {
+    async (ws: Date | null) => {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(
-          `/api/review?weekStart=${ws.toISOString().slice(0, 10)}`,
-        );
+        const qs = ws ? `?weekStart=${ws.toISOString().slice(0, 10)}` : "";
+        const res = await fetch(`/api/review${qs}`);
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
           throw new Error(body.error ?? `HTTP ${res.status}`);
         }
         const body = await res.json();
+        // The server may have resolved a different week than requested
+        // (e.g. the initial no-param load); always sync local state to
+        // what was actually returned so the dropdown/arrows and the next
+        // fetch-dedup key agree with the data on screen.
+        const resolvedWeekStart = new Date(body.weekStart);
+        setWeekStartState(resolvedWeekStart);
+        setFetchedWeekStart(resolvedWeekStart.toISOString().slice(0, 10));
         const withReasons: Role[] = await Promise.all(
           body.roles.map(async (r: Role) => {
             const goalsWithReasons = await Promise.all(
@@ -101,18 +115,28 @@ export function WeeklyReviewPage() {
     [],
   );
 
+  // Initial load: no param, let the server pick the correct default week.
   useEffect(() => {
+    load(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Subsequent loads: user explicitly changed the week (arrows/dropdown).
+  useEffect(() => {
+    if (!weekStart) return;
     const key = weekStart.toISOString().slice(0, 10);
     if (key === fetchedWeekStart) return;
-    setFetchedWeekStart(key);
     load(weekStart);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [weekStart]);
 
   const goToPreviousWeek = () => {
+    if (!weekStart) return;
     setWeekStart(addDays(weekStart, -7));
   };
 
   const goToNextWeek = () => {
+    if (!weekStart) return;
     const next = addDays(weekStart, 7);
     if (next <= startOfWeek()) {
       setWeekStart(next);
@@ -191,6 +215,7 @@ export function WeeklyReviewPage() {
   }
 
   async function completeReview() {
+    if (!weekStart) return;
     const res = await fetch("/api/review/complete", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -202,18 +227,29 @@ export function WeeklyReviewPage() {
       );
       return;
     }
-    const { carriedCount } = await res.json();
+    const { carriedCount, nextUnreviewedWeekStart } = await res.json();
     setToast(
       `Review complete — ${carriedCount} goal${carriedCount === 1 ? "" : "s"} carried into next week`,
     );
     setTimeout(() => {
       setToast(null);
-      router.push("/goals");
-      router.refresh();
+      if (nextUnreviewedWeekStart) {
+        // Another past week still needs review — the layout's gate would
+        // otherwise redirect straight back here the moment we navigate
+        // away, since it checks ALL past weeks, not just this one. Advance
+        // in place instead of leaving, avoiding the push+refresh race that
+        // caused the redirect loop / blank page.
+        const next = new Date(nextUnreviewedWeekStart);
+        setFetchedWeekStart(null);
+        setWeekStart(next);
+      } else {
+        router.push("/goals");
+        router.refresh();
+      }
     }, 1500);
   }
 
-  if (loading) {
+  if (loading || !weekStart) {
     return (
       <div className="flex min-h-screen items-center justify-center text-sm text-[#9CA3AF]">
         Loading that week...

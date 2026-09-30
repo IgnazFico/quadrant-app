@@ -1,32 +1,13 @@
 import { test, expect } from "@playwright/test";
+import { loginAsSeededUser } from "./helpers/auth";
 
 test.describe("Quadrant Live Production User Session & Dashboard", () => {
   test("Can log in with seeded account and view live dashboard", async ({ page }) => {
-    // 1. Navigate to login page
-    await page.goto("/login");
-    await expect(page).toHaveTitle(/Quadrant/);
+    await loginAsSeededUser(page);
 
-    // 2. Fill login credentials
-    await page.locator('input[type="email"]').fill("ignaz.fico@quadrant.com");
-    await page.locator('input[type="password"]').fill("Quadrant_079");
-
-    // 3. Submit login
-    await page.locator('button[type="submit"]').click();
-
-    // 4. Expect navigation to /goals dashboard
-    await page.waitForURL("**/goals", { timeout: 20000 });
     expect(page.url()).toContain("/goals");
 
-    // 5. Wait for the page to finish loading data from /api/goals & /api/schedule
-    await page.waitForFunction(
-      () => {
-        const el = document.body;
-        return !el || (!el.textContent?.includes("Loading your week") && !el.textContent?.includes("Couldn't load your week"));
-      },
-      { timeout: 15000 }
-    );
-
-    // 6. Verify the dashboard renders user's seeded roles and goals
+    // Verify the dashboard renders the user's seeded roles and goals.
     await expect(page.getByText(/Software Architect|Physical Vitality/i).first()).toBeVisible({
       timeout: 10000,
     });

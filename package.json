@@ -7,9 +7,14 @@
     "build": "prisma generate && node --max-old-space-size=4096 ./node_modules/next/dist/bin/next build",
     "start": "next start -H 0.0.0.0",
     "lint": "eslint",
+    "test": "npx playwright test",
+    "seed": "tsx prisma/seed.ts",
     "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
     "prisma:migrate:deploy": "prisma migrate deploy"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.7.1",
@@ -17,7 +22,7 @@
     "@prisma/client": "^7.9.1",
     "bcryptjs": "^3.0.3",
     "libsodium-wrappers-sumo": "^0.8.4",
-    "next": "16.3.0",
+    "next": "^16.3.6",
     "next-auth": "^5.0.0-beta.32",
     "node": "^26.7.0",
     "pg": "^8.23.0",
@@ -38,8 +43,9 @@
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.3.0",
-    "prisma": "^7.9.1",
+    "prisma": "^6.19.3",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }

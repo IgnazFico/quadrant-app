@@ -3,6 +3,7 @@ import { z } from "zod";
 import { auth } from "../../../../../lib/auth";
 import { prisma } from "../../../../../lib/prisma";
 import { startOfWeek } from "../../../../../lib/week";
+import { getEarliestUnreviewedWeekStart } from "../../../../../lib/weeklyReviewGate";
 
 const bodySchema = z.object({
   weekStart: z.string(), // the week being reviewed (the past week)
@@ -16,6 +17,17 @@ const bodySchema = z.object({
  * can't be bypassed by calling this endpoint directly. Only then does it
  * roll carried-forward goals (done+carryForward, or missed+choice=CARRY)
  * into the CURRENT week as fresh Goal rows.
+ *
+ * Also re-checks, after committing, whether ANY past week still has an
+ * unresolved goal (a user can be behind on more than one week) and
+ * returns that as `nextUnreviewedWeekStart`. The layout's redirect gate
+ * looks at ALL past weeks, not just the one being reviewed here — if the
+ * client always navigated away after completing a single week, and an
+ * older week was still outstanding, the gate would immediately redirect
+ * back to /weekly-review, which would then re-show the (already
+ * completed) week the client had cached, looking like a loop. Returning
+ * the next outstanding week lets the client advance to it in place
+ * instead of leaving and bouncing straight back.
  */
 export async function POST(req: Request) {
   const session = await auth();
@@ -68,5 +80,10 @@ export async function POST(req: Request) {
     ),
   );
 
-  return NextResponse.json({ carriedCount: created.length });
+  const nextUnreviewedWeekStart = await getEarliestUnreviewedWeekStart(userId);
+
+  return NextResponse.json({
+    carriedCount: created.length,
+    nextUnreviewedWeekStart,
+  });
 }
