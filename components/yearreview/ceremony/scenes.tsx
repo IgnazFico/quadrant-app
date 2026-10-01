@@ -14,7 +14,7 @@
 import { useState, type CSSProperties, type ReactNode } from "react";
 import { domainColor } from "../../../lib/domainColors";
 import type { YearReview } from "../../../hooks/useYearReview";
-import { ConcentricRings, DotRing, yearRingCloseMs } from "./CeremonyRings";
+import { RoleStars, TogetherSky, yearRingCloseMs } from "./CeremonyRings";
 
 export type SceneDef = {
   id: string;
@@ -203,7 +203,7 @@ function BackMatter({ data }: { data: YearReview }) {
       </button>
       <div id="yc-share-card" hidden={!cardOpen}>
         <div className="yc-share-card">
-          <ConcentricRings rings={data.rings} variant="card" trackStroke="rgba(255,255,255,0.1)" />
+          <TogetherSky rings={data.rings} variant="card" trackStroke="rgba(255,255,255,0.22)" />
           <div className="yc-share-name">{data.identity.title ?? "The year I began"}</div>
           <div className="yc-share-year">{data.year} &middot; Quadrant</div>
         </div>
@@ -300,7 +300,7 @@ export function buildScenes(d: YearReview, statementSnippet: string | null): Sce
             <Words parts={[r.label]} />
           </h1>
           <Line pause={200}>
-            <DotRing votes={r.votesLogged} domain={r.domain} />
+            <RoleStars months={r.months} peak={r.peak} votes={r.votesLogged} domain={r.domain} />
           </Line>
           {r.votesLogged > 0 ? (
             <Soft pause={Math.min(2000, r.votesLogged * 50)}>
@@ -337,7 +337,7 @@ export function buildScenes(d: YearReview, statementSnippet: string | null): Sce
         <div className="yc-role-grid">
           {roles.map((r) => (
             <Line key={r.roleId} className="yc-role-cell">
-              <DotRing votes={r.votesLogged} domain={r.domain} variant="mini" />
+              <RoleStars months={r.months} peak={r.peak} votes={r.votesLogged} domain={r.domain} variant="mini" />
               <div className="yc-cell-name">{r.label}</div>
               <div className="yc-cell-sub">
                 {r.votesLogged > 0
@@ -358,7 +358,7 @@ export function buildScenes(d: YearReview, statementSnippet: string | null): Sce
       "together",
       <>
         <Line>
-          <ConcentricRings rings={roles} />
+          <TogetherSky rings={roles} />
         </Line>
         <Lead parts={["All of you, ", { em: "in one year." }]} pause={roles.length * 260 + 600} />
       </>,
@@ -455,7 +455,7 @@ export function buildScenes(d: YearReview, statementSnippet: string | null): Sce
     "close",
     <>
       <Line>
-        <ConcentricRings rings={roles} yearRing />
+        <TogetherSky rings={roles} yearRing />
       </Line>
       <Lead
         parts={[`${d.year} is `, { em: "part of you" }, " now."]}

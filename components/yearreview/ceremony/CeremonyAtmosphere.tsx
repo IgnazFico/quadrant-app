@@ -2,8 +2,8 @@
 
 /**
  * Background layer for the year-end ceremony: dawn-to-dusk sky, drifting
- * warm light, a tree cross-section that gains rings as the user moves
- * through the year, rising embers (one <canvas>), vignette and grain.
+ * warm light, a field of stars that fills in as the user moves through the
+ * year, rising embers (one <canvas>), vignette and grain.
  *
  * Driven imperatively by YearCeremony through the handle (set / burst) so
  * scene changes never re-render the scene tree. Stops its animation loop
@@ -23,55 +23,61 @@ type Particle = {
   sway: number; ph: number; a: number; burst: boolean;
 };
 
-const WOOD_RINGS = 30;
+const STAR_COUNT = 150;
 
 /**
- * GROWTH-RING-REDESIGN (background motif): irregular tree-ring paths.
- * Deterministic (seeded), so server and client agree and every visit
- * shows the same "trunk".
+ * GROWTH-RING-REDESIGN (background motif): a field of stars, replacing the old
+ * tree cross-section. Deterministic (seeded), so server and client agree and
+ * every visit shows the same sky. Stars are ordered from the centre outward so
+ * the field grows as the ceremony advances, and a few bright ones are joined
+ * to a neighbour by a faint line, like the constellations in the scenes.
  */
-function buildWoodRings() {
+function buildStarField() {
   let seed = 11;
   const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-  const ph = [rnd() * 6.28, rnd() * 6.28, rnd() * 6.28];
+  const rMax = 300;
   const f = (v: number) => v.toFixed(1);
-  const smoothClosed = (p: [number, number][]) => {
-    const n = p.length;
-    let d = `M${f(p[0][0])} ${f(p[0][1])}`;
-    for (let i = 0; i < n; i++) {
-      const p0 = p[(i - 1 + n) % n], p1 = p[i], p2 = p[(i + 1) % n], p3 = p[(i + 2) % n];
-      d += `C${f(p1[0] + (p2[0] - p0[0]) / 6)} ${f(p1[1] + (p2[1] - p0[1]) / 6)} ${f(p2[0] - (p3[0] - p1[0]) / 6)} ${f(p2[1] - (p3[1] - p1[1]) / 6)} ${f(p2[0])} ${f(p2[1])}`;
-    }
-    return d + "Z";
-  };
 
-  const paths: { d: string; late: boolean }[] = [];
-  let r = 9;
-  for (let k = 0; k < WOOD_RINGS; k++) {
-    r += 8 + rnd() * 10 + k * 0.3;
-    const pts: [number, number][] = [];
-    const N = 64;
-    for (let j = 0; j < N; j++) {
-      const a = (j / N) * Math.PI * 2;
-      const wob =
-        1 +
-        0.035 * Math.sin(2 * a + ph[0]) +
-        0.022 * Math.sin(3 * a + ph[1] + k * 0.15) +
-        0.012 * Math.sin(5 * a + ph[2] + k * 0.4) +
-        (rnd() - 0.5) * 0.006;
-      pts.push([r * wob * Math.cos(a), r * wob * Math.sin(a)]);
-    }
-    paths.push({ d: smoothClosed(pts), late: k % 5 === 4 });
+  const stars: { x: number; y: number; r: number; bright: boolean; d: number }[] = [];
+  for (let i = 0; i < STAR_COUNT; i++) {
+    const a = rnd() * Math.PI * 2;
+    const d = Math.sqrt(rnd()) * rMax; // even spread across the disc
+    stars.push({
+      x: d * Math.cos(a),
+      y: d * Math.sin(a),
+      r: 0.5 + rnd() * 0.9,
+      bright: rnd() < 0.14,
+      d,
+    });
   }
-  const rMax = Math.ceil(r * 1.07);
-  return { paths, viewBox: `${-rMax} ${-rMax} ${rMax * 2} ${rMax * 2}` };
+  stars.sort((p, q) => p.d - q.d);
+
+  const links: { d: string; i: number }[] = [];
+  stars.forEach((st, i) => {
+    if (!st.bright) return;
+    let best = -1;
+    let bestD = 75;
+    for (let j = 0; j < i; j++) {
+      const dd = Math.hypot(st.x - stars[j].x, st.y - stars[j].y);
+      if (dd < bestD) {
+        bestD = dd;
+        best = j;
+      }
+    }
+    if (best >= 0) {
+      links.push({ d: `M${f(stars[best].x)} ${f(stars[best].y)}L${f(st.x)} ${f(st.y)}`, i });
+    }
+  });
+
+  const half = Math.ceil(rMax * 1.07);
+  return { stars, links, viewBox: `${-half} ${-half} ${half * 2} ${half * 2}` };
 }
 
 export function CeremonyAtmosphere({ ref }: { ref?: Ref<AtmosphereHandle> }) {
   const skyRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const wood = useMemo(() => buildWoodRings(), []);
-  const [shownRings, setShownRings] = useState(4);
+  const field = useMemo(() => buildStarField(), []);
+  const [shownStars, setShownStars] = useState(10);
   const [golden, setGolden] = useState(false);
 
   // Read by the animation loop without re-subscribing it.
@@ -90,7 +96,7 @@ export function CeremonyAtmosphere({ ref }: { ref?: Ref<AtmosphereHandle> }) {
         sky.style.setProperty("--yc-tint", tint || "#F97316");
       }
       setGolden(final);
-      setShownRings(Math.round(4 + progress * (WOOD_RINGS - 4)));
+      setShownStars(Math.round(10 + progress * (STAR_COUNT - 10)));
     },
     burst() {
       burstRef.current();
@@ -221,16 +227,19 @@ export function CeremonyAtmosphere({ ref }: { ref?: Ref<AtmosphereHandle> }) {
       <div className="yc-orb yc-orb-a" />
       <div className="yc-orb yc-orb-b" />
       <div className="yc-orb yc-orb-c" />
-      {/* GROWTH-RING-REDESIGN (background motif): tree cross-section */}
-      <div className="yc-wood">
-        <svg viewBox={wood.viewBox} preserveAspectRatio="xMidYMid meet">
-          <circle r={5} className="yc-pith" />
-          {wood.paths.map((p, i) => (
-            <path
+      {/* GROWTH-RING-REDESIGN (background motif): star field (was a tree cross-section) */}
+      <div className="yc-stars">
+        <svg viewBox={field.viewBox} preserveAspectRatio="xMidYMid meet">
+          {field.links.map((l) => (
+            <path key={l.i} d={l.d} className={`yc-link ${l.i < shownStars ? "yc-on" : ""}`} />
+          ))}
+          {field.stars.map((st, i) => (
+            <circle
               key={i}
-              d={p.d}
-              pathLength={1}
-              className={`${p.late ? "yc-late" : ""} ${i < shownRings ? "yc-on" : ""}`}
+              cx={+st.x.toFixed(1)}
+              cy={+st.y.toFixed(1)}
+              r={+st.r.toFixed(2)}
+              className={`${st.bright ? "yc-bright" : ""} ${i < shownStars ? "yc-on" : ""}`}
             />
           ))}
         </svg>

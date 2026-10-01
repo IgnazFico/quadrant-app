@@ -4,11 +4,18 @@ import { useEffect, useState } from "react";
 import { useAuthStore } from "../store/authStore";
 import { decryptField, fromBase64 } from "../lib/crypto";
 
-/** One role's ring for the year. GROWTH-RING-REDESIGN: data shape used by the ceremony's ring visuals. */
+/**
+ * One role's year. GROWTH-RING-REDESIGN: data shape used by the ceremony's
+ * constellation visuals. `months` is goals finished in each month (a count of
+ * showing up, never a rate) and `peak` is this role's own busiest month, which
+ * stars are sized against.
+ */
 export type CeremonyRing = {
   roleId: string;
   label: string;
   domain: string;
+  months: number[];
+  peak: number;
   votesLogged: number;
   sealed: boolean;
   newThisYear: boolean;

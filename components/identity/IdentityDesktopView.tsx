@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { domainColor } from "../../lib/domainColors";
+import { constellationTint } from "../../lib/domainColors";
+import { YearBadge } from "../constellation/YearBadge";
 import type { ProfileData } from "../../hooks/useProfile";
-// GROWTH-RING-REDESIGN: ringSvg/ringProgress are the shared role-ring visual (defined in ProfilePage.tsx)
-import { ringSvg, ringProgress, MetaField } from "../profile/ProfilePage";
+import { MetaField } from "../profile/ProfilePage";
 
 /**
  * Desktop merged "Identity" view — Profile (ID card + role badges) next to
@@ -39,6 +39,7 @@ function ProfileColumn({ profile }: { profile: ProfileData }) {
   const { loading, user, roles, statementSnippet, statementMeta, toggleFeatured } = profile;
   const [flipped, setFlipped] = useState(false);
   const [barcode, setBarcode] = useState<number[]>([]);
+  const currentMonth = new Date().getMonth();
 
   useEffect(() => {
     setBarcode(Array.from({ length: 14 }, () => 8 + Math.random() * 14));
@@ -127,8 +128,18 @@ function ProfileColumn({ profile }: { profile: ProfileData }) {
               ) : (
                 featured.map((r) => (
                   <div key={r.id} className="flex flex-1 items-center gap-1.5 rounded-lg bg-[#F3F4F6] px-2.5 py-1.5">
-                    {/* GROWTH-RING-REDESIGN: featured-role ring on the ID card */}
-                    <div className="shrink-0">{ringSvg(domainColor(r.domain), ringProgress(r.ring), 22)}</div>
+                    {/* GROWTH-RING-REDESIGN: featured-role constellation on the ID card (was ringSvg) */}
+                    <div className="shrink-0">
+                      <YearBadge
+                        months={r.constellation.months}
+                        peak={r.constellation.peak}
+                        tint={constellationTint(r.domain)}
+                        size={34}
+                        sealed={r.constellation.sealed}
+                        currentMonth={currentMonth}
+                        label={r.label}
+                      />
+                    </div>
                     <div className="min-w-0">
                       <div className="truncate text-[10.5px] font-semibold leading-tight">{r.label}</div>
                       <div className="font-mono text-[8.5px] text-[#9CA3AF]">Year {r.tenureYears}</div>
@@ -199,7 +210,7 @@ function ProfileColumn({ profile }: { profile: ProfileData }) {
         </Link>
       </div>
       <p className="mb-3 text-[12px] text-[#9CA3AF]">
-        Click a badge to feature it on the card front (up to 2). Each finished goal is a vote for that role&apos;s ring.
+        Click a badge to feature it on the card front (up to 2). Each star is a month of this year, and it brightens as you finish goals.
       </p>
       <div className="grid grid-cols-2 gap-2.5">
         {roles.map((r) => (
@@ -210,8 +221,16 @@ function ProfileColumn({ profile }: { profile: ProfileData }) {
               r.isFeatured ? "border-[#F97316] bg-[#FFF7EA]" : "border-[#ECE8DF] bg-white"
             }`}
           >
-            {/* GROWTH-RING-REDESIGN: role badge ring */}
-            {ringSvg(domainColor(r.domain), ringProgress(r.ring), 30)}
+            {/* GROWTH-RING-REDESIGN: role badge constellation (was ringSvg) */}
+            <YearBadge
+              months={r.constellation.months}
+              peak={r.constellation.peak}
+              tint={constellationTint(r.domain)}
+              size={44}
+              sealed={r.constellation.sealed}
+              currentMonth={currentMonth}
+              label={r.label}
+            />
             <div className="min-w-0">
               <div className="truncate text-[12.5px] font-semibold text-[#1F2937]">{r.label}</div>
               <div className="font-mono text-[9.5px] text-[#9CA3AF]">Year {r.tenureYears}</div>

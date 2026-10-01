@@ -1,4 +1,5 @@
 import { prisma } from "./prisma";
+import { getRoleConstellations } from "./constellation";
 
 const MONTH_NAMES = [
   "January",
@@ -109,10 +110,19 @@ export async function getYearReview(userId: string, year: number) {
     : null;
 
   // ---------------- rings ----------------
+  // GROWTH-RING-REDESIGN: alongside the vote count, each role's twelve monthly
+  // star counts (goals finished per month) and its own busiest month.
+  const constellations = new Map(
+    (await getRoleConstellations(userId, { upToYear: year, currentYearOnly: true })).map(
+      (c) => [c.roleId, c],
+    ),
+  );
   const rings = roles.map((r) => ({
     roleId: r.id,
     label: r.label,
     domain: r.domain,
+    months: constellations.get(r.id)?.years[0]?.months ?? new Array(12).fill(0),
+    peak: constellations.get(r.id)?.peak ?? 1,
     votesLogged: r.growthRings[0]?.votesLogged ?? 0,
     sealed: r.growthRings[0]?.sealed ?? false,
     newThisYear: r.createdAt.getUTCFullYear() === year,

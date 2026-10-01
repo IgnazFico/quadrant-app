@@ -4,14 +4,22 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuthStore } from "../store/authStore";
 import { decryptField, fromBase64 } from "../lib/crypto";
 
-export type Ring = { year: number; votesLogged: number; sealed: boolean } | null;
+// GROWTH-RING-REDESIGN: was `Ring = { year, votesLogged, sealed }`. The badge now
+// draws this year's constellation: goals finished per month, sized against the
+// role's own busiest month (`peak`).
+export type RoleConstellation = {
+  year: number;
+  months: number[];
+  sealed: boolean;
+  peak: number;
+};
 export type RoleBadge = {
   id: string;
   label: string;
   domain: string;
   isFeatured: boolean;
   tenureYears: number;
-  ring: Ring;
+  constellation: RoleConstellation;
 };
 export type ProfileUser = { email: string; createdAt: string };
 export type StatementMeta = { signedName: string; signedAt: string };

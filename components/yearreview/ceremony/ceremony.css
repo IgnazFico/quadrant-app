@@ -110,32 +110,38 @@
 @keyframes yc-drift-b { from { transform: translate(0, 0) scale(1); }     to { transform: translate(9%, 7%) scale(1.12); } }
 @keyframes yc-drift-c { from { transform: translate(0, 0) scale(1.05); }  to { transform: translate(-8%, -6%) scale(0.95); } }
 
-.yc-wood {
+/* GROWTH-RING-REDESIGN (background motif): the star field, replacing the tree cross-section */
+.yc-stars {
   position: absolute;
   left: 50%; top: 52%;
   width: 118vmax; height: 118vmax;
   transform: translate(-50%, -50%);
   translate: calc(var(--yc-px) * -12px) calc(var(--yc-py) * -10px);
 }
-.yc-wood svg {
+.yc-stars svg {
   width: 100%; height: 100%;
   animation: yc-turn 520s linear infinite;
 }
 @keyframes yc-turn { to { transform: rotate(360deg); } }
-.yc-wood path {
-  fill: none;
-  stroke: rgba(124, 45, 18, 0.085);
-  stroke-width: 0.9;
-  stroke-linecap: round;
-  stroke-dasharray: 1 1;
-  stroke-dashoffset: 1;
-  transition: stroke-dashoffset 3200ms var(--yc-slow), stroke 2600ms var(--yc-slow);
+.yc-stars circle {
+  fill: rgba(124, 45, 18, 0.26);
+  opacity: 0;
+  transition: opacity 2600ms var(--yc-slow), fill 2600ms var(--yc-slow);
 }
-.yc-wood path.yc-late { stroke: rgba(124, 45, 18, 0.14); stroke-width: 1.3; }
-.yc-wood path.yc-on { stroke-dashoffset: 0; }
-.yc-wood .yc-pith { fill: rgba(194, 65, 12, 0.16); stroke: none; }
-.yc-sky.yc-golden .yc-wood path { stroke: rgba(194, 65, 12, 0.16); }
-.yc-sky.yc-golden .yc-wood path.yc-late { stroke: rgba(194, 65, 12, 0.26); }
+.yc-stars circle.yc-bright { fill: rgba(194, 65, 12, 0.42); }
+.yc-stars circle.yc-on { opacity: 1; }
+.yc-stars .yc-link {
+  fill: none;
+  stroke: rgba(124, 45, 18, 0.11);
+  stroke-width: 0.7;
+  stroke-linecap: round;
+  opacity: 0;
+  transition: opacity 2600ms var(--yc-slow), stroke 2600ms var(--yc-slow);
+}
+.yc-stars .yc-link.yc-on { opacity: 1; }
+.yc-sky.yc-golden .yc-stars circle { fill: rgba(194, 65, 12, 0.34); }
+.yc-sky.yc-golden .yc-stars circle.yc-bright { fill: rgba(234, 88, 12, 0.55); }
+.yc-sky.yc-golden .yc-stars .yc-link { stroke: rgba(194, 65, 12, 0.18); }
 
 .yc-motes { position: absolute; inset: 0; width: 100%; height: 100%; }
 
@@ -433,6 +439,10 @@
 }
 .yc-line.yc-shown .yc-ring .yc-fade { opacity: 1; }
 
+/* Sparkling stars keep a slow twinkle once revealed (paused under reduced motion below) */
+.yc-ring .yc-twinkle { animation: yc-twinkle 4.4s ease-in-out infinite; }
+@keyframes yc-twinkle { 50% { opacity: 0.55; } }
+
 .yc-role-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
@@ -525,6 +535,7 @@
 }
 .yc-share-year { font: 600 10.5px/1 var(--yc-sans); letter-spacing: 0.22em; text-transform: uppercase; color: rgba(255, 244, 232, 0.5); }
 .yc-share-card .yc-ring .yc-draw { stroke-dashoffset: 0; }
+.yc-share-card .yc-ring .yc-dot { opacity: 1; transform: none; }
 .yc-share-card .yc-ring .yc-fade { opacity: 1; }
 .yc-share-note { font: 400 12px/1.5 var(--yc-sans); color: var(--yc-ink-4); margin: 0 0 6px; }
 
@@ -577,7 +588,7 @@
   .yc-line + .yc-line { margin-top: 18px; }
   .yc-role-grid { grid-template-columns: repeat(2, 1fr); }
   .yc-slip { padding: 30px 24px 24px; }
-  .yc-wood { top: 50%; }
+  .yc-stars { top: 50%; }
 }
 
 @media (prefers-reduced-motion: reduce) {
