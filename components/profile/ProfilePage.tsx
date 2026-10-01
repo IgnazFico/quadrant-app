@@ -6,6 +6,7 @@ import { constellationTint } from "../../lib/domainColors";
 import { NotificationBell } from "../notifications/NotificationBell";
 import { FeedbackModal } from "../feedback/FeedbackModal";
 import { YearBadge } from "../constellation/YearBadge";
+import { RoleBadgeTile } from "../constellation/RoleBadgeTile";
 import type { ProfileData, RoleBadge } from "../../hooks/useProfile";
 
 export function ProfilePage({ profile }: { profile: ProfileData }) {
@@ -134,7 +135,7 @@ export function ProfilePage({ profile }: { profile: ProfileData }) {
                 />
                 <MetaField label="Active roles" value={String(roles.length)} />
                 <MetaField
-                  label="Longest streak"
+                  label="Longest role"
                   value={longestYears > 0 ? `${longestYears} yrs` : "\u2014"}
                 />
               </div>
@@ -260,36 +261,19 @@ export function ProfilePage({ profile }: { profile: ProfileData }) {
               {roles.length} roles
             </span>
           </div>
+          <p className="mb-3 text-[12px] leading-relaxed text-[#9CA3AF]">
+            Each star is a month of this year. It lights up when you finish a
+            goal in that role. Tap a badge to feature it on your card.
+          </p>
           <div className="grid grid-cols-2 gap-2.5">
+            {/* GROWTH-RING-REDESIGN: role badge constellations (was ringSvg) */}
             {roles.map((r) => (
-              <button
+              <RoleBadgeTile
                 key={r.id}
-                onClick={() => toggleFeatured(r)}
-                className={`flex items-center gap-2.5 rounded-xl border p-3 text-left ${
-                  r.isFeatured
-                    ? "border-[#F97316] bg-[#FFF7EA]"
-                    : "border-[#ECE8DF] bg-white"
-                }`}
-              >
-                {/* GROWTH-RING-REDESIGN: role badge constellation (was ringSvg) */}
-                <YearBadge
-                  months={r.constellation.months}
-                  peak={r.constellation.peak}
-                  tint={constellationTint(r.domain)}
-                  size={44}
-                  sealed={r.constellation.sealed}
-                  currentMonth={currentMonth}
-                  label={r.label}
-                />
-                <div className="min-w-0">
-                  <div className="truncate text-[12.5px] font-semibold text-[#1F2937]">
-                    {r.label}
-                  </div>
-                  <div className="font-mono text-[9.5px] text-[#9CA3AF]">
-                    Year {r.tenureYears}
-                  </div>
-                </div>
-              </button>
+                role={r}
+                currentMonth={currentMonth}
+                onToggle={toggleFeatured}
+              />
             ))}
             <Link
               href="/onboarding/roles"

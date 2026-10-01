@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { constellationTint } from "../../lib/domainColors";
 import { YearBadge } from "../constellation/YearBadge";
+import { RoleBadgeTile } from "../constellation/RoleBadgeTile";
 import type { ProfileData } from "../../hooks/useProfile";
 import { MetaField } from "../profile/ProfilePage";
 
@@ -119,7 +120,7 @@ function ProfileColumn({ profile }: { profile: ProfileData }) {
             <div className="mb-3 flex gap-4">
               <MetaField label="Member since" value={user ? formatMonthYear(user.createdAt) : "\u2014"} />
               <MetaField label="Active roles" value={String(roles.length)} />
-              <MetaField label="Longest streak" value={longestYears > 0 ? `${longestYears} yrs` : "\u2014"} />
+              <MetaField label="Longest role" value={longestYears > 0 ? `${longestYears} yrs` : "\u2014"} />
             </div>
 
             <div className="mt-auto flex gap-2.5">
@@ -210,32 +211,12 @@ function ProfileColumn({ profile }: { profile: ProfileData }) {
         </Link>
       </div>
       <p className="mb-3 text-[12px] text-[#9CA3AF]">
-        Click a badge to feature it on the card front (up to 2). Each star is a month of this year, and it brightens as you finish goals.
+        Each star is a month of this year. It lights up when you finish a goal in that role, and fuller months reach further out. Click a badge to feature it on the card (up to 2).
       </p>
       <div className="grid grid-cols-2 gap-2.5">
+        {/* GROWTH-RING-REDESIGN: role badge constellations (was ringSvg) */}
         {roles.map((r) => (
-          <button
-            key={r.id}
-            onClick={() => toggleFeatured(r)}
-            className={`flex items-center gap-2.5 rounded-xl border p-3 text-left ${
-              r.isFeatured ? "border-[#F97316] bg-[#FFF7EA]" : "border-[#ECE8DF] bg-white"
-            }`}
-          >
-            {/* GROWTH-RING-REDESIGN: role badge constellation (was ringSvg) */}
-            <YearBadge
-              months={r.constellation.months}
-              peak={r.constellation.peak}
-              tint={constellationTint(r.domain)}
-              size={44}
-              sealed={r.constellation.sealed}
-              currentMonth={currentMonth}
-              label={r.label}
-            />
-            <div className="min-w-0">
-              <div className="truncate text-[12.5px] font-semibold text-[#1F2937]">{r.label}</div>
-              <div className="font-mono text-[9.5px] text-[#9CA3AF]">Year {r.tenureYears}</div>
-            </div>
-          </button>
+          <RoleBadgeTile key={r.id} role={r} currentMonth={currentMonth} onToggle={toggleFeatured} />
         ))}
         <Link
           href="/onboarding/roles"

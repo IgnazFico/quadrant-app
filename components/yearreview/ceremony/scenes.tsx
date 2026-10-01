@@ -14,14 +14,14 @@
 import { useState, type CSSProperties, type ReactNode } from "react";
 import { domainColor } from "../../../lib/domainColors";
 import type { YearReview } from "../../../hooks/useYearReview";
-import { RoleStars, TogetherSky, yearRingCloseMs } from "./CeremonyRings";
+import { RoleStars, TogetherSky, yearOrbitCloseMs } from "./CeremonyRings";
 
 export type SceneDef = {
   id: string;
   node: ReactNode;
   /** colours the background light while this scene is showing */
   tint?: string;
-  /** closing scene: back matter scrolls, embers burst when the year ring closes */
+  /** closing scene: back matter scrolls, embers burst when the year orbit closes */
   final?: boolean;
   /** ms between lines (default 1100) */
   stagger?: number;
@@ -289,8 +289,17 @@ export function buildScenes(d: YearReview, statementSnippet: string | null): Sce
   }
 
   // 3. Roles: one screen each, or one quiet grid past 5 roles
+  // GROWTH-RING-REDESIGN: the first constellation the user sees says once what
+  // a star means, so the rest of the ceremony doesn't have to.
+  const starKey = (
+    <p className="yc-line yc-quiet yc-star-key" data-pause={500}>
+      Each star is a month you finished something here.
+      <br />
+      The fuller the month, the further it reaches.
+    </p>
+  );
   if (roles.length > 0 && roles.length <= 5) {
-    for (const r of roles) {
+    for (const [idx, r] of roles.entries()) {
       const color = domainColor(r.domain);
       add(
         `role-${r.roleId}`,
@@ -315,6 +324,7 @@ export function buildScenes(d: YearReview, statementSnippet: string | null): Sce
               It&rsquo;s still part of you.
             </Soft>
           )}
+          {idx === 0 && r.votesLogged > 0 && starKey}
           {r.newThisYear && (
             <Line pause={300}>
               <span className="yc-role-new">
@@ -334,6 +344,7 @@ export function buildScenes(d: YearReview, statementSnippet: string | null): Sce
       <>
         <Kicker>Your roles</Kicker>
         <Lead parts={["Every part of your life, ", { em: "this year." }]} />
+        {starKey}
         <div className="yc-role-grid">
           {roles.map((r) => (
             <Line key={r.roleId} className="yc-role-cell">
@@ -360,7 +371,7 @@ export function buildScenes(d: YearReview, statementSnippet: string | null): Sce
         <Line>
           <TogetherSky rings={roles} />
         </Line>
-        <Lead parts={["All of you, ", { em: "in one year." }]} pause={roles.length * 260 + 600} />
+        <Lead parts={["All of you, ", { em: "in one sky." }]} pause={roles.length * 260 + 600} />
       </>,
     );
   }
@@ -455,16 +466,16 @@ export function buildScenes(d: YearReview, statementSnippet: string | null): Sce
     "close",
     <>
       <Line>
-        <TogetherSky rings={roles} yearRing />
+        <TogetherSky rings={roles} yearOrbit />
       </Line>
       <Lead
         parts={[`${d.year} is `, { em: "part of you" }, " now."]}
         pause={roles.length * 260 + 3600}
       />
       <Soft pause={600}>
-        This ring is permanent.
+        These stars are yours to keep.
         <br />
-        Nothing next year can undo it.
+        Nothing next year can dim them.
       </Soft>
       <p className="yc-line yc-closing" data-pause={1400}>
         Thank you for making time for yourself.
@@ -478,8 +489,8 @@ export function buildScenes(d: YearReview, statementSnippet: string | null): Sce
         <BackMatter data={d} />
       </Line>
     </>,
-    // First line reveals at 450ms; the year ring then takes yearRingCloseMs to close.
-    { final: true, burstAt: 450 + yearRingCloseMs(roles.length) },
+    // First line reveals at 450ms; the year orbit then takes yearOrbitCloseMs to close.
+    { final: true, burstAt: 450 + yearOrbitCloseMs(roles.length) },
   );
 
   return scenes;

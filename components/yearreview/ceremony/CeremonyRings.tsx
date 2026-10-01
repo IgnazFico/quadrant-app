@@ -156,16 +156,18 @@ export function RoleStars({
 /**
  * GROWTH-RING-REDESIGN: every role's year together, one orbit per role in the
  * user's own role order (never ranked). A role that rested is a faint dotted
- * orbit. `yearRing` adds the thin outer orbit that closes on the final scene.
+ * orbit. `yearOrbit` adds the thin outer orbit that traces the year on the
+ * final scene and, as it closes, lights one bright star where the year began
+ * and ended (12 o'clock): the year sealed into the sky.
  */
 export function TogetherSky({
   rings,
-  yearRing = false,
+  yearOrbit = false,
   variant = "together",
   trackStroke = "rgba(124,45,18,0.10)",
 }: {
   rings: CeremonyRing[];
-  yearRing?: boolean;
+  yearOrbit?: boolean;
   variant?: "together" | "card";
   trackStroke?: string;
 }) {
@@ -175,7 +177,7 @@ export function TogetherSky({
   const n = rings.length;
   const lastR = base + Math.max(0, n - 1) * gap;
   const yearR = lastR + 26;
-  const outer = yearRing ? yearR : lastR + amp + 8;
+  const outer = yearOrbit ? yearR + 10 : lastR + amp + 8;
   const half = outer + 8;
 
   return (
@@ -244,29 +246,38 @@ export function TogetherSky({
           </g>
         );
       })}
-      {yearRing && (
-        <circle
-          className="yc-draw"
-          r={yearR}
-          fill="none"
-          stroke="#F97316"
-          strokeWidth={2}
-          strokeLinecap="round"
-          transform="rotate(-90)"
-          style={
-            {
-              "--len": (2 * Math.PI * yearR).toFixed(1),
-              "--d": `${n * 260 + 900}ms`,
-              "--dur": "3600ms",
-            } as Vars
-          }
-        />
+      {yearOrbit && (
+        <>
+          <circle
+            className="yc-draw"
+            r={yearR}
+            fill="none"
+            stroke="#F97316"
+            strokeOpacity={0.7}
+            strokeWidth={1.3}
+            strokeLinecap="round"
+            transform="rotate(-90)"
+            style={
+              {
+                "--len": (2 * Math.PI * yearR).toFixed(1),
+                "--d": `${n * 260 + 900}ms`,
+                "--dur": "3600ms",
+              } as Vars
+            }
+          />
+          {/* The year's own star, lit as the orbit closes (see yearOrbitCloseMs). */}
+          <g className="yc-dot" style={{ "--d": `${yearOrbitCloseMs(n)}ms` } as Vars}>
+            <circle cy={-yearR} r={9} fill="#F97316" fillOpacity={0.18} />
+            <circle cy={-yearR} r={3.4} fill="#F97316" />
+            <path className="yc-twinkle" d={star4(0, -yearR, 10)} fill="#F97316" />
+          </g>
+        </>
       )}
     </svg>
   );
 }
 
-/** When the year ring finishes closing, relative to its line appearing. Keep in sync with TogetherSky's yearRing timing. */
-export function yearRingCloseMs(ringCount: number) {
+/** When the year orbit finishes closing, relative to its line appearing. Keep in sync with TogetherSky's yearOrbit timing. */
+export function yearOrbitCloseMs(ringCount: number) {
   return ringCount * 260 + 900 + 3400;
 }

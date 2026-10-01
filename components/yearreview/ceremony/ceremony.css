@@ -13,8 +13,8 @@
    Fonts are loaded only on this route: src/app/(app)/year-review/layout.tsx
 
    Atmosphere (back to front): dawn-to-dusk sky, drifting warm
-   light, tree cross-section that gains rings as you go, rising
-   embers (canvas), vignette, paper grain.
+   light, star field that fills in as you go (GROWTH-RING-REDESIGN),
+   rising embers (canvas), vignette, paper grain.
    ========================================================== */
 
 @property --yc-tint {
@@ -416,6 +416,7 @@
   filter: drop-shadow(0 10px 30px rgba(194, 65, 12, 0.18));
 }
 .yc-ring-mini { width: 88px; height: auto; }
+.yc-star-key { margin-top: 18px !important; }
 
 .yc-ring .yc-dot {
   opacity: 0;

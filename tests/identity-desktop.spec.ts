@@ -33,18 +33,34 @@ test.describe("Identity desktop merged view", () => {
     await loginAsSeededUser(page);
     await page.goto("/profile");
 
-    const badges = page.locator("button").filter({ hasText: "Year" });
-    const first = badges.first();
+    // Scope to the desktop view: the mobile ProfilePage is also in the DOM (hidden).
+    const desktop = page.locator(".hidden.md\\:block");
+    const first = desktop.getByTestId("role-badge").first();
     await expect(first).toBeVisible();
 
-    const initiallyFeatured = (await first.getAttribute("class"))?.includes("border-[#F97316]");
+    const initiallyFeatured = await first.getAttribute("aria-pressed");
     await first.click();
-    await page.waitForTimeout(300);
-    const afterClick = (await first.getAttribute("class"))?.includes("border-[#F97316]");
-    expect(afterClick).not.toBe(initiallyFeatured);
+    await expect(first).not.toHaveAttribute("aria-pressed", initiallyFeatured ?? "false");
 
     // Restore original state so re-runs stay consistent.
     await first.click();
+  });
+
+  // GROWTH-RING-REDESIGN: badges are constellations, described by months shown up.
+  test("role badges draw this year's constellation", async ({ page }) => {
+    await loginAsSeededUser(page);
+    await page.goto("/profile");
+
+    const desktop = page.locator(".hidden.md\\:block");
+    const badge = desktop.getByTestId("role-badge").first();
+    await expect(badge.getByRole("img")).toHaveAttribute(
+      "aria-label",
+      /: (showed up in \d+ months?|no finished goals yet)$/,
+    );
+    await expect(badge).toContainText(/\d+ stars? this year|First star waiting/);
+
+    const copy = (await desktop.innerText()) ?? "";
+    expect(copy).not.toMatch(/growth ring|streak|%/i);
   });
 
   test("Your year in Quadrant link navigates to /year-review", async ({ page }) => {

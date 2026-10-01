@@ -48,6 +48,8 @@ test.describe("Year-end ceremony", () => {
     const close = page.locator(".yc-scene.yc-active");
     await expect(close).toHaveAttribute("data-scene", "close");
     await expect(close.getByText("Thank you for making time for yourself.")).toBeVisible();
+    // GROWTH-RING-REDESIGN: the close speaks in stars, not rings.
+    await expect(close.getByText("These stars are yours to keep.")).toBeVisible();
     await expect(close.getByRole("button", { name: "Close the year" })).toBeVisible();
   });
 
@@ -58,6 +60,8 @@ test.describe("Year-end ceremony", () => {
 
     const all = (await page.locator(".yc-stage").textContent()) ?? "";
     expect(all).not.toMatch(/%|completion rate|most improved|most consistent|quietest|due some attention|did it match/i);
+    // GROWTH-RING-REDESIGN: no ring language left anywhere in the ceremony.
+    expect(all).not.toMatch(/\bring\b|growth ring|tree/i);
   });
 
   test("the numbers stay optional, behind a disclosure", async ({ page }) => {
