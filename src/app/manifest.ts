@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Quadrant — Life Architecture",
     short_name: "Quadrant",
     description:
-      "Anti-burnout role-based life architecture and cumulative annual growth rings.",
+      "Anti-burnout role-based life architecture and a yearly constellation of the months you showed up.",
     start_url: "/goals",
     display: "standalone",
     orientation: "portrait",

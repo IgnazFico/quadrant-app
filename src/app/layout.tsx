@@ -32,7 +32,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "Quadrant — Doing more is not the same as living well",
   description:
-    "Privacy-first, role-based life architecture built on Quadrant II priorities and cumulative annual growth rings.",
+    "Privacy-first, role-based life architecture built on Quadrant II priorities and a yearly constellation of the months you showed up.",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,

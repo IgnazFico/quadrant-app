@@ -213,7 +213,7 @@ export function ParadigmComparison() {
             </p>
           </div>
 
-          {/* Beam 2: Cumulative Growth Rings */}
+          {/* Beam 2: The Constellation (GROWTH-RING-REDESIGN) */}
           <div
             className={`rounded-xl border bg-white/95 p-3.5 shadow-xs transition-all duration-300 delay-75 ${
               quadrantHovered
@@ -223,17 +223,17 @@ export function ParadigmComparison() {
           >
             <div className="flex items-center justify-between">
               <span className="font-mono text-[10px] font-bold uppercase text-amber-600">
-                PILLAR 02 &bull; CUMULATIVE GROWTH RINGS
+                PILLAR 02 &bull; YOUR YEAR IN STARS
               </span>
               <span className="rounded bg-amber-50 px-1.5 py-0.5 font-mono text-[9px] font-bold text-amber-700">
                 NO RESETS
               </span>
             </div>
             <p className="mt-1 text-xs font-semibold text-gray-900">
-              Grow like a tree. Every completed goal logs a permanent vote.
+              Every finished goal lights that month’s star.
             </p>
             <p className="mt-0.5 text-[11px] text-gray-500">
-              No broken streaks. Your annual growth rings seal every December 31 into an unshakeable identity record.
+              No broken streaks. A quiet month is just a quiet dot, and on December 31 your year joins into a constellation of its own.
             </p>
           </div>
 

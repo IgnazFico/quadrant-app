@@ -4,6 +4,16 @@ import { prisma } from "../../lib/prisma";
 import { EvidenceCards } from "../../components/landing/EvidenceCards";
 import { ParadigmComparison } from "../../components/landing/ParadigmComparison";
 import { FeatureShowcase } from "../../components/landing/FeatureShowcase";
+import { jitter } from "../../components/constellation/geometry";
+
+// GROWTH-RING-REDESIGN: faint deterministic star field behind the features
+// section, matching the constellation showcase and the year ceremony.
+const SECTION_STARS = Array.from({ length: 70 }, (_, i) => ({
+  x: 50 + jitter(3, i) * 100,
+  y: 50 + jitter(11, i) * 100,
+  size: 1.5 + (jitter(17, i) + 0.5) * 2,
+  o: 0.2 + (jitter(23, i) + 0.5) * 0.4,
+}));
 
 export default async function HomePage() {
   const session = await auth();
@@ -30,7 +40,7 @@ export default async function HomePage() {
           priceCurrency: "USD",
         },
         description:
-          "Quadrant is an anti-burnout life architecture application replacing toxic streak resets with cumulative annual growth rings and role-based planning.",
+          "Quadrant is an anti-burnout life architecture application replacing toxic streak resets with a yearly constellation of the months you showed up, and role-based planning.",
       },
       {
         "@type": "FAQPage",
@@ -41,7 +51,7 @@ export default async function HomePage() {
             name: "How does Quadrant eliminate habit streak guilt?",
             acceptedAnswer: {
               "@type": "Answer",
-              text: "Quadrant replaces fragile streaks with Cumulative Annual Growth Rings. When you complete a goal, you log a permanent vote toward your role's annual ring. Missing a day never resets your progress to zero.",
+              text: "Quadrant replaces fragile streaks with a constellation. Each role gets twelve stars a year, one per month, and every goal you finish lights up that month's star. A quiet month is just a quiet dot; nothing ever resets to zero.",
             },
           },
           {
@@ -194,7 +204,8 @@ export default async function HomePage() {
           <p className="animate-subheadline mx-auto mt-3.5 max-w-2xl font-sans text-sm leading-relaxed text-[#6B7280] sm:text-base">
             Quadrant organizes your week by human identity roles, protects your
             Quadrant II priorities before reactive fires hit, and replaces
-            broken streak guilt with cumulative annual growth rings.
+            broken streak guilt with a constellation of the months you showed
+            up.
           </p>
 
           {/* Action CTAs */}
@@ -270,22 +281,41 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Feature Showcase: Highlighting the Feature Examples Directly */}
+      {/* Feature Showcase: warm paper + star field, matching the constellation (GROWTH-RING-REDESIGN) */}
       <section
         id="features"
-        className="relative border-t border-[#ECE8DF]/80 bg-white/50 px-5 py-20 sm:px-8 sm:py-28"
+        className="relative overflow-hidden border-t border-[#E8DFCF] px-5 py-20 sm:px-8 sm:py-28"
+        style={{
+          background:
+            "radial-gradient(120% 70% at 50% 0%, #FDFBF7 0%, #FAF7F2 50%, #F5EEE3 100%)",
+        }}
       >
-        <div className="mx-auto max-w-5xl">
+        <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+          {SECTION_STARS.map((s, i) => (
+            <span
+              key={i}
+              className="absolute rounded-full bg-[#C9B79C]"
+              style={{
+                left: `${s.x}%`,
+                top: `${s.y}%`,
+                width: s.size,
+                height: s.size,
+                opacity: s.o,
+              }}
+            />
+          ))}
+        </div>
+        <div className="relative mx-auto max-w-5xl">
           <div className="max-w-2xl">
-            <span className="font-mono text-xs font-bold uppercase tracking-wider text-[#F97316]">
+            <span className="font-mono text-xs font-bold uppercase tracking-wider text-[#B45309]">
               Inside The App
             </span>
-            <h2 className="mt-2 font-serif text-3xl font-bold tracking-tight text-[#1F2937] sm:text-4xl md:text-5xl">
+            <h2 className="mt-2 font-serif text-3xl font-bold tracking-tight text-[#2B2420] sm:text-4xl md:text-5xl">
               An interface designed to keep you centered.
             </h2>
-            <p className="mt-2 text-sm text-[#6B7280]">
-              Explore the interactive examples below to see how Quadrant works
-              in real practice.
+            <p className="mt-2 text-sm text-[#5E5247]">
+              Plan by role, watch your year fill with stars, and close each
+              week without guilt. Try the examples below.
             </p>
           </div>
 
@@ -322,7 +352,7 @@ export default async function HomePage() {
             >
               {session?.user
                 ? "Enter Your Dashboard"
-                : "Start Your Growth Rings Free"}
+                : "Start Your Constellation Free"}
             </Link>
           </div>
 

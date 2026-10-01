@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ConstellationShowcase } from "./ConstellationShowcase";
 
 export function FeatureShowcase() {
   // Feature 1 State: Active selected role & completed goals
@@ -13,16 +14,6 @@ export function FeatureShowcase() {
 
   function toggleGoal(id: string) {
     setCompletedGoals((prev) => ({ ...prev, [id]: !prev[id] }));
-  }
-
-  // Feature 2 State: Interactive votes on Growth Ring
-  const [votes, setVotes] = useState<number>(18);
-  const [isSimulatingVote, setIsSimulatingVote] = useState<boolean>(false);
-
-  function addSimulatedVote() {
-    setIsSimulatingVote(true);
-    setVotes((v) => (v >= 24 ? 18 : v + 1));
-    setTimeout(() => setIsSimulatingVote(false), 500);
   }
 
   // Feature 3 State: Sunday Review interactive decision
@@ -157,7 +148,7 @@ export function FeatureShowcase() {
                 </div>
               </div>
               <span className="rounded bg-emerald-50 px-2 py-0.5 font-mono text-[10px] font-bold text-emerald-700">
-                {completedGoals.health ? "Vote Logged ✓" : "Vote +1"}
+                {completedGoals.health ? "Star Lit ✓" : "Lights a Star"}
               </span>
             </div>
 
@@ -227,168 +218,8 @@ export function FeatureShowcase() {
         </div>
       </div>
 
-      {/* 
-        FEATURE 02: CUMULATIVE ANNUAL GROWTH RINGS
-        Outer container is calm, stable, and un-distorted.
-        Interaction is 100% focused on the interactive Growth Ring console.
-      */}
-      <div className="rounded-3xl border border-[#ECE8DF] bg-white/90 p-6 shadow-sm sm:p-10">
-        <div className="flex flex-col justify-between gap-8 lg:flex-row lg:items-center">
-          <div className="max-w-md">
-            <span className="rounded-md bg-[#FFF7ED] px-2.5 py-1 font-mono text-[10px] font-bold uppercase text-[#EA580C]">
-              Feature 02
-            </span>
-            <h3 className="mt-2.5 font-serif text-2xl font-bold tracking-tight text-[#1F2937] sm:text-3xl">
-              Cumulative Annual Growth Rings
-            </h3>
-            <p className="mt-2.5 text-sm leading-relaxed text-[#6B7280]">
-              A tree records rainy seasons and dry seasons alike. It never
-              resets to zero. Your completed goals deposit votes toward your
-              annual growth rings, sealed every December 31 into an indelible
-              identity record.
-            </p>
-            <div className="mt-4">
-              <button
-                type="button"
-                onClick={addSimulatedVote}
-                className="inline-flex items-center gap-2 rounded-xl bg-[#EA580C] px-4 py-2.5 font-mono text-xs font-bold text-white shadow-sm transition-all hover:bg-[#C2410C] hover:shadow active:scale-95"
-              >
-                <span>+ Simulate Goal Completion</span>
-                <span className="rounded bg-white/20 px-1.5 py-0.5 text-[10px]">
-                  Vote +1
-                </span>
-              </button>
-            </div>
-          </div>
-
-          {/* THE FEATURE EXAMPLE UI (Interactive Ring Console) */}
-          <div className="flex w-full max-w-md flex-col items-center justify-center rounded-2xl border border-[#FED7AA]/70 bg-gradient-to-br from-[#FFFDF9] to-[#FFF7ED] p-6 shadow-sm">
-            <div className="flex items-center gap-6">
-              {/* GROWTH-RING-REDESIGN: landing-page interactive growth ring demo */}
-              {/* Ultra-Smooth Hardware-Interpolated SVG Growth Ring */}
-              <div className="relative flex h-32 w-32 shrink-0 items-center justify-center">
-                {/* Expanding Tree-Ring Cambium Pulse Ripple */}
-                {isSimulatingVote && (
-                  <span className="pointer-events-none absolute inset-1 rounded-full border-2 border-[#F97316] opacity-60 animate-ping" />
-                )}
-
-                <svg
-                  className="h-full w-full -rotate-90 transform"
-                  viewBox="0 0 120 120"
-                  aria-hidden="true"
-                >
-                  <defs>
-                    <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#FB923C" />
-                      <stop offset="50%" stopColor="#F97316" />
-                      <stop offset="100%" stopColor="#EA580C" />
-                    </linearGradient>
-                  </defs>
-
-                  {/* Outer Faint Guide */}
-                  <circle
-                    cx="60"
-                    cy="60"
-                    r="56"
-                    stroke="#FED7AA"
-                    strokeWidth="1"
-                    strokeDasharray="2 4"
-                    fill="transparent"
-                    opacity="0.5"
-                  />
-
-                  {/* Base Track */}
-                  <circle
-                    cx="60"
-                    cy="60"
-                    r="47"
-                    stroke="#F3F4F6"
-                    strokeWidth="7"
-                    fill="transparent"
-                  />
-
-                  {/* Inner Prior-Year Veteran Ring (Year 1 & 2 Layer) */}
-                  <circle
-                    cx="60"
-                    cy="60"
-                    r="37"
-                    stroke="#FDBA74"
-                    strokeWidth="1.5"
-                    strokeDasharray="4 3"
-                    fill="transparent"
-                    opacity="0.7"
-                  />
-
-                  {/* Active Cumulative Progress Stroke (Butter-Smooth Subpixel Interpolation) */}
-                  <circle
-                    cx="60"
-                    cy="60"
-                    r="47"
-                    stroke="url(#ringGradient)"
-                    strokeWidth="7"
-                    strokeDasharray="295.31"
-                    strokeDashoffset={295.31 * (1 - votes / 24)}
-                    strokeLinecap="round"
-                    fill="transparent"
-                    style={{
-                      transition: "stroke-dashoffset 0.75s cubic-bezier(0.16, 1, 0.3, 1)",
-                    }}
-                  />
-                </svg>
-
-                {/* Center Core Display */}
-                <div
-                  className={`absolute flex flex-col items-center justify-center rounded-full bg-white shadow-xs transition-transform duration-300 ${
-                    isSimulatingVote ? "scale-105" : ""
-                  }`}
-                  style={{ width: "66px", height: "66px" }}
-                >
-                  <span className="font-serif text-lg font-black tracking-tight text-[#1F2937]">
-                    2026
-                  </span>
-                  <span
-                    className={`font-mono text-[9px] font-bold transition-colors duration-300 ${
-                      isSimulatingVote ? "text-[#C2410C]" : "text-[#EA580C]"
-                    }`}
-                  >
-                    {votes} / 24
-                  </span>
-                </div>
-              </div>
-
-              {/* Ring Metadata Details */}
-              <div className="space-y-1 text-left">
-                <div className="flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase text-[#EA580C]">
-                  <span className="h-2 w-2 rounded-full bg-[#EA580C] animate-pulse" />
-                  <span>RINGS STATUS: ACTIVE</span>
-                </div>
-                <div className="font-serif text-lg font-bold text-[#1F2937]">
-                  Founder &bull; Year 3
-                </div>
-                <div className="text-xs text-[#6B7280]">
-                  <strong className="text-[#1F2937]">{votes} permanent votes</strong> logged.
-                </div>
-                <div className="mt-1 font-mono text-[9.5px] text-[#9CA3AF]">
-                  Seals Dec 31 &bull; Never resets to zero
-                </div>
-              </div>
-            </div>
-
-            {/* Live Vote Log Banner */}
-            <div
-              className={`mt-4 w-full rounded-lg border px-3 py-1.5 text-center font-mono text-[10.5px] transition-all duration-300 ${
-                isSimulatingVote
-                  ? "border-[#EA580C] bg-[#FFF5EB] text-[#C2410C] shadow-xs"
-                  : "border-orange-200/80 bg-white/90 text-[#EA580C]"
-              }`}
-            >
-              {isSimulatingVote
-                ? "🎉 +1 Vote Cast! Progress ring smoothly expanded."
-                : "Tap '+ Simulate Goal Completion' to test vote logging."}
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* FEATURE 02: THE CONSTELLATION (GROWTH-RING-REDESIGN) */}
+      <ConstellationShowcase />
 
       {/* 
         FEATURE 03: THE HONEST SUNDAY REVIEW
