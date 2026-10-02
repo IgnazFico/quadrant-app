@@ -8,6 +8,7 @@ import {
   dayKey,
   toDateKey,
 } from "../lib/week";
+import { ANYTIME_PER_DAY } from "../lib/scheduleRules";
 
 export type GoalStatus = "IN_PROGRESS" | "DONE" | "MISSED";
 
@@ -42,7 +43,21 @@ type CreateBlockInput = {
 
 type MutationResult =
   | { ok: true; block: ScheduleBlock }
-  | { ok: false; error: string };
+  | { ok: false; error: string; code?: string; existingBlockId?: string | null };
+
+type UpdateBlockInput = {
+  roleId?: string;
+  goalId?: string | null;
+  title?: string;
+  /** Move to this day of the visible week. */
+  day?: Date;
+  /** Move to this hour; null = anytime (day priority). */
+  hour?: number | null;
+};
+
+function errorMessage(body: { error?: unknown }, fallback: string): string {
+  return typeof body.error === "string" ? body.error : fallback;
+}
 
 /**
  * Shared data + mutation logic for a week of roles/goals + schedule blocks.
@@ -110,6 +125,11 @@ export function useWeek(initialWeekStart?: Date) {
     },
     [blocks, days],
   );
+  /** A goal has at most one block (schedule_blocks.goalId is UNIQUE). */
+  const blockForGoal = useCallback(
+    (goalId: string) => blocks.find((b) => b.goalId === goalId) ?? null,
+    [blocks],
+  );
   const timedBlockFor = useCallback(
     (dayIndex: number, hour: number) => {
       const key = dayKey(days[dayIndex]);
@@ -118,6 +138,18 @@ export function useWeek(initialWeekStart?: Date) {
           (b) => !b.isPriority && b.hour === hour && b.day.slice(0, 10) === key,
         ) ?? null
       );
+    },
+    [blocks, days],
+  );
+  /** True when `dayIndex` can take another Anytime item (lib/scheduleRules.ts).
+   *  Pass the block being edited/moved so it doesn't count against itself. */
+  const canAddAnytime = useCallback(
+    (dayIndex: number, excludeBlockId?: string | null) => {
+      const key = dayKey(days[dayIndex]);
+      const n = blocks.filter(
+        (b) => b.isPriority && b.day.slice(0, 10) === key && b.id !== excludeBlockId,
+      ).length;
+      return n < ANYTIME_PER_DAY;
     },
     [blocks, days],
   );
@@ -239,7 +271,9 @@ export function useWeek(initialWeekStart?: Date) {
         const body = await res.json().catch(() => ({}));
         return {
           ok: false,
-          error: body.error ?? "Couldn't save the schedule block.",
+          error: errorMessage(body, "Couldn't save the schedule block."),
+          code: typeof body.code === "string" ? body.code : undefined,
+          existingBlockId: body.blockId ?? null,
         };
       }
       const { block } = await res.json();
@@ -250,24 +284,51 @@ export function useWeek(initialWeekStart?: Date) {
   );
 
   const updateBlock = useCallback(
-    async (
-      id: string,
-      data: { roleId?: string; goalId?: string | null; title?: string },
-    ): Promise<MutationResult> => {
+    async (id: string, data: UpdateBlockInput): Promise<MutationResult> => {
+      const { day, ...rest } = data;
       const res = await fetch(`/api/schedule/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...rest,
+          ...(day !== undefined ? { day: dayKey(day) } : {}),
+        }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        return { ok: false, error: body.error ?? "Couldn't save the block." };
+        return {
+          ok: false,
+          error: errorMessage(body, "Couldn't save the block."),
+          code: typeof body.code === "string" ? body.code : undefined,
+          existingBlockId: body.blockId ?? null,
+        };
       }
       const { block } = await res.json();
       setBlocks((prev) => prev.map((b) => (b.id === block.id ? block : b)));
       return { ok: true, block };
     },
     [],
+  );
+
+  /** Drag-to-reschedule: moves a block to another day of this week,
+   *  keeping its time. Optimistic; rolls back if the server refuses. */
+  const moveBlock = useCallback(
+    async (id: string, dayIndex: number): Promise<MutationResult> => {
+      const target = days[dayIndex];
+      const before = blocks.find((b) => b.id === id);
+      if (!before) return { ok: false, error: "That block is gone — try refreshing." };
+      if (before.day.slice(0, 10) === dayKey(target)) return { ok: true, block: before };
+
+      setBlocks((prev) =>
+        prev.map((b) => (b.id === id ? { ...b, day: dayKey(target) } : b)),
+      );
+      const result = await updateBlock(id, { day: target });
+      if (!result.ok) {
+        setBlocks((prev) => prev.map((b) => (b.id === id ? before : b)));
+      }
+      return result;
+    },
+    [blocks, days, updateBlock],
   );
 
   const deleteBlock = useCallback(async (id: string) => {
@@ -297,8 +358,10 @@ export function useWeek(initialWeekStart?: Date) {
     goToNextWeek,
     goToWeek,
     blocksForDay,
+    blockForGoal,
     timedBlockFor,
     prioritiesFor,
+    canAddAnytime,
     toggleGoal,
     editGoalTitleLocal,
     commitGoalTitle,
@@ -306,6 +369,7 @@ export function useWeek(initialWeekStart?: Date) {
     addGoal,
     createBlock,
     updateBlock,
+    moveBlock,
     deleteBlock,
     scheduleForToday,
     reload: () => load(weekStart),

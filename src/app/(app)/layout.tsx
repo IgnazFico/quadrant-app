@@ -4,7 +4,7 @@ import { auth } from "../../../lib/auth";
 import { getMissionGateStatus } from "../../../lib/missionGate";
 import { getWeeklyReviewGateStatus } from "../../../lib/weeklyReviewGate";
 import { ActivityPinger } from "../../../components/mission/ActivityPinger";
-import { BottomNav } from "../../../components/nav/BottomNav";
+import { AppShell } from "../../../components/nav/AppShell";
 import { RecapPrompt } from "../../../components/yearreview/RecapPrompt";
 
 export default async function AppLayout({
@@ -38,9 +38,8 @@ export default async function AppLayout({
   return (
     <>
       <ActivityPinger />
-      {children}
+      <AppShell email={session.user.email ?? ""}>{children}</AppShell>
       <RecapPrompt />
-      <BottomNav />
     </>
   );
 }

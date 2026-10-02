@@ -2,6 +2,7 @@
 
 import { useReview } from "../../hooks/useReview";
 import { usePatterns } from "../../hooks/usePatterns";
+import { useWeekSnapshot } from "../../hooks/useWeekSnapshot";
 import { WeeklyReviewPage } from "../review/WeeklyReviewPage";
 import { PatternsPage } from "../patterns/PatternsPage";
 import { ReflectDesktopView } from "./ReflectDesktopView";
@@ -24,6 +25,9 @@ import { ReflectDesktopView } from "./ReflectDesktopView";
 export function ReflectPage({ variant }: { variant: "review" | "patterns" }) {
   const review = useReview();
   const patterns = usePatterns();
+  // Desktop only uses this (the "this week so far" rail between reviews);
+  // it's one small read-only fetch.
+  const thisWeek = useWeekSnapshot();
 
   return (
     <>
@@ -35,7 +39,7 @@ export function ReflectPage({ variant }: { variant: "review" | "patterns" }) {
         )}
       </div>
       <div className="hidden md:block">
-        <ReflectDesktopView review={review} patterns={patterns} />
+        <ReflectDesktopView review={review} patterns={patterns} thisWeek={thisWeek} />
       </div>
     </>
   );

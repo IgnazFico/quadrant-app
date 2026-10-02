@@ -5,6 +5,8 @@ import { domainColor } from "../../lib/domainColors";
 import { dayKey } from "../../lib/week";
 import { NotificationBell } from "../notifications/NotificationBell";
 import type { WeekData, Role, ScheduleBlock } from "../../hooks/useWeek";
+import { ANYTIME_LIMIT_MESSAGE, ANYTIME_LIMIT_REACHED } from "../../lib/scheduleRules";
+import { showToast } from "../../store/toastStore";
 import "./schedule.css";
 
 const HOURS = Array.from({ length: 16 }, (_, i) => i + 6); // 6..21
@@ -34,13 +36,17 @@ export function WeeklySchedulePage({ week }: { week: WeekData }) {
     createBlock,
     updateBlock,
     deleteBlock,
+    blockForGoal,
+    canAddAnytime,
     goToPreviousWeek,
     goToNextWeek,
   } = week;
 
   const [sheet, setSheet] = useState<SheetState | null>(null);
+  const [sheetError, setSheetError] = useState<string | null>(null);
 
   function openBlockCell(dayIndex: number, hour: number) {
+    setSheetError(null);
     setSheet({
       mode: "block",
       dayIndex,
@@ -49,6 +55,7 @@ export function WeeklySchedulePage({ week }: { week: WeekData }) {
     });
   }
   function openPriority(dayIndex: number, existing: ScheduleBlock | null = null) {
+    setSheetError(null);
     setSheet({ mode: "priority", dayIndex, existing });
   }
 
@@ -58,10 +65,11 @@ export function WeeklySchedulePage({ week }: { week: WeekData }) {
     title: string,
   ) {
     if (!sheet) return;
+    let result;
     if (sheet.existing) {
-      await updateBlock(sheet.existing.id, { roleId, goalId, title });
+      result = await updateBlock(sheet.existing.id, { roleId, goalId, title });
     } else if (sheet.mode === "block") {
-      await createBlock({
+      result = await createBlock({
         roleId,
         goalId,
         title,
@@ -70,7 +78,7 @@ export function WeeklySchedulePage({ week }: { week: WeekData }) {
         isPriority: false,
       });
     } else {
-      await createBlock({
+      result = await createBlock({
         roleId,
         goalId,
         title,
@@ -79,7 +87,13 @@ export function WeeklySchedulePage({ week }: { week: WeekData }) {
         isPriority: true,
       });
     }
+    if (!result.ok) {
+      if (result.code === ANYTIME_LIMIT_REACHED) showToast(ANYTIME_LIMIT_MESSAGE);
+      else setSheetError(result.error);
+      return;
+    }
     setSheet(null);
+    setSheetError(null);
   }
 
   async function deleteSheet() {
@@ -217,12 +231,15 @@ export function WeeklySchedulePage({ week }: { week: WeekData }) {
                       <span>{p.title}</span>
                     </div>
                   ))}
-                  <button
-                    className="priority-add"
-                    onClick={() => openPriority(i)}
-                  >
-                    + priority
-                  </button>
+                  {/* At most ANYTIME_PER_DAY per day (lib/scheduleRules.ts). */}
+                  {canAddAnytime(i) && (
+                    <button
+                      className="priority-add"
+                      onClick={() => openPriority(i)}
+                    >
+                      + priority
+                    </button>
+                  )}
                 </div>
               ))}
 
@@ -275,9 +292,14 @@ export function WeeklySchedulePage({ week }: { week: WeekData }) {
             day: "numeric",
           })}
           roles={roles}
-          onClose={() => setSheet(null)}
+          onClose={() => {
+            setSheet(null);
+            setSheetError(null);
+          }}
           onSave={saveSheet}
           onDelete={sheet.existing ? deleteSheet : undefined}
+          blockForGoal={blockForGoal}
+          error={sheetError}
         />
       )}
     </div>
@@ -291,6 +313,8 @@ function ScheduleSheet({
   onClose,
   onSave,
   onDelete,
+  blockForGoal,
+  error,
 }: {
   sheet: SheetState;
   dayLabel: string;
@@ -298,6 +322,8 @@ function ScheduleSheet({
   onClose: () => void;
   onSave: (roleId: string, goalId: string | null, title: string) => void;
   onDelete?: () => void;
+  blockForGoal: (goalId: string) => ScheduleBlock | null;
+  error: string | null;
 }) {
   const existing = sheet.existing;
   const [roleId, setRoleId] = useState(existing?.roleId ?? roles[0]?.id ?? "");
@@ -367,11 +393,17 @@ function ScheduleSheet({
           className="mb-3 w-full rounded-lg border border-[#E5E1D8] bg-[#FCFBF8] px-3 py-2.5 text-sm"
         >
           <option value="">Something else...</option>
-          {role?.goals.map((g) => (
-            <option key={g.id} value={g.id}>
-              {g.title}
-            </option>
-          ))}
+          {role?.goals
+            // One place per goal: hide goals scheduled elsewhere.
+            .filter((g) => {
+              const b = blockForGoal(g.id);
+              return !b || b.id === existing?.id;
+            })
+            .map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.title}
+              </option>
+            ))}
         </select>
 
         {usingCustom && (
@@ -386,6 +418,12 @@ function ScheduleSheet({
               className="mb-3 w-full rounded-lg border border-[#E5E1D8] bg-[#FCFBF8] px-3 py-2.5 text-sm"
             />
           </>
+        )}
+
+        {error && (
+          <p className="mb-2 rounded-lg bg-[#FDECEC] px-3 py-2 text-xs text-[#C0392B]">
+            {error}
+          </p>
         )}
 
         <div className="mt-3 flex gap-2.5">

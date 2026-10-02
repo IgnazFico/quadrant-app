@@ -166,7 +166,8 @@ async function main() {
     });
     const blockData = [
       { roleId: roles[0].id, goalId: goals[0].id, day: today, hour: 9, title: 'Standup meeting' },
-      { roleId: roles[0].id, goalId: goals[0].id, day: today, hour: 14, title: 'Code review' },
+      // Standalone (no goalId): a goal has at most one block (schedule_blocks.goalId UNIQUE).
+      { roleId: roles[0].id, goalId: null, day: today, hour: 14, title: 'Code review' },
       { roleId: roles[1].id, goalId: goals[1].id, day: today, hour: null, isPriority: true, title: 'Morning run' },
     ];
     await Promise.all(

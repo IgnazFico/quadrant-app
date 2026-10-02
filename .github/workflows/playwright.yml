@@ -54,6 +54,23 @@ jobs:
         # so live-login.spec.ts can authenticate and see content.
         run: npm run seed
 
+      - name: Apply database migrations
+        # The weekly review relies on the goals_weekStart_is_monday CHECK
+        # constraint; staging must have every migration before tests run.
+        run: npx prisma migrate deploy
+
+      - name: Weekly review loop regression (gate vs review week)
+        # Drives the real gate + review week resolution against staging with a
+        # throwaway user. Fails if the gate can point at a week the review page
+        # cannot load or clear (the /weekly-review redirect loop).
+        run: npx tsx scripts/verify-weekly-review-loop.ts
+
+      - name: Schedule rules regression
+        # One block per goal (schedule_blocks.goalId UNIQUE; moving is a
+        # PATCH) and at most 2 Anytime blocks per user per day (DB trigger).
+        # Throwaway users on staging.
+        run: npx tsx scripts/verify-schedule-rules.ts
+
       - name: Run Playwright tests
         # PR runs: smoke project only (excludes live-login.spec.ts which needs
         # a seeded DB with a real user). The full E2E suite is available via

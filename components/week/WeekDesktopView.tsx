@@ -4,8 +4,13 @@ import { useState } from "react";
 import { domainColor } from "../../lib/domainColors";
 import { domainLabel } from "../../lib/domains";
 import { dayKey } from "../../lib/week";
-import { NotificationBell } from "../notifications/NotificationBell";
 import type { WeekData, Role, Goal, ScheduleBlock } from "../../hooks/useWeek";
+import {
+  ANYTIME_LIMIT_MESSAGE,
+  ANYTIME_LIMIT_REACHED,
+  ANYTIME_PER_DAY,
+} from "../../lib/scheduleRules";
+import { showToast } from "../../store/toastStore";
 
 const DAY_NAMES_LONG = [
   "Monday",
@@ -19,6 +24,17 @@ const DAY_NAMES_LONG = [
 
 function fmtShort(d: Date) {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+const DAY_ABBR_UTC = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+/** Compact "Tue 9a" / "Thu" label for a goal's scheduled block. */
+function scheduledLabel(b: ScheduleBlock) {
+  const [y, m, d] = b.day.slice(0, 10).split("-").map(Number);
+  const day = DAY_ABBR_UTC[new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
+  if (b.hour == null) return day;
+  const h12 = b.hour % 12 === 0 ? 12 : b.hour % 12;
+  return `${day} ${h12}${b.hour >= 12 ? "p" : "a"}`;
 }
 
 function fmtTime(hour: number | null) {
@@ -39,20 +55,30 @@ type ModalState = {
 
 /**
  * Desktop split-view: roles/goals on the left, the 7-day board on the
- * right, matching web-prototype/index.html's "Week" page. Drag a goal's
+ * right. The board is one column per day (not the prototype's day rows):
+ * a busy day grows its own column instead of pushing every other day down,
+ * and columns past COLUMN_CAP blocks collapse behind "+N more". Drag a goal's
  * grip handle onto a day to schedule it — this always creates a NEW
  * schedule block for that day (never moves an existing one), matching
- * both the prototype's behavior and PATCH /api/schedule/[id], which
- * intentionally never changes a block's day/hour.
+ * PATCH /api/schedule/[id].
+ *
+ * One place per goal: a goal has at most one schedule block (DB UNIQUE on
+ * schedule_blocks.goalId). Dragging a block — or the grip of a goal that's
+ * already scheduled — onto another day MOVES that block (keeping its
+ * time); only an unscheduled goal opens the create modal. The edit modal
+ * can change day and time.
  */
 export function WeekDesktopView({ week }: { week: WeekData }) {
   const {
     days,
     todayKey,
     roles,
+    blocks,
     loading,
     error,
     blocksForDay,
+    blockForGoal,
+    canAddAnytime,
     toggleGoal,
     editGoalTitleLocal,
     commitGoalTitle,
@@ -60,6 +86,7 @@ export function WeekDesktopView({ week }: { week: WeekData }) {
     addGoal,
     createBlock,
     updateBlock,
+    moveBlock,
     deleteBlock,
     goToPreviousWeek,
     goToNextWeek,
@@ -69,6 +96,10 @@ export function WeekDesktopView({ week }: { week: WeekData }) {
   const [modal, setModal] = useState<ModalState | null>(null);
   const [modalError, setModalError] = useState<string | null>(null);
   const [dragOverDay, setDragOverDay] = useState<number | null>(null);
+  const [draggingBlockId, setDraggingBlockId] = useState<string | null>(null);
+  const [boardError, setBoardError] = useState<string | null>(null);
+  // Days the user has expanded past the per-column cap (see DayColumn).
+  const [expandedDays, setExpandedDays] = useState<Set<number>>(new Set());
 
   const totalGoals = roles.reduce((a, r) => a + r.goals.length, 0);
   const doneGoals = roles.reduce(
@@ -87,7 +118,26 @@ export function WeekDesktopView({ week }: { week: WeekData }) {
     });
   }
 
+  function toggleExpandedDay(dayIndex: number) {
+    setExpandedDays((prev) => {
+      const next = new Set(prev);
+      if (next.has(dayIndex)) next.delete(dayIndex);
+      else next.add(dayIndex);
+      return next;
+    });
+  }
+
+  function dayIndexOf(block: ScheduleBlock) {
+    return days.findIndex((d) => dayKey(d) === block.day.slice(0, 10));
+  }
+
   function openCreateModal(dayIndex: number, opts: { roleId?: string; goalId?: string } = {}) {
+    // A goal has one place in the week: if it's already scheduled, edit that.
+    const existing = opts.goalId ? blockForGoal(opts.goalId) : null;
+    if (existing) {
+      openEditModal(existing, Math.max(0, dayIndexOf(existing)));
+      return;
+    }
     const goal = opts.goalId
       ? roles.flatMap((r) => r.goals.map((g) => ({ ...g, roleId: r.id }))).find((g) => g.id === opts.goalId)
       : null;
@@ -114,6 +164,12 @@ export function WeekDesktopView({ week }: { week: WeekData }) {
     setModalError(null);
   }
 
+  /** Anytime-limit refusals are a toast; anything else stays inline. */
+  function reportSaveError(result: { error: string; code?: string }) {
+    if (result.code === ANYTIME_LIMIT_REACHED) showToast(ANYTIME_LIMIT_MESSAGE);
+    else setModalError(result.error);
+  }
+
   async function saveModal() {
     if (!modal) return;
     const role = roles.find((r) => r.id === modal.roleId);
@@ -125,14 +181,26 @@ export function WeekDesktopView({ week }: { week: WeekData }) {
     }
     const hour = modal.hour ? Number(modal.hour.split(":")[0]) : null;
 
+    // Anytime cap (lib/scheduleRules.ts). Only checked when this save would
+    // take a new Anytime slot; the server enforces the same rule.
+    const editing = modal.id ? blocks.find((b) => b.id === modal.id) : null;
+    const staysAnytimeInPlace =
+      !!editing && editing.isPriority && dayIndexOf(editing) === modal.dayIndex;
+    if (hour === null && !staysAnytimeInPlace && !canAddAnytime(modal.dayIndex, modal.id)) {
+      showToast(ANYTIME_LIMIT_MESSAGE);
+      return;
+    }
+
     if (modal.id) {
       const result = await updateBlock(modal.id, {
         roleId: modal.roleId,
         goalId: goal ? goal.id : null,
         title,
+        day: days[modal.dayIndex],
+        hour,
       });
       if (!result.ok) {
-        setModalError(result.error);
+        reportSaveError(result);
         return;
       }
     } else {
@@ -145,7 +213,7 @@ export function WeekDesktopView({ week }: { week: WeekData }) {
         isPriority: hour == null,
       });
       if (!result.ok) {
-        setModalError(result.error);
+        reportSaveError(result);
         return;
       }
     }
@@ -159,77 +227,90 @@ export function WeekDesktopView({ week }: { week: WeekData }) {
     setModal(null);
   }
 
-  // ---------- Drag a goal's grip onto a day column ----------
+  // ---------- Drag & drop ----------
+  // Payload is "goal:<id>" (a goal's grip) or "block:<id>" (a scheduled
+  // card). A scheduled goal's grip carries its block, so both paths move
+  // the one existing block; only an unscheduled goal opens the modal.
   function onGoalDragStart(e: React.DragEvent, goalId: string) {
-    e.dataTransfer.setData("text/plain", goalId);
-    e.dataTransfer.effectAllowed = "copy";
+    const existing = blockForGoal(goalId);
+    if (existing) {
+      onBlockDragStart(e, existing.id);
+      return;
+    }
+    e.dataTransfer.setData("text/plain", `goal:${goalId}`);
+    e.dataTransfer.effectAllowed = "copyMove";
+  }
+  function onBlockDragStart(e: React.DragEvent, blockId: string) {
+    e.dataTransfer.setData("text/plain", `block:${blockId}`);
+    e.dataTransfer.effectAllowed = "move";
+    setDraggingBlockId(blockId);
+  }
+  function onDragEnd() {
+    setDraggingBlockId(null);
+    setDragOverDay(null);
   }
   function onDayDragOver(e: React.DragEvent, dayIndex: number) {
     e.preventDefault();
-    e.dataTransfer.dropEffect = "copy";
+    e.dataTransfer.dropEffect = draggingBlockId ? "move" : "copy";
     setDragOverDay(dayIndex);
   }
-  function onDayDrop(e: React.DragEvent, dayIndex: number) {
+  async function onDayDrop(e: React.DragEvent, dayIndex: number) {
     e.preventDefault();
     setDragOverDay(null);
-    const goalId = e.dataTransfer.getData("text/plain");
-    if (goalId) openCreateModal(dayIndex, { goalId });
+    setDraggingBlockId(null);
+    const [kind, id] = e.dataTransfer.getData("text/plain").split(":");
+    if (!id) return;
+    setBoardError(null);
+    if (kind === "block") {
+      const b = blocks.find((x) => x.id === id);
+      if (b?.isPriority && dayIndexOf(b) !== dayIndex && !canAddAnytime(dayIndex, id)) {
+        showToast(ANYTIME_LIMIT_MESSAGE);
+        return;
+      }
+      const result = await moveBlock(id, dayIndex);
+      if (!result.ok) {
+        if (result.code === ANYTIME_LIMIT_REACHED) showToast(ANYTIME_LIMIT_MESSAGE);
+        else setBoardError(result.error);
+      }
+    } else if (kind === "goal") {
+      openCreateModal(dayIndex, { goalId: id });
+    }
   }
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-sm text-[#9CA3AF]">
+      <div className="flex min-h-[60vh] items-center justify-center text-sm text-[#9CA3AF]">
         Loading your week...
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2]">
-      <div className="sticky top-0 z-20 flex items-center justify-between gap-4 border-b border-[#ECE8DF] bg-[rgba(250,247,242,0.9)] px-10 py-3 backdrop-blur-sm">
-        <div className="flex items-center gap-2.5">
-          <div className="grid h-6 w-6 grid-cols-2 grid-rows-2 gap-[2.5px] rounded-[5px] bg-[#FFF0E0] p-1 shadow-[0_0_0_1px_rgba(249,115,22,0.2)]">
-            <span className="rounded-[1.5px] bg-[#E5E7EB]" />
-            <span className="rounded-[1.5px] bg-[#F97316]" />
-            <span className="rounded-[1.5px] bg-[#E5E7EB]" />
-            <span className="rounded-[1.5px] bg-[#E5E7EB]" />
-          </div>
-          <span className="font-serif text-[19px] font-bold tracking-[-0.01em] text-[#1F2937]">
-            Quadrant
-          </span>
-        </div>
-        <div className="flex items-center gap-3.5">
-          <button
-            onClick={goToPreviousWeek}
-            className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-[#ECE8DF] bg-white text-[#6B7280] hover:bg-[#F3F4F6]"
-            aria-label="Previous week"
-          >
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-          </button>
-          <span className="font-mono text-[11px] text-[#9CA3AF]">
-            {fmtShort(days[0])} &ndash; {fmtShort(days[6])}
-          </span>
-          <button
-            onClick={goToNextWeek}
-            className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-[#ECE8DF] bg-white text-[#6B7280] hover:bg-[#F3F4F6]"
-            aria-label="Next week"
-          >
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </button>
-          <NotificationBell />
-        </div>
-      </div>
-
-      <div className="mx-auto max-w-[1320px] px-10 pb-20 pt-[34px]">
+    <div>
+      <div className="mx-auto max-w-[1600px] px-6 pb-20 pt-[34px] lg:px-8 2xl:px-10">
         <header className="mb-[26px] flex flex-wrap items-end justify-between gap-6 border-b border-[#ECE8DF] pb-[22px]">
           <div>
             <div className="inline-flex items-center gap-2.5 font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-[#9CA3AF]">
               <b className="rounded border border-[#FED7AA] bg-[#FFF7ED] px-1.5 py-0.5 text-[#C2410C]">A-01</b>
+              <button
+                onClick={goToPreviousWeek}
+                className="flex h-6 w-6 items-center justify-center rounded-md border border-[#ECE8DF] bg-white text-[#6B7280] hover:bg-[#F3F4F6]"
+                aria-label="Previous week"
+              >
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
+              </button>
               <span>Week of {fmtShort(days[0])} – {fmtShort(days[6])}</span>
+              <button
+                onClick={goToNextWeek}
+                className="flex h-6 w-6 items-center justify-center rounded-md border border-[#ECE8DF] bg-white text-[#6B7280] hover:bg-[#F3F4F6]"
+                aria-label="Next week"
+              >
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
             </div>
             <h1 className="my-3 font-serif text-[40px] font-semibold leading-[1.1] tracking-[-0.015em] text-[#1F2937]">
               This week
@@ -246,13 +327,13 @@ export function WeekDesktopView({ week }: { week: WeekData }) {
           </div>
         </header>
 
-        {error && (
+        {(error || boardError) && (
           <p className="mb-5 rounded-lg bg-[#FDECEC] px-3 py-2 text-xs text-[#C0392B]">
-            {error}
+            {error ?? boardError}
           </p>
         )}
 
-        <div className="grid grid-cols-[370px_minmax(0,1fr)] items-start gap-6 xl:grid-cols-[370px_minmax(0,1fr)] max-xl:grid-cols-1">
+        <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[280px_minmax(0,1fr)] xl:gap-5 2xl:grid-cols-[300px_minmax(0,1fr)] 2xl:gap-6">
           {/* ---------- Left: roles + goals ---------- */}
           <section aria-label="Goals by role" className="sticky top-[84px] max-xl:static">
             <div className="mb-3.5 flex items-baseline justify-between">
@@ -278,13 +359,13 @@ export function WeekDesktopView({ week }: { week: WeekData }) {
                     onClick={() => toggleCollapse(role.id)}
                     className="flex w-full items-center gap-2.5 px-3.5 py-3 text-left"
                   >
-                    <span className="text-[14.5px] font-semibold text-[#1F2937]">
+                    <span className="min-w-0 truncate text-[14.5px] font-semibold text-[#1F2937]" title={role.label}>
                       {role.label}
                     </span>
-                    <span className="font-mono text-[10px] uppercase tracking-[0.06em]" style={{ color }}>
+                    <span className="min-w-0 shrink-[100] truncate whitespace-nowrap font-mono text-[10px] uppercase tracking-[0.06em]" style={{ color }}>
                       {domainLabel(role.domain)}
                     </span>
-                    <span className="ml-auto font-mono text-[11px] text-[#9CA3AF]">
+                    <span className="ml-auto shrink-0 font-mono text-[11px] text-[#9CA3AF]">
                       {doneCount}/{role.goals.length}
                     </span>
                     <svg
@@ -317,12 +398,14 @@ export function WeekDesktopView({ week }: { week: WeekData }) {
                           onToggle={() => toggleGoal(g, role.id)}
                           onEdit={(title) => editGoalTitleLocal(g.id, role.id, title)}
                           onCommit={(title) => commitGoalTitle(g.id, title)}
+                          scheduled={blockForGoal(g.id)}
                           onSchedule={() =>
                             openCreateModal(todayIndex >= 0 ? todayIndex : 0, {
                               roleId: role.id,
                               goalId: g.id,
                             })
                           }
+                          onDragEnd={onDragEnd}
                           onDelete={() => deleteGoal(g.id, role.id)}
                         />
                       ))}
@@ -338,13 +421,13 @@ export function WeekDesktopView({ week }: { week: WeekData }) {
                 <circle cx="9" cy="12" r="1.6" /><circle cx="15" cy="12" r="1.6" />
                 <circle cx="9" cy="18" r="1.6" /><circle cx="15" cy="18" r="1.6" />
               </svg>
-              Drag a goal onto a day, or use the clock to schedule it.
+              Drag a goal onto a day to schedule it. Drag a scheduled block to move it.
             </p>
           </section>
 
-          {/* ---------- Right: the day board ---------- */}
-          <section aria-label="Week schedule" className="rounded-2xl border border-[#ECE8DF] bg-white p-5">
-            <div className="mb-3.5 flex items-baseline justify-between">
+          {/* ---------- Right: the day board (one column per day) ---------- */}
+          <section aria-label="Week schedule" className="min-w-0 rounded-2xl border border-[#ECE8DF] bg-white p-3 2xl:p-4">
+            <div className="mb-3.5 flex items-baseline justify-between px-1">
               <h2 className="font-serif text-xl font-semibold text-[#1F2937]">
                 The week ahead
               </h2>
@@ -354,75 +437,31 @@ export function WeekDesktopView({ week }: { week: WeekData }) {
               </span>
             </div>
 
-            <div className="flex flex-col gap-2">
-              {days.map((d, i) => {
-                const blocks = blocksForDay(i).sort(
-                  (a, b) => (a.hour ?? 99) - (b.hour ?? 99),
-                );
-                const isToday = i === todayIndex;
-                const isPast = todayIndex >= 0 && i < todayIndex;
-                const isOver = dragOverDay === i;
-                return (
-                  <div
+            <div className="overflow-x-auto">
+              <div className="grid min-w-[760px] grid-cols-7 overflow-hidden rounded-xl border border-[#ECE8DF]">
+                {days.map((d, i) => (
+                  <DayColumn
                     key={i}
+                    date={d}
+                    dayIndex={i}
+                    blocks={blocksForDay(i)}
+                    isToday={i === todayIndex}
+                    isPast={todayIndex >= 0 && i < todayIndex}
+                    isOver={dragOverDay === i}
+                    expanded={expandedDays.has(i)}
+                    onToggleExpanded={() => toggleExpandedDay(i)}
                     onDragOver={(e) => onDayDragOver(e, i)}
                     onDragLeave={() => setDragOverDay((cur) => (cur === i ? null : cur))}
                     onDrop={(e) => onDayDrop(e, i)}
-                    className={`grid min-h-[64px] grid-cols-[92px_minmax(0,1fr)_auto] items-start gap-3 rounded-xl border p-2.5 transition-colors ${
-                      isOver
-                        ? "border-[#F97316] bg-[#FFF7ED] shadow-[0_0_0_3px_rgba(249,115,22,0.12)]"
-                        : isToday
-                          ? "border-[#FED7AA] bg-white shadow-[0_0_0_3px_rgba(249,115,22,0.08)]"
-                          : isPast
-                            ? "border-[#ECE8DF] bg-transparent"
-                            : "border-[#ECE8DF] bg-[#FAF8F5]"
-                    }`}
-                  >
-                    <div className="flex h-full flex-col border-r border-[#ECE8DF] py-1 pr-3">
-                      <span className={`font-serif text-base font-semibold ${isToday ? "text-[#C2410C]" : "text-[#1F2937]"}`}>
-                        {isToday ? "Today" : DAY_NAMES_LONG[i]}
-                      </span>
-                      <span className="font-mono text-[10.5px] text-[#9CA3AF]">{fmtShort(d)}</span>
-                    </div>
-                    <div className="grid grid-cols-[repeat(auto-fill,minmax(170px,1fr))] content-start gap-2">
-                      {blocks.length === 0 ? (
-                        <p className="py-2 px-0.5 text-[12.5px] text-[#B7B2A7]">
-                          {isToday
-                            ? "Nothing scheduled yet — pull a goal into today."
-                            : isPast
-                              ? "Nothing placed."
-                              : "Open"}
-                        </p>
-                      ) : (
-                        blocks.map((b) => (
-                          <button
-                            key={b.id}
-                            onClick={() => openEditModal(b, i)}
-                            className="w-full rounded-lg border border-[#ECE8DF] border-l-[3px] bg-white px-2.5 py-1.5 text-left transition-transform hover:translate-x-0.5 hover:shadow-[0_2px_8px_rgba(31,41,55,0.06)]"
-                            style={{ borderLeftColor: domainColor(b.role.domain) }}
-                          >
-                            <div className="font-mono text-[10.5px] text-[#6B7280]">
-                              {fmtTime(b.hour)}
-                            </div>
-                            <div className="my-0.5 overflow-wrap-anywhere text-[13px] font-medium leading-tight text-[#1F2937]">
-                              {b.title}
-                            </div>
-                            <div className="font-mono text-[9.5px] uppercase tracking-[0.05em] text-[#9CA3AF]">
-                              {b.role.label}{b.goalId ? " · goal" : ""}
-                            </div>
-                          </button>
-                        ))
-                      )}
-                    </div>
-                    <button
-                      onClick={() => openCreateModal(i)}
-                      className="self-center whitespace-nowrap rounded-lg border border-dashed border-[#D6D2C8] px-2.5 py-1.5 text-xs text-[#8A8579] hover:bg-[#EFEBE1]"
-                    >
-                      + Add
-                    </button>
-                  </div>
-                );
-              })}
+                    onOpenBlock={(b) => openEditModal(b, i)}
+                    onBlockDragStart={onBlockDragStart}
+                    onDragEnd={onDragEnd}
+                    draggingBlockId={draggingBlockId}
+                    anytimeFull={!canAddAnytime(i)}
+                    onAdd={() => openCreateModal(i)}
+                  />
+                ))}
+              </div>
             </div>
           </section>
         </div>
@@ -433,6 +472,15 @@ export function WeekDesktopView({ week }: { week: WeekData }) {
           modal={modal}
           roles={roles}
           days={days}
+          blockForGoal={blockForGoal}
+          anytimeFull={
+            !canAddAnytime(modal.dayIndex, modal.id) &&
+            // an Anytime block staying on its own day keeps its slot
+            !(
+              modal.id &&
+              blocks.some((b) => b.id === modal.id && b.isPriority && dayIndexOf(b) === modal.dayIndex)
+            )
+          }
           error={modalError}
           onChange={setModal}
           onClose={() => setModal(null)}
@@ -441,6 +489,210 @@ export function WeekDesktopView({ week }: { week: WeekData }) {
         />
       )}
     </div>
+  );
+}
+
+const DAY_NAMES_SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+/**
+ * Timed blocks shown in a column before it collapses behind "+N more".
+ * Keeps one heavy day from stretching the whole board (every column shares
+ * the row height). Anytime items sit above and are never collapsed — there
+ * are at most ANYTIME_PER_DAY of them.
+ */
+const COLUMN_CAP = 5;
+
+function DayColumn({
+  date,
+  dayIndex,
+  blocks,
+  isToday,
+  isPast,
+  isOver,
+  expanded,
+  onToggleExpanded,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+  onOpenBlock,
+  onBlockDragStart,
+  onDragEnd,
+  draggingBlockId,
+  anytimeFull,
+  onAdd,
+}: {
+  date: Date;
+  dayIndex: number;
+  blocks: ScheduleBlock[];
+  isToday: boolean;
+  isPast: boolean;
+  isOver: boolean;
+  expanded: boolean;
+  onToggleExpanded: () => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDragLeave: () => void;
+  onDrop: (e: React.DragEvent) => void;
+  onOpenBlock: (b: ScheduleBlock) => void;
+  onBlockDragStart: (e: React.DragEvent, blockId: string) => void;
+  onDragEnd: () => void;
+  draggingBlockId: string | null;
+  /** This day already holds ANYTIME_PER_DAY Anytime items. */
+  anytimeFull: boolean;
+  onAdd: () => void;
+}) {
+  // Anytime (no hour) on top, then timed blocks by hour.
+  const anytime = blocks.filter((b) => b.hour == null);
+  const timed = blocks
+    .filter((b) => b.hour != null)
+    .sort((a, b) => (a.hour as number) - (b.hour as number));
+  const overflow = timed.length > COLUMN_CAP;
+  // When collapsed, show CAP-1 cards so the "+N more" row takes the last slot.
+  const visibleTimed = overflow && !expanded ? timed.slice(0, COLUMN_CAP - 1) : timed;
+  const hidden = timed.length - visibleTimed.length;
+
+  const card = (b: ScheduleBlock) => (
+    <BlockCard
+      key={b.id}
+      block={b}
+      muted={isPast}
+      dragging={draggingBlockId === b.id}
+      onOpen={() => onOpenBlock(b)}
+      onDragStart={(e) => onBlockDragStart(e, b.id)}
+      onDragEnd={onDragEnd}
+    />
+  );
+
+  return (
+    <div
+      role="group"
+      aria-label={`${DAY_NAMES_LONG[dayIndex]} ${fmtShort(date)}`}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+      className={`relative flex min-w-0 flex-col border-[#F1EEE7] transition-colors [&:not(:first-child)]:border-l ${
+        isOver
+          ? "bg-[#FFF7ED] shadow-[inset_0_0_0_2px_#F97316]"
+          : isToday
+            ? "bg-[#FFFBF7]"
+            : isPast
+              ? "bg-[#FCFBF8]"
+              : "bg-white"
+      }`}
+    >
+      {isToday && <span aria-hidden="true" className="absolute inset-x-0 top-0 h-[2px] bg-[#F97316]" />}
+
+      <div className="flex items-end justify-between gap-1 border-b border-[#F1EEE7] px-2.5 pb-2 pt-2.5">
+        <div className="min-w-0">
+          <div
+            className={`font-mono text-[10px] font-semibold uppercase tracking-[0.08em] ${
+              isToday ? "text-[#C2410C]" : isPast ? "text-[#C9CBCF]" : "text-[#9CA3AF]"
+            }`}
+          >
+            {isToday ? "Today" : DAY_NAMES_SHORT[dayIndex]}
+          </div>
+          <div
+            className={`font-serif text-[22px] font-semibold leading-none ${
+              isToday ? "text-[#C2410C]" : isPast ? "text-[#B7B2A7]" : "text-[#1F2937]"
+            }`}
+          >
+            {date.getUTCDate()}
+          </div>
+        </div>
+        {blocks.length > 0 && (
+          <span className="font-mono text-[10.5px] text-[#B7B2A7]">{blocks.length}</span>
+        )}
+      </div>
+
+      <div className="flex min-h-[260px] flex-1 flex-col gap-1.5 p-1.5">
+        {anytime.length > 0 && (
+          <>
+            <div className="flex items-center justify-between px-1 pt-0.5">
+              <span className="font-mono text-[9.5px] font-semibold uppercase tracking-[0.08em] text-[#9CA3AF]">
+                Anytime
+              </span>
+              <span
+                title={
+                  anytimeFull
+                    ? `This day holds the maximum of ${ANYTIME_PER_DAY} Anytime items`
+                    : `${anytime.length} of ${ANYTIME_PER_DAY} Anytime slots used`
+                }
+                className={`font-mono text-[9.5px] ${anytimeFull ? "text-[#C2410C]" : "text-[#B7B2A7]"}`}
+              >
+                {anytime.length}/{ANYTIME_PER_DAY}
+              </span>
+            </div>
+            {anytime.map(card)}
+            {timed.length > 0 && (
+              <div role="separator" aria-hidden="true" className="mx-1 my-0.5 border-t border-dashed border-[#E5E1D8]" />
+            )}
+          </>
+        )}
+
+        {visibleTimed.map(card)}
+
+        {overflow && (
+          <button
+            onClick={onToggleExpanded}
+            className="rounded-md px-2 py-1 text-left font-mono text-[10.5px] text-[#8A8579] hover:bg-[#F3EEE6] hover:text-[#1F2937]"
+          >
+            {expanded ? "Show less" : `+${hidden} more`}
+          </button>
+        )}
+
+        {blocks.length === 0 && isToday && (
+          <p className="px-1.5 py-1 text-[11.5px] leading-snug text-[#B7B2A7]">
+            Nothing yet. Pull a goal in.
+          </p>
+        )}
+
+        <button
+          onClick={onAdd}
+          title={`Add to ${DAY_NAMES_LONG[dayIndex]}`}
+          className="mt-auto rounded-md border border-dashed border-transparent px-2 py-1.5 text-left text-[11.5px] text-[#B7B2A7] transition-colors hover:border-[#D6D2C8] hover:bg-[#FAF8F5] hover:text-[#8A8579]"
+        >
+          + Add
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function BlockCard({
+  block,
+  muted,
+  dragging,
+  onOpen,
+  onDragStart,
+  onDragEnd,
+}: {
+  block: ScheduleBlock;
+  muted: boolean;
+  dragging: boolean;
+  onOpen: () => void;
+  onDragStart: (e: React.DragEvent) => void;
+  onDragEnd: () => void;
+}) {
+  return (
+    <button
+      draggable
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      onClick={onOpen}
+      title={`${block.title} · ${block.role.label} — drag to another day to move it`}
+      className={`w-full cursor-grab rounded-md border border-[#ECE8DF] border-l-[3px] bg-white px-2 py-1.5 text-left transition-shadow hover:shadow-[0_2px_8px_rgba(31,41,55,0.08)] active:cursor-grabbing ${
+        dragging ? "opacity-40" : muted ? "opacity-70 hover:opacity-100" : ""
+      }`}
+      style={{ borderLeftColor: domainColor(block.role.domain) }}
+    >
+      <div className="font-mono text-[10px] text-[#6B7280]">{fmtTime(block.hour)}</div>
+      <div className="my-0.5 line-clamp-3 text-[12.5px] font-medium leading-snug text-[#1F2937] wrap-anywhere">
+        {block.title}
+      </div>
+      <div className="truncate font-mono text-[9px] uppercase tracking-[0.05em] text-[#9CA3AF]">
+        {block.role.label}
+        {block.goalId ? " · goal" : ""}
+      </div>
+    </button>
   );
 }
 
@@ -463,7 +715,9 @@ function GoalRow({
   onToggle,
   onEdit,
   onCommit,
+  scheduled,
   onSchedule,
+  onDragEnd,
   onDelete,
 }: {
   goal: Goal;
@@ -471,16 +725,21 @@ function GoalRow({
   onToggle: () => void;
   onEdit: (title: string) => void;
   onCommit: (title: string) => void;
+  /** The goal's one block, if it has a place in the week already. */
+  scheduled: ScheduleBlock | null;
   onSchedule: () => void;
+  onDragEnd: () => void;
   onDelete: () => void;
 }) {
   const done = goal.status === "DONE";
+  const when = scheduled ? scheduledLabel(scheduled) : null;
   return (
     <div className="mb-1.5 flex items-center gap-1.5 rounded-lg bg-white py-1.5 pl-1 pr-1.5">
       <span
         draggable
         onDragStart={onDragStart}
-        title="Drag onto a day"
+        onDragEnd={onDragEnd}
+        title={scheduled ? "Drag onto another day to move it" : "Drag onto a day"}
         className="grid shrink-0 cursor-grab place-items-center p-1 text-[#D6D2C8] hover:text-[#9CA3AF] active:cursor-grabbing"
       >
         <svg viewBox="0 0 24 24" width="12" height="14" fill="currentColor">
@@ -504,17 +763,29 @@ function GoalRow({
       </button>
       <input
         value={goal.title}
+        title={goal.title}
         onChange={(e) => onEdit(e.target.value)}
         onBlur={(e) => onCommit(e.target.value)}
-        className={`flex-1 bg-transparent p-0.5 text-[13.5px] ${
+        className={`min-w-0 flex-1 truncate bg-transparent p-0.5 text-[13.5px] ${
           done ? "text-[#B3AFA6] line-through" : "text-[#1F2937]"
         }`}
       />
-      <button onClick={onSchedule} aria-label="Schedule it" title="Schedule it" className="shrink-0 p-0.5 text-[#C9CBCF] hover:text-[#F97316]">
-        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="9" /><polyline points="12 7 12 12 15 14" />
-        </svg>
-      </button>
+      {when ? (
+        <button
+          onClick={onSchedule}
+          aria-label={`Scheduled ${when} — reschedule`}
+          title="Scheduled — click to change day or time"
+          className="shrink-0 whitespace-nowrap rounded-md bg-[#FFF7ED] px-1.5 py-0.5 font-mono text-[10px] font-medium text-[#C2410C] hover:bg-[#FFEDD5]"
+        >
+          {when}
+        </button>
+      ) : (
+        <button onClick={onSchedule} aria-label="Schedule it" title="Schedule it" className="shrink-0 p-0.5 text-[#C9CBCF] hover:text-[#F97316]">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="9" /><polyline points="12 7 12 12 15 14" />
+          </svg>
+        </button>
+      )}
       <button onClick={onDelete} aria-label="Remove goal" title="Remove" className="shrink-0 p-0.5 text-[#C9CBCF] hover:text-[#E15656]">
         <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
           <path d="M18 6 6 18" /><path d="M6 6l12 12" />
@@ -557,6 +828,8 @@ function BlockModal({
   modal,
   roles,
   days,
+  blockForGoal,
+  anytimeFull,
   error,
   onChange,
   onClose,
@@ -566,6 +839,9 @@ function BlockModal({
   modal: ModalState;
   roles: Role[];
   days: Date[];
+  blockForGoal: (goalId: string) => ScheduleBlock | null;
+  /** The chosen day has no Anytime slot left for this block. */
+  anytimeFull: boolean;
   error: string | null;
   onChange: (m: ModalState) => void;
   onClose: () => void;
@@ -573,7 +849,15 @@ function BlockModal({
   onDelete?: () => void;
 }) {
   const role = roles.find((r) => r.id === modal.roleId);
-  const goals = role?.goals.filter((g) => g.status !== "DONE" || g.id === modal.goalId) ?? [];
+  // One place per goal: hide goals that already have a block elsewhere
+  // (the goal this block already holds stays selectable).
+  const goals =
+    role?.goals.filter((g) => {
+      if (g.id === modal.goalId) return true;
+      if (g.status === "DONE") return false;
+      const b = blockForGoal(g.id);
+      return !b || b.id === modal.id;
+    }) ?? [];
 
   return (
     <div
@@ -586,7 +870,7 @@ function BlockModal({
             {modal.id ? "Edit time block" : "Schedule a goal"}
           </div>
           <h3 className="mt-1 font-serif text-[22px] font-semibold text-[#1F2937]">
-            {modal.id ? "Adjust this block" : "Give it a place in the week"}
+            {modal.id ? "Move or adjust this block" : "Give it a place in the week"}
           </h3>
         </div>
 
@@ -647,8 +931,7 @@ function BlockModal({
             <select
               value={modal.dayIndex}
               onChange={(e) => onChange({ ...modal, dayIndex: Number(e.target.value) })}
-              disabled={!!modal.id}
-              className="w-full rounded-lg border border-[#E5E1D8] bg-[#FCFBF8] px-3 py-2.5 text-sm disabled:opacity-60"
+              className="w-full rounded-lg border border-[#E5E1D8] bg-[#FCFBF8] px-3 py-2.5 text-sm"
             >
               {DAY_NAMES_LONG.map((d, i) => (
                 <option key={d} value={i}>
@@ -659,14 +942,16 @@ function BlockModal({
           </div>
           <div>
             <label className="mb-1 block font-mono text-[10.5px] uppercase tracking-[0.06em] text-[#9CA3AF]">
-              Time <span className="normal-case tracking-normal">(optional)</span>
+              Time{" "}
+              <span className="normal-case tracking-normal">
+                {anytimeFull ? "(required)" : "(optional)"}
+              </span>
             </label>
             <input
               type="time"
               value={modal.hour}
               onChange={(e) => onChange({ ...modal, hour: e.target.value })}
-              disabled={!!modal.id}
-              className="w-full rounded-lg border border-[#E5E1D8] bg-[#FCFBF8] px-3 py-2.5 text-sm disabled:opacity-60"
+              className="w-full rounded-lg border border-[#E5E1D8] bg-[#FCFBF8] px-3 py-2.5 text-sm"
             />
           </div>
         </div>

@@ -28,6 +28,7 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
     addGoal,
     deleteBlock,
     scheduleForToday,
+    blockForGoal,
   } = week;
 
   const [openRoleId, setOpenRoleId] = useState<string | null>(null);
@@ -234,7 +235,9 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
                 <option value="">Something else...</option>
                 {roles
                   .find((r) => r.id === formRoleId)
-                  ?.goals.map((g) => (
+                  // One place per goal: already-scheduled goals aren't offered.
+                  ?.goals.filter((g) => !blockForGoal(g.id))
+                  .map((g) => (
                     <option key={g.id} value={g.id}>
                       {g.title}
                     </option>
@@ -349,6 +352,15 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
                               : "text-[#1F2937]"
                           }`}
                         />
+                        {blockForGoal(g.id) ? (
+                          <Link
+                            href="/schedule"
+                            className="shrink-0 rounded-md bg-[#FFF7ED] px-1.5 py-0.5 font-mono text-[10px] font-medium text-[#C2410C]"
+                            aria-label="Scheduled — view in schedule"
+                          >
+                            Scheduled
+                          </Link>
+                        ) : (
                         <button
                           onClick={() => openScheduleForm(role.id, g.id)}
                           className="shrink-0 p-0.5 text-[#C9CBCF] hover:text-[#F97316]"
@@ -368,6 +380,7 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
                             <polyline points="12 7 12 12 15 14" />
                           </svg>
                         </button>
+                        )}
                         <button
                           onClick={() => deleteGoal(g.id, role.id)}
                           className="shrink-0 p-0.5 text-[#C9CBCF] hover:text-[#E15656]"

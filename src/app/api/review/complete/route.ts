@@ -3,7 +3,11 @@ import { z } from "zod";
 import { auth } from "../../../../../lib/auth";
 import { prisma } from "../../../../../lib/prisma";
 import { startOfWeek } from "../../../../../lib/week";
-import { getEarliestUnreviewedWeekStart } from "../../../../../lib/weeklyReviewGate";
+import {
+  getEarliestUnreviewedWeekStart,
+  resolveReviewWeek,
+  reviewWeekGoalsWhere,
+} from "../../../../../lib/weeklyReviewGate";
 
 const bodySchema = z.object({
   weekStart: z.string(), // the week being reviewed (the past week)
@@ -45,10 +49,11 @@ export async function POST(req: Request) {
     );
   }
 
-  const reviewedWeek = startOfWeek(new Date(parsed.data.weekStart));
+  const reviewedWeek = await resolveReviewWeek(userId, parsed.data.weekStart);
 
+  // Same week + matching as GET /api/review and the gate (lib/weeklyReviewGate.ts).
   const goals = await prisma.goal.findMany({
-    where: { weekStart: reviewedWeek, role: { userId } },
+    where: reviewWeekGoalsWhere(userId, reviewedWeek),
     include: { reviewEntry: true },
   });
 
@@ -72,8 +77,31 @@ export async function POST(req: Request) {
   );
 
   const currentWeek = startOfWeek();
+
+  // Idempotent: completing the same week twice (a retry, a double click, or a
+  // week re-opened after a data repair) must not duplicate carried goals.
+  // A goal counts as already carried when the same role already has a goal
+  // with the same title in the current week. There is no compound unique key
+  // to upsert on, so check first.
+  const existing = toCarry.length
+    ? await prisma.goal.findMany({
+        where: {
+          weekStart: currentWeek,
+          roleId: { in: [...new Set(toCarry.map((g) => g.roleId))] },
+        },
+        select: { roleId: true, title: true },
+      })
+    : [];
+  const have = new Set(existing.map((g) => `${g.roleId}\u0000${g.title}`));
+  const fresh = toCarry.filter((g) => {
+    const k = `${g.roleId}\u0000${g.title}`;
+    if (have.has(k)) return false;
+    have.add(k);
+    return true;
+  });
+
   const created = await prisma.$transaction(
-    toCarry.map((g: any) =>
+    fresh.map((g) =>
       prisma.goal.create({
         data: { roleId: g.roleId, title: g.title, weekStart: currentWeek },
       }),

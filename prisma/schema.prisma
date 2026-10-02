@@ -87,12 +87,16 @@ model Goal {
   title         String
   status        GoalStatus @default(IN_PROGRESS)
   carryForward  Boolean    @default(false)
+  /// Always the Monday of the week (UTC date from lib/week startOfWeek()).
+  /// Enforced by the goals_weekStart_is_monday CHECK constraint (migration
+  /// 20261001120000): week queries match it by equality, so any other day
+  /// would be unreachable by the weekly review.
   weekStart     DateTime   @db.Date
   createdAt     DateTime   @default(now())
 
   role           Role            @relation(fields: [roleId], references: [id], onDelete: Cascade)
   reviewEntry    ReviewEntry?
-  scheduleBlocks ScheduleBlock[]
+  scheduleBlock  ScheduleBlock?
   completedAt DateTime?
 
   @@index([roleId, weekStart])
@@ -118,7 +122,7 @@ model ReviewEntry {
 model ScheduleBlock {
   id         String   @id @default(uuid())
   roleId     String
-  goalId     String?
+  goalId     String?  @unique // a goal has at most one place in the week
   day        DateTime @db.Date
   hour       Int?
   isPriority Boolean  @default(false)

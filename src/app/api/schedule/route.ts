@@ -2,7 +2,15 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "../../../../lib/auth";
 import { prisma } from "../../../../lib/prisma";
-import { startOfDay } from "../../../../lib/week";
+import { startOfDay, parseDayKey } from "../../../../lib/week";
+import {
+  anytimeDayFull,
+  anytimeLimitReached,
+  goalAlreadyScheduled,
+  isAnytimeLimitError,
+  isUniqueViolation,
+  loadOwnedGoal,
+} from "../../../../lib/scheduleGoal";
 
 /**
  * GET /api/schedule — today's agenda only (used by the weekly goals page).
@@ -61,21 +69,44 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Role not found" }, { status: 404 });
   }
 
-  const day = parsed.data.day
-    ? startOfDay(new Date(parsed.data.day))
-    : startOfDay();
+  const day = parsed.data.day ? parseDayKey(parsed.data.day) : startOfDay();
 
-  const block = await prisma.scheduleBlock.create({
-    data: {
-      roleId: role.id,
-      goalId: parsed.data.goalId ?? null,
-      day,
-      hour: parsed.data.isPriority ? null : (parsed.data.hour ?? null),
-      isPriority: parsed.data.isPriority,
-      title: parsed.data.title,
-    },
-    include: { role: true },
-  });
+  // A goal has one place in the week. Scheduling it again is a move, which
+  // goes through PATCH /api/schedule/[id] — never a second block.
+  const goalId = parsed.data.goalId ?? null;
+  if (goalId) {
+    const goal = await loadOwnedGoal(goalId, userId);
+    if (!goal) {
+      return NextResponse.json({ error: "Goal not found" }, { status: 404 });
+    }
+    const existing = await prisma.scheduleBlock.findUnique({ where: { goalId } });
+    if (existing) return goalAlreadyScheduled(existing);
+  }
+
+  // At most ANYTIME_PER_DAY untimed items per day (lib/scheduleRules.ts).
+  if (parsed.data.isPriority && (await anytimeDayFull(userId, day))) {
+    return anytimeLimitReached();
+  }
+
+  let block;
+  try {
+    block = await prisma.scheduleBlock.create({
+      data: {
+        roleId: role.id,
+        goalId,
+        day,
+        hour: parsed.data.isPriority ? null : (parsed.data.hour ?? null),
+        isPriority: parsed.data.isPriority,
+        title: parsed.data.title,
+      },
+      include: { role: true },
+    });
+  } catch (e) {
+    // Lost a race with another request scheduling the same goal.
+    if (isUniqueViolation(e)) return goalAlreadyScheduled(null);
+    if (isAnytimeLimitError(e)) return anytimeLimitReached();
+    throw e;
+  }
 
   return NextResponse.json({ block });
 }

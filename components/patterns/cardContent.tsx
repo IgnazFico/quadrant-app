@@ -38,7 +38,18 @@ function topDaypart(d: { morning: number; afternoon: number; evening: number }) 
   return (Object.entries(d) as [string, number][]).sort((a, b) => b[1] - a[1])[0][0];
 }
 
-export function renderPatternCard(id: string, data: PatternsData): React.ReactNode {
+/**
+ * `fill` (desktop Reflect grid): the card may be stretched taller than its
+ * content by a neighbour in the same grid row. The Rhythm chart then grows
+ * to fill it instead of leaving a gap, and the Presence heatmap is capped so
+ * its square cells don't balloon on wide cards. Mobile omits it.
+ */
+export function renderPatternCard(
+  id: string,
+  data: PatternsData,
+  opts: { fill?: boolean } = {},
+): React.ReactNode {
+  const fill = !!opts.fill;
   if (id === "rhythm") {
     const maxCount = Math.max(1, ...data.rhythm.weekday.map((w) => w.count));
     const busiest = [...data.rhythm.weekday].sort((a, b) => b.count - a.count)[0];
@@ -52,11 +63,11 @@ export function renderPatternCard(id: string, data: PatternsData): React.ReactNo
           {busiest && busiest.count > 0 ? `${expandDay(busiest.label)}s are usually where things come together.` : "Not enough finished goals yet to see a shape here."}
         </Title>
 
-        <div className="mt-1.5 mb-3.5 flex h-[88px] items-end gap-1.5">
+        <div className={`mt-1.5 mb-3.5 flex items-end gap-1.5 ${fill ? "min-h-[88px] flex-1" : "h-[88px]"}`}>
           {data.rhythm.weekday.map((w) => (
             <div key={w.label} className="flex h-full flex-1 flex-col items-center justify-end">
               <div
-                className="w-full max-w-[22px] rounded-[11px]"
+                className={`w-full rounded-[11px] ${fill ? "max-w-[34px]" : "max-w-[22px]"}`}
                 style={{
                   height: `${Math.max((w.count / maxCount) * 100, 5)}%`,
                   background: w.label === busiest?.label && w.count > 0 ? "#F97316" : "rgba(255,255,255,.55)",
@@ -83,7 +94,7 @@ export function renderPatternCard(id: string, data: PatternsData): React.ReactNo
         <div className="mb-1.5 font-serif text-[46px] font-bold leading-none" style={{ color: "#8A331F" }}>{data.presence.activeDaysCount}</div>
         <p className="mb-4.5 text-[13px] font-medium" style={{ color: "#A6482E" }}>separate days you opened Quadrant this month.</p>
 
-        <div className="mb-4 grid grid-cols-7 gap-1.5">
+        <div className={`mb-4 grid grid-cols-7 gap-1.5 ${fill ? "max-w-[280px]" : ""}`}>
           {data.presence.heatmap.map((d) => (
             <div key={d.date} className="aspect-square rounded-[7px]" style={{ background: d.active ? "rgba(180,67,42,.75)" : "rgba(180,67,42,.12)" }} />
           ))}

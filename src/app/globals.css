@@ -104,3 +104,8 @@ body {
 .animate-cta-fade {
   animation: fade-slide-up 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.35s backwards;
 }
+
+/* Toast entrance (components/toast/Toaster.tsx) */
+.toast-in {
+  animation: fade-slide-up 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}

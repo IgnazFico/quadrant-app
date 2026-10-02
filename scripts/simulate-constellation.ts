@@ -29,6 +29,12 @@ type Row = {
   done?: string;
 };
 
+/** Monday (UTC) of a YYYY-MM-DD date. goals.weekStart must be a Monday (DB CHECK). */
+function mondayOf(day: string): Date {
+  const d = new Date(`${day}T00:00:00Z`);
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - ((d.getUTCDay() + 6) % 7)));
+}
+
 async function goals(roleId: string, rows: Row[]) {
   for (const r of rows) {
     for (let i = 0; i < r.n; i++) {
@@ -37,7 +43,7 @@ async function goals(roleId: string, rows: Row[]) {
           roleId,
           title: `goal ${r.week} ${i}`,
           status: r.status,
-          weekStart: new Date(`${r.week}T00:00:00Z`),
+          weekStart: mondayOf(r.week),
           completedAt:
             r.status === "DONE" ? new Date(`${r.done ?? r.week}T12:00:00Z`) : null,
         },

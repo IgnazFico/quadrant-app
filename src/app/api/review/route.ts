@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import { auth } from "../../../../lib/auth";
 import { prisma } from "../../../../lib/prisma";
-import { startOfWeek, addDays } from "../../../../lib/week";
-import { getEarliestUnreviewedWeekStart } from "../../../../lib/weeklyReviewGate";
+import { weekRange } from "../../../../lib/week";
+import {
+  getEarliestUnreviewedWeekStart,
+  resolveReviewWeek,
+} from "../../../../lib/weeklyReviewGate";
 
 /**
  * GET /api/review?weekStart=YYYY-MM-DD
@@ -13,6 +16,10 @@ import { getEarliestUnreviewedWeekStart } from "../../../../lib/weeklyReviewGate
  * showed "last week" while an older week was still unresolved, completing
  * "last week" could never satisfy the gate, causing a redirect loop back
  * to this same page.
+ *
+ * The returned weekStart is always a Monday (startOfWeek). The client must
+ * treat it as an opaque key and send it back verbatim; it is only ever
+ * re-snapped here, never re-derived from local-time Date math.
  *
  * Reason text stays encrypted here — the client decrypts it locally with
  * the master key before displaying it. This route only ever sees ciphertext.
@@ -26,16 +33,22 @@ export async function GET(req: Request) {
 
   const url = new URL(req.url);
   const param = url.searchParams.get("weekStart");
-  const weekStart = param
-    ? startOfWeek(new Date(param))
-    : (await getEarliestUnreviewedWeekStart(userId)) ?? addDays(startOfWeek(), -7);
+  // `due`: some past week still has an unresolved goal (the same check as
+  // the layout gate). When false, the review has nothing to ask yet and the
+  // desktop Reflect page shows "this week so far" instead (see
+  // components/reflect/ReflectDesktopView.tsx).
+  const earliest = await getEarliestUnreviewedWeekStart(userId);
+  const weekStart = await resolveReviewWeek(userId, param);
+  // Range, not equality: this must load every goal the gate can see in this
+  // week, or the gate can never be cleared (see lib/weeklyReviewGate.ts).
+  const inWeek = weekRange(weekStart);
 
   const roles = await prisma.role.findMany({
-    where: { userId, goals: { some: { weekStart } } },
+    where: { userId, goals: { some: { weekStart: inWeek } } },
     orderBy: { createdAt: "asc" },
     include: {
       goals: {
-        where: { weekStart },
+        where: { weekStart: inWeek },
         orderBy: { createdAt: "asc" },
         include: { reviewEntry: true },
       },
@@ -58,5 +71,5 @@ export async function GET(req: Request) {
     })),
   }));
 
-  return NextResponse.json({ weekStart, roles: serialized });
+  return NextResponse.json({ weekStart, roles: serialized, due: earliest !== null });
 }

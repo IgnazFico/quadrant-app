@@ -45,6 +45,9 @@ export function useReview() {
   const [weekStart, setWeekStartState] = useState<Date | null>(null);
   const [fetchedWeekStart, setFetchedWeekStart] = useState<string | null>(null);
   const [roles, setRoles] = useState<ReviewRole[]>([]);
+  // True while some past week still needs reflecting (server's gate check).
+  // Null until the first load answers.
+  const [due, setDue] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeReflect, setActiveReflect] = useState<{
@@ -94,6 +97,7 @@ export function useReview() {
         const resolvedWeekStart = new Date(body.weekStart);
         setWeekStartState(resolvedWeekStart);
         setFetchedWeekStart(resolvedWeekStart.toISOString().slice(0, 10));
+        setDue(Boolean(body.due));
         const withReasons: ReviewRole[] = await Promise.all(
           body.roles.map(async (r: ReviewRole) => {
             const goalsWithReasons = await Promise.all(
@@ -245,6 +249,18 @@ export function useReview() {
       return;
     }
     const { carriedCount, nextUnreviewedWeekStart } = await res.json();
+    // The server just accepted this week as complete, so it can never be the
+    // next outstanding week. If it is, the gate and this page disagree about
+    // what the week contains; advancing "in place" would reload the same week
+    // forever. Stop and say so instead of looping.
+    const doneKey = weekStart.toISOString().slice(0, 10);
+    if (
+      nextUnreviewedWeekStart &&
+      new Date(nextUnreviewedWeekStart).toISOString().slice(0, 10) === doneKey
+    ) {
+      setError("This week still shows as open. Refresh the page; if it persists, let us know.");
+      return;
+    }
     setToast(
       `Review complete — ${carriedCount} goal${carriedCount === 1 ? "" : "s"} carried into next week`,
     );
@@ -268,6 +284,7 @@ export function useReview() {
 
   return {
     weekStart,
+    due,
     weekOptions,
     roles,
     loading,
