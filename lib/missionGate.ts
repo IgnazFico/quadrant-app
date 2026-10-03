@@ -1,9 +1,16 @@
 import { prisma } from "./prisma";
 
-/** Upserts today's activity row for this user. Safe to call multiple times a day. */
-export async function recordActivityToday(userId: string) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+/**
+ * Upserts the activity row for the user's local calendar day. Safe to call
+ * multiple times a day.
+ *
+ * `day` is the UTC-midnight Date of the client's local date (see
+ * parseClientDay in lib/week.ts). Never derive it from the server clock:
+ * `new Date().setHours(0,0,0,0)` is server-local midnight, and @db.Date keeps
+ * its UTC date, which filed UTC+7 users' visits under the previous day.
+ */
+export async function recordActivityToday(userId: string, day: Date) {
+  const today = day;
 
   // Verify the user still exists before writing — prevents FK violations
   // from stale JWTs after database resets.

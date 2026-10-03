@@ -55,6 +55,24 @@ export function parseDayKey(s: string): Date {
   return startOfDay(new Date(s));
 }
 
+/**
+ * Parses a calendar day sent by the client ("YYYY-MM-DD", the user's local
+ * date) into the UTC-midnight Date that @db.Date stores verbatim. Returns
+ * null unless the string is a real date within ±1 day of the server's UTC
+ * date: every timezone (UTC-12..UTC+14) falls inside that window, so this
+ * accepts every honest client and rejects arbitrary backfilled days.
+ */
+export function parseClientDay(s: unknown, now: Date = new Date()): Date | null {
+  if (typeof s !== "string") return null;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  if (!m) return null;
+  const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+  if (dayKey(d) !== s) return null; // rejects 2026-02-30 etc.
+  const todayUtc = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const diffDays = Math.round((d.getTime() - todayUtc) / 86_400_000);
+  return Math.abs(diffDays) <= 1 ? d : null;
+}
+
 export function addDays(d: Date, n: number): Date {
   const date = new Date(d);
   return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + n));

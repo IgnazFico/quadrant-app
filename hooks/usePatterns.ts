@@ -23,7 +23,10 @@ export function usePatterns(): PatternsState {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch("/api/patterns");
+        // Send the user's local month: the API's default comes from the
+        // server clock (UTC on Vercel), which lags UTC+ users at month start.
+        const now = new Date();
+        const res = await fetch(`/api/patterns?year=${now.getFullYear()}&month=${now.getMonth() + 1}`);
         if (res.ok && !cancelled) setData(await res.json());
       } finally {
         if (!cancelled) setLoading(false);

@@ -35,7 +35,8 @@ export function PatternsPageAlt() {
 
   useEffect(() => {
     (async () => {
-      const res = await fetch("/api/patterns");
+      const now = new Date();
+      const res = await fetch(`/api/patterns?year=${now.getFullYear()}&month=${now.getMonth() + 1}`);
       if (res.ok) setData(await res.json());
       setLoading(false);
     })();

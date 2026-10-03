@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import { auth } from "../../../../lib/auth";
 import { getPatterns } from "../../../../lib/patterns";
 
-/** GET /api/patterns?year=2026&month=8 — defaults to the current month. */
+/**
+ * GET /api/patterns?year=2026&month=8 — clients should always pass their
+ * local year/month; the fallback uses the server clock (UTC on Vercel).
+ */
 export async function GET(req: Request) {
   const session = await auth();
   if (!session?.user?.id) {
