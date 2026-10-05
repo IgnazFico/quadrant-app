@@ -56,7 +56,7 @@ async function main() {
         `${g.id}  ${g.ws}  ${g.status.padEnd(11)} review=${g.reId ? g.choice : "-"}  completed=${g.completedAt ? "yes" : "no"}  scheduleBlocks=${nb}  user=${g.userId.slice(0, 8)}`,
       );
     }
-    console.log(`growth rings on those roles: ${JSON.stringify(rings)}`);
+    console.log(`growth ring rows (data model behind each role's constellation) on those roles: ${JSON.stringify(rings)}`);
 
     mkdirSync("C:/Users/Nazmc/quadrant-backups", { recursive: true });
     const file = `C:/Users/Nazmc/quadrant-backups/${byIds ? "goals-by-id" : "nonmonday-goals"}-${target}-${Date.now()}.json`;

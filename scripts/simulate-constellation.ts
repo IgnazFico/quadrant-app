@@ -3,6 +3,8 @@ import { prisma } from "../lib/prisma";
 import { getRoleConstellations } from "../lib/constellation";
 
 // GROWTH-RING-REDESIGN: checks the monthly star counts behind the constellation.
+// Concept note: the constellation is the visual form of the growth ring. Stars come from DONE goals'
+// completedAt per month; the GrowthRing row only supplies the `sealed` flag (closed year).
 // Run against a scratch database:  npx tsx scripts/simulate-constellation.ts
 //
 // The constellation measures showing up: a month's value is how many goals were

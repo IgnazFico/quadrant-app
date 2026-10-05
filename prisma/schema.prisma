@@ -136,6 +136,8 @@ model ScheduleBlock {
   @@map("schedule_blocks")
 }
 
+// The data model behind the UI's yearly constellation (the UI no longer draws rings; stars
+// come from goal completedAt in lib/constellation.ts). Name kept to avoid a migration.
 // One row per role per year. votesLogged resets to 0 when a new year's row is created;
 // sealed rows are permanent and never deleted — they're the "veteran" record.
 model GrowthRing {

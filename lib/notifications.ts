@@ -102,7 +102,8 @@ export async function evaluateNotificationsForUser(userId: string) {
     }
   }
 
-  // 4. Role Milestone: When a role hits 25, 50, 100, etc. votes
+  // 4. Role Milestone: When a role hits 25, 50, 100, etc. finished goals this year.
+  // (growthRing.votesLogged is the running count; the UI no longer calls it rings.)
   const currentYear = new Date().getFullYear();
   const rings = await prisma.growthRing.findMany({
     where: {
@@ -120,7 +121,12 @@ export async function evaluateNotificationsForUser(userId: string) {
         userId,
         type: NotificationType.ROLE_MILESTONE,
         title: "Role Milestone",
-        message: { contains: `${milestoneTier} votes recorded for ${ring.role.label}` },
+        // Match the legacy wording too, so users who already got the old
+        // "N votes recorded" notice are not notified a second time.
+        OR: [
+          { message: { contains: `Showed up ${milestoneTier} times as ${ring.role.label}` } },
+          { message: { contains: `${milestoneTier} votes recorded for ${ring.role.label}` } },
+        ],
       },
     });
 
@@ -130,7 +136,7 @@ export async function evaluateNotificationsForUser(userId: string) {
           userId,
           type: NotificationType.ROLE_MILESTONE,
           title: "Role Milestone",
-          message: `${milestoneTier} votes recorded for ${ring.role.label}. Great job showing up.`,
+          message: `Showed up ${milestoneTier} times as ${ring.role.label} this year. That counts.`,
           link: "/goals",
         },
       });
@@ -299,7 +305,7 @@ export async function seedManualNotification(
     },
     ROLE_MILESTONE: {
       title: "Role Milestone",
-      message: customMessage || "25 votes recorded for Craft. Great job showing up.",
+      message: customMessage || "Showed up 25 times as Craft this year. That counts.",
       link: "/goals",
     },
     YEAR_END_REVIEW: {

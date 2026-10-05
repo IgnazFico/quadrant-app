@@ -163,10 +163,15 @@ server.tool(
 
 // ---------------------------------------------------------------------------
 // Tool 3: Simulate Growth Ring Sealing (Year-End Cron Job)
+// NOTE (growth ring vs constellation): "growth ring" is the data model (GrowthRing /
+// growth_rings: one row per role per year, votesLogged = goals finished, sealed = year closed).
+// In the UI it is drawn as a constellation (one star per month), not a ring. Tool and column
+// names keep "ring" so existing MCP configs and the schema stay stable.
+// This closes each role's yearly constellation (what /api/cron/seal-rings does).
 // ---------------------------------------------------------------------------
 server.tool(
   "simulate_growth_ring_seal",
-  "Simulates the year-end cron job that seals annual growth rings for all roles",
+  "Simulates the year-end cron job (/api/cron/seal-rings). Seals each role's GrowthRing row for the year, which the app shows as the role's yearly constellation closing into its final shape. 'Growth ring' is the data model; the UI draws it as a constellation.",
   {
     targetYear: z.number().default(new Date().getFullYear()),
   },
@@ -187,7 +192,7 @@ server.tool(
         content: [
           {
             type: "text",
-            text: `✅ Sealed ${result.count} Growth Ring(s) for year ${targetYear}.`,
+            text: `✅ Sealed ${result.count} growth ring row(s) for year ${targetYear} (role constellations for that year are now closed).`,
           },
         ],
       };
@@ -205,7 +210,7 @@ server.tool(
 // ---------------------------------------------------------------------------
 server.tool(
   "inspect_database_metrics",
-  "Returns counts and summary of active users, roles, goals, and sealed growth rings",
+  "Returns counts of users, roles, goals, growth ring rows (one per role per year; shown in the UI as yearly constellations) and notifications",
   {},
   async () => {
     try {
@@ -226,7 +231,7 @@ server.tool(
                 users: usersCount,
                 roles: rolesCount,
                 goals: goalsCount,
-                growthRings: ringsCount,
+                growthRings: ringsCount, // rows in growth_rings; each is one role-year, rendered as a constellation
                 notifications: notifsCount,
               },
               null,

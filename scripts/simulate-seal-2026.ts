@@ -10,10 +10,12 @@ const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) throw new Error("DATABASE_URL is not set (checked ../.env)");
 const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: databaseUrl }) });
 
+// "Growth ring" = the GrowthRing table (one row per role per year). In the app its sealed flag
+// closes the role's yearly constellation. Mirrors the MCP tool simulate_growth_ring_seal.
 async function simulateSeal2026() {
   const targetYear = 2026;
   console.log(`\n========================================`);
-  console.log(`🌲 Simulating Growth Ring Sealing for ${targetYear}`);
+  console.log(`🌲 Simulating growth ring sealing (closing role constellations) for ${targetYear}`);
   console.log(`========================================\n`);
 
   // 1. Fetch all roles across all users
@@ -67,7 +69,7 @@ async function simulateSeal2026() {
     },
   });
 
-  console.log(`\n✅ Successfully sealed ${sealResult.count} Growth Ring(s) for year ${targetYear}.\n`);
+  console.log(`\n✅ Successfully sealed ${sealResult.count} growth ring row(s) (constellations closed) for year ${targetYear}.\n`);
 
   // 5. Query and display the verified sealed growth rings
   const sealedRings = await prisma.growthRing.findMany({
@@ -86,7 +88,7 @@ async function simulateSeal2026() {
     ],
   });
 
-  console.log(`=== Sealed Growth Rings Summary (Year ${targetYear}) ===`);
+  console.log(`=== Sealed Growth Ring Rows (constellations) Summary (Year ${targetYear}) ===`);
   console.table(
     sealedRings.map((ring: any) => ({
       User: ring.role.user.email,

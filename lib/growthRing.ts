@@ -1,5 +1,11 @@
 import { prisma } from "./prisma";
 
+// "Growth ring" is the data model, not the UI. One GrowthRing row per role per year holds
+// votesLogged (goals finished) and sealed (year closed). The app draws a role's year as a
+// constellation, one star per month (lib/constellation.ts, components/constellation/), and
+// derives the stars from goal completedAt, not from this table. This table still drives the
+// 25-goal role milestone and the sealed flag. Name kept to avoid a schema migration.
+
 function currentYear(): number {
   return new Date().getFullYear();
 }

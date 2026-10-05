@@ -1,7 +1,7 @@
 # Quadrant: Closed Beta Tester Playbook
 
 > **"Doing more is not the same as living well."**  
-> Welcome to the private beta test of **Quadrant** — an anti-burnout life architecture web app built to replace toxic streak resets with cumulative annual growth rings and role-based planning.
+> Welcome to the private beta test of **Quadrant** — an anti-burnout life architecture web app built to replace toxic streak resets with a yearly constellation that only ever fills in, and role-based planning.
 
 ---
 
@@ -58,8 +58,8 @@ At the start of your week, define 1–2 essential goals for each role. These are
 ### Step 3: Schedule Before the Fires Hit (`/schedule`)
 Allocate time blocks or priority slots for your Big Rocks into your weekly calendar grid.
 
-### Step 4: Annual Growth Rings (Identity Votes)
-Every time you complete a goal, you cast a **permanent identity vote** toward that role's cumulative annual growth ring. Missing a day or taking a break **never resets your ring**. At the end of the year, your ring is sealed into your permanent veteran growth record.
+### Step 4: Your Yearly Constellation
+Every goal you finish adds a star to that role's constellation, one star per month, so the shape records the months you showed up. Missing a day or taking a break **never resets anything**: a quiet month is just a quiet star. There are no streaks, scores or targets. When the year ends, each role's constellation closes into a permanent shape that stays in your record. You'll see them on your Identity page and in the Year in Review.
 
 ### Step 5: The Sunday Reset (`/weekly-review`)
 Wrap up your week with an honest, calm review. Reflect on what was completed, intentionally carry forward or cancel incomplete goals with zero guilt, and log your private encrypted reflection.

@@ -236,9 +236,12 @@ async function runWeeklySimulation() {
   });
 
   // ==========================================
-  // PHASE 5: Goal Progress & Growth Rings Voting
+  // PHASE 5: Goal Progress & Growth Ring Votes
+  // Growth ring = data model (votesLogged on GrowthRing). The UI shows a role's year as a
+  // constellation derived from completedAt (see scripts/simulate-constellation.ts); this phase
+  // only checks the vote counter that drives the role milestone.
   // ==========================================
-  console.log("\n🌲 PHASE 5: Goal Completion & Growth Rings Voting");
+  console.log("\n🌲 PHASE 5: Goal Completion & Growth Ring Votes (counter behind milestones)");
 
   await recordTest("Marking Goal DONE Increments Growth Ring Votes", "Positive Path", async () => {
     const roleId = roles[0].id;

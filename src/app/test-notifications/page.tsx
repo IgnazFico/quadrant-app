@@ -47,15 +47,15 @@ const NOTIFICATION_CATALOG = [
   {
     type: "ROLE_MILESTONE",
     title: "Role Milestone",
-    sample: "25 votes recorded for Craft. Great job showing up.",
-    desc: "Rewards accumulated identity votes logged in annual rings.",
+    sample: "Showed up 25 times as Craft this year. That counts.",
+    desc: "Marks every 25 goals finished in a role this year.",
     target: "/goals",
   },
   {
     type: "YEAR_END_REVIEW",
     title: "Year-End Review",
     sample: "Your Year in Review is ready. See everything you built this year.",
-    desc: "Opens Dec 20–31 before annual growth rings permanently seal.",
+    desc: "Opens Dec 20–31, before the year closes into its constellation.",
     target: "/year-review",
   },
   {

@@ -103,8 +103,10 @@ async function seedProductionUser() {
   });
   console.log(`  ✅ Roles created: Software Architect, Physical Vitality, Continuous Learner, Partner & Friend`);
 
-  // 5. Create 2026 Cumulative Growth Rings
-  console.log(`Creating Cumulative Annual Growth Rings for 2026...`);
+  // 5. Create 2026 growth ring rows (data model). The UI draws these roles' years as constellations,
+  //    but the stars come from DONE goals' completedAt, not from votesLogged; these rows only drive
+  //    milestones and the sealed flag.
+  console.log(`Creating 2026 growth ring rows (shown as constellations)...`);
   const currentYear = new Date().getFullYear();
   await prisma.growthRing.createMany({
     data: [
@@ -114,7 +116,7 @@ async function seedProductionUser() {
       { roleId: roleRelationships.id, year: currentYear, votesLogged: 15, sealed: false },
     ],
   });
-  console.log(`  ✅ 2026 Growth Rings initialized with logged votes`);
+  console.log(`  ✅ 2026 growth ring rows initialized (vote counts only; constellation stars need DONE goals)`);
 
   // 6. Create Big Rocks (Weekly Goals) for Current Week
   console.log(`Creating Weekly Big Rocks (Goals)...`);
