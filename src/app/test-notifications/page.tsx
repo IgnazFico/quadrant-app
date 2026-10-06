@@ -149,12 +149,6 @@ export default function StandaloneTestNotificationsPage() {
         <div className="mb-6 flex items-center justify-between border-b border-[#ECE8DF] pb-4">
           <div>
             <div className="flex items-center gap-2">
-              <div className="grid h-5 w-5 grid-cols-2 grid-rows-2 gap-[2px]">
-                <span className="rounded-[2px] bg-[#F3F4F6]" />
-                <span className="rounded-[2px] bg-[#F97316]" />
-                <span className="rounded-[2px] bg-[#F3F4F6]" />
-                <span className="rounded-[2px] bg-[#F3F4F6]" />
-              </div>
               <span className="font-serif text-xl font-bold text-[#1F2937]">
                 Quadrant Notifications Test Suite
               </span>

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { isRecapWindowOpen } from "../../lib/yearRecapWindow";
+import { QuadrantMark } from "../brand/QuadrantMark";
 
 function dismissedKey(year: number) {
   return `quadrant:recap-dismissed:${year}`;
@@ -44,11 +45,8 @@ export function RecapPrompt() {
   return (
     <div className="fixed inset-x-0 bottom-[76px] z-20 flex justify-center px-4">
       <div className="flex w-full max-w-[420px] items-center gap-3 rounded-2xl border border-[#ECE8DF] bg-white p-3.5 shadow-[0_10px_30px_-10px_rgba(31,41,55,0.25)]">
-        <div className="grid h-9 w-9 shrink-0 grid-cols-2 grid-rows-2 gap-[3px] rounded-lg bg-[#FFF1E4] p-1.5">
-          <span className="rounded-[2px] bg-white/60" />
-          <span className="rounded-[2px] bg-[#F97316]" />
-          <span className="rounded-[2px] bg-white/60" />
-          <span className="rounded-[2px] bg-white/60" />
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#F6F0E6]">
+          <QuadrantMark size={24} />
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-[12.5px] font-semibold text-[#1F2937]">

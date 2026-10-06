@@ -45,12 +45,6 @@ export function ProfilePage({ profile }: { profile: ProfileData }) {
       <div className="w-full max-w-[440px]">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="grid h-4 w-4 grid-cols-2 grid-rows-2 gap-[2px]">
-              <span className="rounded-[2px] bg-[#F3F4F6]" />
-              <span className="rounded-[2px] bg-[#F97316]" />
-              <span className="rounded-[2px] bg-[#F3F4F6]" />
-              <span className="rounded-[2px] bg-[#F3F4F6]" />
-            </div>
             <span className="font-serif text-[15px] font-semibold text-[#9CA3AF]">
               Quadrant
             </span>
@@ -87,12 +81,6 @@ export function ProfilePage({ profile }: { profile: ProfileData }) {
             >
               <div className="mb-auto flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <div className="grid h-3.5 w-3.5 grid-cols-2 grid-rows-2 gap-[1.5px]">
-                    <span className="rounded-[1.5px] bg-[#F3F4F6]" />
-                    <span className="rounded-[1.5px] bg-[#F97316]" />
-                    <span className="rounded-[1.5px] bg-[#F3F4F6]" />
-                    <span className="rounded-[1.5px] bg-[#F3F4F6]" />
-                  </div>
                   <span className="font-mono text-[9.5px] uppercase tracking-wide text-[#9CA3AF]">
                     Quadrant ID
                   </span>

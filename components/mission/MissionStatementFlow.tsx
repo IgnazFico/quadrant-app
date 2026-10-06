@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useAuthStore } from "../../store/authStore";
 import { encryptField, toBase64 } from "../../lib/crypto";
 import Link from "next/link";
+import { QuadrantMark } from "../brand/QuadrantMark";
 
 type Screen =
   | "intro"
@@ -86,12 +87,6 @@ export function MissionStatementFlow() {
     <div className="flex min-h-screen justify-center bg-[#FFF9F2] px-6 py-10">
       <div className="w-full max-w-[460px]">
         <div className="mb-2 flex items-center gap-2">
-          <div className="grid h-4 w-4 grid-cols-2 grid-rows-2 gap-[2px]">
-            <span className="rounded-[2px] bg-[#F3F4F6]" />
-            <span className="rounded-[2px] bg-[#F97316]" />
-            <span className="rounded-[2px] bg-[#F3F4F6]" />
-            <span className="rounded-[2px] bg-[#F3F4F6]" />
-          </div>
           <span className="font-serif text-[15px] font-semibold text-[#C9CBCF]">
             Quadrant
           </span>
@@ -119,12 +114,7 @@ export function MissionStatementFlow() {
         {/* INTRO — the milestone framing this was specifically asked for */}
         {screen === "intro" && (
           <div className="mt-10 flex flex-col items-center text-center">
-            <div className="mb-6 grid h-11 w-11 grid-cols-2 grid-rows-2 gap-1">
-              <span className="rounded-md bg-[#F3F4F6]" />
-              <span className="rounded-md bg-[#F97316]" />
-              <span className="rounded-md bg-[#F3F4F6]" />
-              <span className="rounded-md bg-[#F3F4F6]" />
-            </div>
+            <QuadrantMark size={48} className="mb-6" />
             <p className="mb-3.5 font-mono text-[11px] uppercase tracking-wide text-[#F97316]">
               Seven days in
             </p>
@@ -283,12 +273,7 @@ export function MissionStatementFlow() {
         {screen === "done" && (
           <div className="mt-10 flex flex-col items-center text-center">
             <div className="mb-4.5 flex h-[60px] w-[60px] items-center justify-center rounded-full border border-[#ECE8DF] bg-[#F3F4F6]">
-              <div className="grid h-[22px] w-[22px] grid-cols-2 grid-rows-2 gap-1">
-                <span className="rounded bg-[#F3F4F6]" />
-                <span className="rounded bg-[#F97316]" />
-                <span className="rounded bg-[#F3F4F6]" />
-                <span className="rounded bg-[#F3F4F6]" />
-              </div>
+              <QuadrantMark size={26} />
             </div>
             <h1 className="mb-2 font-serif text-xl font-semibold text-[#1F2937]">
               Committed

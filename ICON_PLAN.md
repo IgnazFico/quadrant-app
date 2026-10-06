@@ -1,6 +1,6 @@
 # Implementation plan: Editorial app icon
 
-Status: plan only, nothing wired yet. Assets: `public/brand/editorial/` (untracked, added Oct 5).
+Status: Phase 1 done; Phase 2 option A done with clay (the other grid glyphs were removed pending visual sign-off). Uncommitted; see STATE.md. Assets: `public/brand/editorial/` (untracked, added Oct 5).
 Design: a "Q" made of four ring segments with a tail. The top-right segment (Quadrant II) is clay `#D9845A`; the rest is ink `#2E2A26` on a linen `#F6F0E6` tile. The favicon uses its own simplified 16-unit geometry.
 
 ---

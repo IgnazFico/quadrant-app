@@ -91,12 +91,6 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
       <div className="w-full max-w-[420px]">
         <div className="mb-5 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="grid h-4 w-4 grid-cols-2 grid-rows-2 gap-[2px]">
-              <span className="rounded-[2px] bg-[#F3F4F6]" />
-              <span className="rounded-[2px] bg-[#F97316]" />
-              <span className="rounded-[2px] bg-[#F3F4F6]" />
-              <span className="rounded-[2px] bg-[#F3F4F6]" />
-            </div>
             <span className="font-serif text-[15px] font-semibold text-[#9CA3AF]">
               Quadrant
             </span>

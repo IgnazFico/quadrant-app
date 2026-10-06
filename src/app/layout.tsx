@@ -41,8 +41,14 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/icon.svg", type: "image/svg+xml" },
-      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/brand/editorial/svg/favicon.svg", type: "image/svg+xml" },
+      {
+        url: "/brand/editorial/svg/favicon-dark.svg",
+        type: "image/svg+xml",
+        media: "(prefers-color-scheme: dark)",
+      },
+      { url: "/brand/editorial/png/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/brand/editorial/png/favicon-16.png", sizes: "16x16", type: "image/png" },
     ],
     apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },

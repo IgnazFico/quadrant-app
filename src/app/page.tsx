@@ -5,6 +5,7 @@ import { EvidenceCards } from "../../components/landing/EvidenceCards";
 import { ParadigmComparison } from "../../components/landing/ParadigmComparison";
 import { FeatureShowcase } from "../../components/landing/FeatureShowcase";
 import { jitter } from "../../components/constellation/geometry";
+import { QuadrantMark } from "../../components/brand/QuadrantMark";
 
 // GROWTH-RING-REDESIGN: faint deterministic star field behind the features
 // section, matching the constellation showcase and the year ceremony.
@@ -98,12 +99,7 @@ export default async function HomePage() {
             href="/"
             className="flex items-center gap-2.5 transition-opacity hover:opacity-90"
           >
-            <div className="grid h-6 w-6 grid-cols-2 grid-rows-2 gap-[2.5px] rounded-[5px] bg-[#FFF0E0] p-1 shadow-xs ring-1 ring-[#F97316]/20">
-              <span className="rounded-[1.5px] bg-[#E5E7EB]" />
-              <span className="rounded-[1.5px] bg-[#F97316]" />
-              <span className="rounded-[1.5px] bg-[#E5E7EB]" />
-              <span className="rounded-[1.5px] bg-[#E5E7EB]" />
-            </div>
+            <QuadrantMark size={26} />
             <span className="font-serif text-xl font-bold tracking-tight text-[#1F2937]">
               Quadrant
             </span>
@@ -367,12 +363,6 @@ export default async function HomePage() {
       <footer className="border-t border-[#ECE8DF]/80 bg-[#FAF7F2]/90 px-5 py-10 text-xs text-[#9CA3AF] sm:px-8">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 sm:flex-row">
           <div className="flex items-center gap-2.5">
-            <div className="grid h-4 w-4 grid-cols-2 grid-rows-2 gap-[2px]">
-              <span className="rounded-[1px] bg-[#E5E7EB]" />
-              <span className="rounded-[1px] bg-[#F97316]" />
-              <span className="rounded-[1px] bg-[#E5E7EB]" />
-              <span className="rounded-[1px] bg-[#E5E7EB]" />
-            </div>
             <span className="font-serif font-bold text-[#374151]">
               Quadrant
             </span>

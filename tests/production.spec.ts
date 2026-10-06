@@ -15,6 +15,28 @@ test.describe("Quadrant Production Verification Suite", () => {
     expect(manifest.icons.length).toBeGreaterThan(0);
   });
 
+  test("App icons: manifest covers any + maskable sizes and every icon resolves", async ({
+    request,
+    page,
+  }) => {
+    const manifest = await (await request.get("/manifest.webmanifest")).json();
+    const icons: { src: string; sizes: string; purpose?: string }[] = manifest.icons;
+
+    const anySizes = icons.filter((i) => (i.purpose ?? "any") === "any").map((i) => i.sizes);
+    expect(anySizes).toEqual(expect.arrayContaining(["192x192", "512x512"]));
+    expect(icons.some((i) => i.purpose === "maskable")).toBe(true);
+
+    const paths = [...icons.map((i) => i.src), "/favicon.ico", "/apple-touch-icon.png"];
+    for (const p of paths) {
+      const res = await request.get(p);
+      expect(res.status(), p).toBe(200);
+      expect(res.headers()["content-type"] ?? "", p).toMatch(/^image\//);
+    }
+
+    await page.goto("/");
+    await expect(page.locator('link[rel="icon"][href*="/brand/editorial/"]').first()).toBeAttached();
+  });
+
   test("Landing page renders typography, meta, and CTA buttons", async ({ page }) => {
     await page.goto("/");
     await expect(page).toHaveTitle(/Quadrant/);

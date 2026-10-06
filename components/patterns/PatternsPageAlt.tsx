@@ -121,12 +121,6 @@ function cardBg(id: string) {
 function Brand() {
   return (
     <div className="mb-5 flex items-center gap-2">
-      <div className="grid h-4 w-4 grid-cols-2 grid-rows-2 gap-[2px]">
-        <span className="rounded-[2px] bg-white/50" />
-        <span className="rounded-[2px] bg-[#F97316]" />
-        <span className="rounded-[2px] bg-white/50" />
-        <span className="rounded-[2px] bg-white/50" />
-      </div>
       <span className="font-serif text-[13px] font-semibold text-black/35">Quadrant &middot; Patterns</span>
     </div>
   );

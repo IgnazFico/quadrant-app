@@ -7,6 +7,7 @@ import { signOutAction } from "../../lib/authActions";
 import { NotificationBell } from "../notifications/NotificationBell";
 import { BottomNav } from "./BottomNav";
 import { Toaster } from "../toast/Toaster";
+import { QuadrantMark } from "../brand/QuadrantMark";
 
 /**
  * App chrome for every (app) route.
@@ -100,15 +101,7 @@ function TopBar({ pathname, email }: { pathname: string; email: string }) {
         href="/goals"
         className="inline-flex items-center gap-2.5 justify-self-start font-serif text-[19px] font-bold tracking-[-0.01em] text-[#1F2937]"
       >
-        <span
-          aria-hidden="true"
-          className="grid h-6 w-6 grid-cols-2 grid-rows-2 gap-[2.5px] rounded-[5px] bg-[#FFF0E0] p-1 shadow-[0_0_0_1px_rgba(249,115,22,0.2)]"
-        >
-          <i className="rounded-[1.5px] bg-[#E5E7EB]" />
-          <i className="rounded-[1.5px] bg-[#F97316]" />
-          <i className="rounded-[1.5px] bg-[#E5E7EB]" />
-          <i className="rounded-[1.5px] bg-[#E5E7EB]" />
-        </span>
+        <QuadrantMark size={24} />
         Quadrant
       </Link>
 
