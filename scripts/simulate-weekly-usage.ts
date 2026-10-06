@@ -1,4 +1,4 @@
-import "dotenv/config";
+import "./lib/use-staging.mjs"; // writes test data: staging only
 import { prisma } from "../lib/prisma";
 import bcrypt from "bcryptjs";
 import {

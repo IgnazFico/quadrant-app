@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -H 0.0.0.0",
+    "dev": "node scripts/with-env.mjs staging next dev -H 0.0.0.0",
+    "dev:prod": "node scripts/with-env.mjs prod next dev -H 0.0.0.0",
     "build": "prisma generate && node --max-old-space-size=4096 ./node_modules/next/dist/bin/next build",
     "start": "next start -H 0.0.0.0",
     "lint": "eslint",
@@ -11,7 +12,9 @@
     "seed": "tsx prisma/seed.ts",
     "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
-    "prisma:migrate:deploy": "prisma migrate deploy"
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "db:staging": "node scripts/prisma-env.mjs staging",
+    "db:prod": "node scripts/prisma-env.mjs prod"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.7.1",

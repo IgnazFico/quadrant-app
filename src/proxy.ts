@@ -44,15 +44,9 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Forward current pathname in request headers for layout gate checks
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set("x-pathname", pathname);
-
-  return NextResponse.next({
-    request: {
-      headers: requestHeaders,
-    },
-  });
+  // Gates no longer need the request path (see src/app/(app)/layout.tsx), so
+  // the old x-pathname request-header override is gone.
+  return NextResponse.next();
 }
 
 export const config = {

@@ -1,4 +1,4 @@
-import { YearInReviewPage } from "../../../../components/yearreview/YearInReviewPage";
+import { YearInReviewPage } from "../../../../../../components/yearreview/YearInReviewPage";
 
 export default function YearReview() {
   return <YearInReviewPage />;

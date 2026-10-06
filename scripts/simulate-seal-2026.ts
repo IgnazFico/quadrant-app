@@ -1,13 +1,10 @@
+import "./lib/use-staging.mjs"; // seals rings (writes): staging only
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
-import dotenv from "dotenv";
-import path from "path";
-
-dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 const databaseUrl = process.env.DATABASE_URL;
 // Prisma 7 has no built-in engine connection: the client needs a driver adapter.
-if (!databaseUrl) throw new Error("DATABASE_URL is not set (checked ../.env)");
+if (!databaseUrl) throw new Error("DATABASE_URL is not set (expected .env.staging)");
 const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: databaseUrl }) });
 
 // "Growth ring" = the GrowthRing table (one row per role per year). In the app its sealed flag

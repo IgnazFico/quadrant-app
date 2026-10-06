@@ -16,14 +16,15 @@
  *   - Schedule blocks for TODAY are recreated every run.
  *   - Activity day for TODAY is created once.
  *
- * Environment variables (any one of these combos works):
- *   STAGING_DIRECT_URL / STAGING_DATABASE_URL  — local .env staging
- *   DIRECT_URL / DATABASE_URL                   — CI workflow / generic
+ * Database: always STAGING.
+ *   Locally  — .env.staging (via scripts/lib/env.mjs)
+ *   CI       — the workflow's DATABASE_URL / DIRECT_URL (already staging)
+ * Refuses to run if the resolved URL is the production host.
  *
  * Requires the Prisma client to be generated (npx prisma generate).
  */
 
-import 'dotenv/config';
+import '../scripts/lib/use-staging.mjs';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
@@ -45,15 +46,9 @@ async function main() {
   await sodium.ready;
 
   console.log('Connecting to database...');
-  const connectionString =
-    process.env.STAGING_DIRECT_URL ||
-    process.env.STAGING_DATABASE_URL ||
-    process.env.DIRECT_URL ||
-    process.env.DATABASE_URL;
+  const connectionString = process.env.DIRECT_URL || process.env.DATABASE_URL;
   if (!connectionString) {
-    console.error(
-      'ERROR: No database URL found. Set STAGING_DIRECT_URL, STAGING_DATABASE_URL, DIRECT_URL, or DATABASE_URL.',
-    );
+    console.error('ERROR: No database URL found (expected .env.staging locally, DATABASE_URL in CI).');
     process.exit(1);
   }
 

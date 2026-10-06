@@ -65,6 +65,12 @@ jobs:
         # cannot load or clear (the /weekly-review redirect loop).
         run: npx tsx scripts/verify-weekly-review-loop.ts
 
+      - name: Gate layout guard (no redirect in a shared layout)
+        # The gates must live in route-group layouts that never wrap their own
+        # redirect target; a path-based redirect in the shared (app) layout
+        # caused the endless GET /weekly-review?_rsc=... loop.
+        run: npx tsx scripts/verify-gate-layout.ts
+
       - name: Schedule rules regression
         # One block per goal (schedule_blocks.goalId UNIQUE; moving is a
         # PATCH) and at most 2 Anytime blocks per user per day (DB trigger).

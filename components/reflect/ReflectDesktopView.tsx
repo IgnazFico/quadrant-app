@@ -8,7 +8,8 @@ import type { ReviewData, ReviewGoal, ReviewRole } from "../../hooks/useReview";
 import type { PatternsState } from "../../hooks/usePatterns";
 import type { WeekSnapshot } from "../../hooks/useWeekSnapshot";
 import type { Role } from "../../hooks/useWeek";
-import { GoalRow, ReflectSheet } from "../review/WeeklyReviewPage";
+import { GoalRow } from "../review/WeeklyReviewPage";
+import { ReflectModal } from "./ReflectModal";
 import { CARD_ORDER, CARD_THEME, renderPatternCard } from "../patterns/cardContent";
 
 /**
@@ -256,8 +257,10 @@ function ReviewPanel({ review }: { review: ReviewData }) {
       )}
 
       {activeReflect && (
-        <ReflectSheet
+        <ReflectModal
+          key={activeReflect.goal.id}
           goal={activeReflect.goal}
+          role={roles.find((r) => r.id === activeReflect.roleId)}
           disabled={!masterKey}
           onClose={cancelReflect}
           onSubmit={submitReflection}

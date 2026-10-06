@@ -7,14 +7,14 @@
 // listed ids whatever their week (for rows already repaired by the migration).
 // Backs up every affected row (goal, review entry, linked schedule blocks) to
 // C:/Users/Nazmc/quadrant-backups before writing.
-import "dotenv/config";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { Pool } from "pg";
+import { resolveEnv } from "./lib/env.mjs";
 
 const target = process.argv[2];
-const url =
-  target === "staging" ? process.env.STAGING_DATABASE_URL : target === "prod" ? process.env.DATABASE_URL : undefined;
-if (!url) throw new Error("usage: prod|staging [--delete <goalId...>]");
+if (target !== "staging" && target !== "prod") throw new Error("usage: prod|staging [--delete <goalId...>]");
+// staging: .env.staging; prod: .env (scripts/lib/env.mjs).
+const url = resolveEnv(target).DATABASE_URL;
 const argv = process.argv.slice(3);
 const force = argv.includes("--force");
 const byIds = argv[0] === "--ids" ? argv.slice(1).filter((a) => a !== "--force") : null;

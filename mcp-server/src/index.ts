@@ -16,13 +16,21 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const workspaceRoot = path.resolve(__dirname, "../..");
 
-// Load .env from root quadrant workspace
+// Dev/test MCP server: its tools create and delete users, so it only ever
+// talks to STAGING. .env (shared secrets) with .env.staging layered on top;
+// refuses to start if that resolves to the production host.
+const PROD_HOST = /ep-weathered-snow-/;
+dotenv.config({ path: path.join(workspaceRoot, ".env.staging"), override: true });
 dotenv.config({ path: path.join(workspaceRoot, ".env") });
+process.env.DATABASE_URL = process.env.STAGING_DATABASE_URL || process.env.DATABASE_URL;
 
 const execAsync = promisify(exec);
 
 // Initialize Prisma with Postgres adapter matching Quadrant architecture
 const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl || PROD_HOST.test(databaseUrl)) {
+  throw new Error("quadrant-dev MCP: needs a staging DATABASE_URL in .env.staging (refusing production)");
+}
 const adapter = databaseUrl ? new PrismaPg({ connectionString: databaseUrl }) : undefined;
 const prisma = adapter ? new PrismaClient({ adapter }) : new PrismaClient();
 

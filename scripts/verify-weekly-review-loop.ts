@@ -9,13 +9,9 @@
 // page must be able to load that week's unresolved goals, and resolving them
 // plus completing the week must clear the gate or move it to a different week.
 // If it doesn't, the user is redirected to /weekly-review forever.
-import "dotenv/config";
-
-// Locally: STAGING_DATABASE_URL from .env. In CI: DATABASE_URL is already staging.
-const staging = process.env.STAGING_DATABASE_URL || process.env.DATABASE_URL;
-if (!staging) throw new Error("no STAGING_DATABASE_URL or DATABASE_URL");
-if (/weathered-snow/.test(staging)) throw new Error("refusing: that is the production host");
-process.env.DATABASE_URL = staging;
+// Locally: .env.staging. In CI: the workflow's DATABASE_URL (already staging).
+// Refuses the production host either way (scripts/lib/env.mjs).
+import "./lib/use-staging.mjs";
 
 let failures = 0;
 const check = (name: string, ok: boolean, detail = "") => {
