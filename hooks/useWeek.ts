@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   startOfWeek,
   startOfDay,
@@ -76,9 +77,20 @@ export type WeekView = "this" | "next";
  * Sunday) and set roles, goals and a schedule for the next seven days. There
  * is no browsing back (past weeks belong to the weekly review) or further
  * ahead. See WeekToggle.tsx.
+ *
+ * The choice lives in the URL (`?week=next`), so /goals and /schedule agree
+ * and the Sunday review can link straight to planning. replaceState, not
+ * push: switching isn't a navigation worth a Back step.
  */
 export function useWeek() {
-  const [view, setView] = useState<WeekView>("this");
+  const searchParams = useSearchParams();
+  const view: WeekView = searchParams.get("week") === "next" ? "next" : "this";
+  const setView = useCallback((v: WeekView) => {
+    const url = new URL(window.location.href);
+    if (v === "next") url.searchParams.set("week", "next");
+    else url.searchParams.delete("week");
+    window.history.replaceState(null, "", `${url.pathname}${url.search}`);
+  }, []);
   // Recomputed per render so the page follows the calendar if it's left
   // open across midnight on Sunday; only re-fetches when the key changes.
   const thisWeekKey = dayKey(startOfWeek());

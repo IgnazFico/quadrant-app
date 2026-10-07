@@ -109,7 +109,8 @@ export function NotificationBell() {
   const fetchNotifications = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/notifications");
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const res = await fetch(`/api/notifications?tz=${encodeURIComponent(tz)}`);
       if (res.ok) {
         const data = await res.json();
         setNotifications(data.notifications || []);

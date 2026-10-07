@@ -3,6 +3,7 @@ import { z } from "zod";
 import { auth } from "../../../../../lib/auth";
 import { prisma } from "../../../../../lib/prisma";
 import { castVote, retractVote } from "../../../../../lib/growthRing";
+import { latestStartedWeek } from "../../../../../lib/week";
 
 async function loadOwnedGoal(id: string, userId: string) {
   const goal = await prisma.goal.findUnique({ where: { id }, include: { role: true } });
@@ -35,6 +36,15 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
   const wasDone = owned.status === "DONE";
   const willBeDone = (parsed.data.status ?? owned.status) === "DONE";
+
+  // Next week can be planned, not finished: a goal can't be done before its
+  // week has started anywhere (the UI hides the checkbox for next week).
+  if (!wasDone && willBeDone && owned.weekStart.getTime() > latestStartedWeek().getTime()) {
+    return NextResponse.json(
+      { error: "This goal's week hasn't started yet." },
+      { status: 409 },
+    );
+  }
 
   // completedAt is server-managed, not client-settable — it's derived
   // from the same transition the vote logic already checks below.

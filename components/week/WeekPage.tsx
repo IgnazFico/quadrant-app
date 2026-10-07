@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useWeek } from "../../hooks/useWeek";
 import { WeeklyGoalsPage } from "../goals/WeeklyGoalsPage";
 import { WeeklySchedulePage } from "../schedule/WeeklySchedulePage";
@@ -18,8 +19,19 @@ import { WeekDesktopView } from "./WeekDesktopView";
  * regardless of which of the two routes was visited, since on desktop
  * "the week" is one screen (goals + schedule side by side), matching the
  * web-prototype's Week page.
+ *
+ * Suspense: useWeek() reads `?week=next` via useSearchParams, which needs a
+ * boundary on prerendered routes.
  */
 export function WeekPage({ variant }: { variant: "goals" | "schedule" }) {
+  return (
+    <Suspense fallback={<WeekLoading />}>
+      <WeekPageInner variant={variant} />
+    </Suspense>
+  );
+}
+
+function WeekPageInner({ variant }: { variant: "goals" | "schedule" }) {
   const week = useWeek();
 
   return (
@@ -35,5 +47,13 @@ export function WeekPage({ variant }: { variant: "goals" | "schedule" }) {
         <WeekDesktopView week={week} />
       </div>
     </>
+  );
+}
+
+function WeekLoading() {
+  return (
+    <div className="flex min-h-[60vh] items-center justify-center text-sm text-[#9CA3AF]">
+      Loading your week...
+    </div>
   );
 }

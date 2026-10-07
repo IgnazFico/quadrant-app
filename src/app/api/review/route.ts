@@ -1,14 +1,17 @@
 import { NextResponse } from "next/server";
 import { auth } from "../../../../lib/auth";
 import { prisma } from "../../../../lib/prisma";
-import { weekRange } from "../../../../lib/week";
 import {
-  getEarliestUnreviewedWeekStart,
-  resolveReviewWeek,
-} from "../../../../lib/weeklyReviewGate";
+  addDays,
+  currentWeekFor,
+  reviewCandidateWeek,
+  startOfWeek,
+  weekRange,
+} from "../../../../lib/week";
+import { getReviewWindow } from "../../../../lib/weeklyReviewGate";
 
 /**
- * GET /api/review?weekStart=YYYY-MM-DD
+ * GET /api/review?weekStart=YYYY-MM-DD&tz=Area/City
  * Without a weekStart param, defaults to the OLDEST past week that still
  * has an unresolved goal (matching the layout's gate — see
  * lib/weeklyReviewGate.ts), falling back to last week if nothing is
@@ -16,6 +19,13 @@ import {
  * showed "last week" while an older week was still unresolved, completing
  * "last week" could never satisfy the gate, causing a redirect loop back
  * to this same page.
+ *
+ * `tz` (the browser's IANA zone) also opens the review on the user's own
+ * Sunday for the week that's ending, before it is required (see
+ * getReviewWindow). Response flags:
+ *   due    a past week is unresolved; the layout gate is redirecting here
+ *   open   some week can be reviewed now (due, or the Sunday review)
+ *   early  the week shown is the user's ongoing week (Sunday review)
  *
  * The returned weekStart is always a Monday (startOfWeek). The client must
  * treat it as an opaque key and send it back verbatim; it is only ever
@@ -33,12 +43,22 @@ export async function GET(req: Request) {
 
   const url = new URL(req.url);
   const param = url.searchParams.get("weekStart");
-  // `due`: some past week still has an unresolved goal (the same check as
-  // the layout gate). When false, the review has nothing to ask yet and the
+  const tz = url.searchParams.get("tz");
+  const now = new Date();
+  // When neither due nor open, the review has nothing to ask yet and the
   // desktop Reflect page shows "this week so far" instead (see
   // components/reflect/ReflectDesktopView.tsx).
-  const earliest = await getEarliestUnreviewedWeekStart(userId);
-  const weekStart = await resolveReviewWeek(userId, param);
+  const reviewWindow = await getReviewWindow(userId, tz, now);
+  const lastWeek = addDays(startOfWeek(now), -7);
+  // Default: the week needing review; else the week ending for the user (so
+  // a Sunday visit shows this week even if every goal in it is done); else
+  // last week.
+  const weekStart = startOfWeek(
+    param
+      ? new Date(param)
+      : reviewWindow.week ?? reviewCandidateWeek(now, tz, lastWeek)?.week ?? lastWeek,
+  );
+  const early = weekStart.getTime() === currentWeekFor(now, tz).getTime();
   // Range, not equality: this must load every goal the gate can see in this
   // week, or the gate can never be cleared (see lib/weeklyReviewGate.ts).
   const inWeek = weekRange(weekStart);
@@ -71,5 +91,11 @@ export async function GET(req: Request) {
     })),
   }));
 
-  return NextResponse.json({ weekStart, roles: serialized, due: earliest !== null });
+  return NextResponse.json({
+    weekStart,
+    roles: serialized,
+    due: reviewWindow.required,
+    open: reviewWindow.week !== null,
+    early,
+  });
 }

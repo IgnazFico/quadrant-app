@@ -1,8 +1,13 @@
 import { prisma } from "./prisma";
 import { NotificationType } from "@prisma/client";
-import { hasUnreviewedPastGoals } from "./weeklyReviewGate";
+import { getReviewWindow } from "./weeklyReviewGate";
 import { getMissionGateStatus } from "./missionGate";
 import { isRecapWindowOpen } from "./yearRecapWindow";
+
+const SUNDAY_RESET_MESSAGE =
+  "Your week is wrapping up. Take a few minutes to look back, then plan the week ahead.";
+const SUNDAY_RESET_LATE =
+  "Last week is ready to close out. Look back on it, then plan this week.";
 
 /** Returns start and end of the current local day in UTC */
 function getTodayBounds(): { start: Date; end: Date } {
@@ -16,7 +21,7 @@ function getTodayBounds(): { start: Date; end: Date } {
  * Evaluates the user's state and generates pending notifications
  * without spamming or violating anti-burnout principles.
  */
-export async function evaluateNotificationsForUser(userId: string) {
+export async function evaluateNotificationsForUser(userId: string, timeZone?: string | null) {
   const { start: todayStart, end: todayEnd } = getTodayBounds();
 
   // 1. Morning Focus: If user has scheduled priority blocks today
@@ -52,17 +57,20 @@ export async function evaluateNotificationsForUser(userId: string) {
     }
   }
 
-  // 2. Sunday Reset: If user has unreviewed past goals needing reflection
-  const hasUnreviewed = await hasUnreviewedPastGoals(userId);
-  if (hasUnreviewed) {
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  // 2. Sunday Reset: the review is open. With the browser timezone that
+  // starts on the user's own Sunday (offered, not yet required); otherwise,
+  // or if they missed Sunday, once a past week is unresolved.
+  const review = await getReviewWindow(userId, timeZone);
+  if (review.week) {
+    // 6 days, not 7: a Sunday-morning visit must not be blocked by last
+    // Sunday's afternoon notification.
+    const sixDaysAgo = new Date(Date.now() - 6 * 86_400_000);
 
     const existingReset = await prisma.notification.findFirst({
       where: {
         userId,
         type: NotificationType.SUNDAY_RESET,
-        createdAt: { gte: sevenDaysAgo },
+        createdAt: { gte: sixDaysAgo },
       },
     });
 
@@ -72,7 +80,7 @@ export async function evaluateNotificationsForUser(userId: string) {
           userId,
           type: NotificationType.SUNDAY_RESET,
           title: "Sunday Reset",
-          message: "Take 5 minutes to wrap up last week and clear your plate for tomorrow.",
+          message: review.required ? SUNDAY_RESET_LATE : SUNDAY_RESET_MESSAGE,
           link: "/weekly-review",
         },
       });
@@ -286,7 +294,7 @@ export async function seedManualNotification(
       title: "Sunday Reset",
       message:
         customMessage ||
-        "Take 5 minutes to wrap up last week and clear your plate for tomorrow.",
+        SUNDAY_RESET_MESSAGE,
       link: "/weekly-review",
     },
     SEVEN_DAY_MILESTONE: {

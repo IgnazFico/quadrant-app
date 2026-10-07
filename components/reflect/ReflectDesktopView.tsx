@@ -28,7 +28,8 @@ import { SplitNote, monthName } from "../patterns/PatternsMonth";
  * Cards size to their content (no fixed min-height); grid rows stretch so
  * the cards in a row match.
  *
- * The review rail has two states, driven by `review.due` (the layout gate's
+ * The review rail has two states, driven by `review.open` (due, or the
+ * user's Sunday; see getReviewWindow in lib/weeklyReviewGate.ts) and `review.due` (the layout gate's
  * own check, returned by GET /api/review):
  *   - due: a past week has unresolved goals, so the real review renders
  *     (reflect on missed goals, close out the week)
@@ -64,14 +65,15 @@ export function ReflectDesktopView({
           </h1>
           <p className="max-w-[580px] text-[15px] text-[#6B7280]">
             What happened, and what it&apos;s teaching you. The review opens each
-            Monday for the week that just ended. Patterns update as you go.
+            Sunday as the week ends, so you can plan the next one after.
+            Patterns update as you go.
           </p>
         </div>
       </header>
 
       <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[360px_minmax(0,1fr)] 2xl:grid-cols-[380px_minmax(0,1fr)]">
         <div className="xl:sticky xl:top-[84px]">
-          {review.due ? (
+          {review.open || (review.early && review.totalCount > 0) ? (
             <ReviewPanel review={review} />
           ) : (
             <BetweenReviewsPanel review={review} thisWeek={thisWeek} />
@@ -145,6 +147,7 @@ function ReviewPanel({ review }: { review: ReviewData }) {
     cancelReflect,
     submitReflection,
     completeReview,
+    early,
   } = review;
 
   if (loading || !weekStart) {
@@ -164,7 +167,7 @@ function ReviewPanel({ review }: { review: ReviewData }) {
       eyebrow={
         <span className="inline-flex items-center gap-1.5">
           <span className="h-1.5 w-1.5 rounded-full bg-[#F97316]" aria-hidden="true" />
-          <span className="text-[#C2410C]">Due now</span>
+          <span className="text-[#C2410C]">{early ? "Sunday review" : "Due now"}</span>
           <span>· {fmt(weekStart)} – {fmt(addDays(weekStart, 6))}</span>
         </span>
       }
@@ -230,7 +233,7 @@ function ReviewPanel({ review }: { review: ReviewData }) {
               onClick={completeReview}
               className="self-start whitespace-nowrap rounded-lg bg-[#F97316] px-4 py-2 text-[13px] font-semibold text-white hover:bg-[#EA6A0C] disabled:bg-[#F0D9C6]"
             >
-              Close out the week &rarr;
+              {early ? "Close out the week, then plan the next" : "Close out the week"} &rarr;
             </button>
           </div>
         </>
@@ -261,7 +264,8 @@ function BetweenReviewsPanel({
   thisWeek: WeekSnapshot;
 }) {
   const weekStart = thisWeek.weekStart ?? startOfWeek();
-  const opensOn = addDays(weekStart, 7);
+  // Sunday of this week (getReviewWindow opens the review on the user's Sunday).
+  const opensOn = addDays(weekStart, 6);
   const now = new Date();
   const todayUTC = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
   const daysLeft = Math.max(0, Math.round((opensOn.getTime() - todayUTC) / 86400000));

@@ -2,15 +2,17 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "../../../../../lib/auth";
 import { prisma } from "../../../../../lib/prisma";
-import { startOfWeek } from "../../../../../lib/week";
+import { carryTargetWeek, currentWeekFor, dayKey } from "../../../../../lib/week";
 import {
   getEarliestUnreviewedWeekStart,
+  isReviewableWeek,
   resolveReviewWeek,
   reviewWeekGoalsWhere,
 } from "../../../../../lib/weeklyReviewGate";
 
 const bodySchema = z.object({
-  weekStart: z.string(), // the week being reviewed (the past week)
+  weekStart: z.string(), // the week being reviewed
+  tz: z.string().max(64).optional(), // browser IANA zone; enables the Sunday review
 });
 
 /**
@@ -20,7 +22,10 @@ const bodySchema = z.object({
  * has a ReviewEntry — mirroring the client's disabled-button gate so it
  * can't be bypassed by calling this endpoint directly. Only then does it
  * roll carried-forward goals (done+carryForward, or missed+choice=CARRY)
- * into the CURRENT week as fresh Goal rows.
+ * into the week after the reviewed one as fresh Goal rows: the Sunday review
+ * of the ongoing week carries into NEXT week, a late review of an older week
+ * into the current one (lib/week.ts carryTargetWeek). The ongoing week can
+ * only be completed on the user's Sunday (isReviewableWeek).
  *
  * Also re-checks, after committing, whether ANY past week still has an
  * unresolved goal (a user can be behind on more than one week) and
@@ -50,6 +55,14 @@ export async function POST(req: Request) {
   }
 
   const reviewedWeek = await resolveReviewWeek(userId, parsed.data.weekStart);
+  const now = new Date();
+  const tz = parsed.data.tz;
+  if (!isReviewableWeek(reviewedWeek, now, tz)) {
+    return NextResponse.json(
+      { error: "This week's review opens on Sunday." },
+      { status: 409 },
+    );
+  }
 
   // Same week + matching as GET /api/review and the gate (lib/weeklyReviewGate.ts).
   const goals = await prisma.goal.findMany({
@@ -76,17 +89,17 @@ export async function POST(req: Request) {
       g.reviewEntry?.choice === "CARRY",
   );
 
-  const currentWeek = startOfWeek();
+  const targetWeek = carryTargetWeek(reviewedWeek, currentWeekFor(now, tz));
 
   // Idempotent: completing the same week twice (a retry, a double click, or a
   // week re-opened after a data repair) must not duplicate carried goals.
   // A goal counts as already carried when the same role already has a goal
-  // with the same title in the current week. There is no compound unique key
+  // with the same title in the target week. There is no compound unique key
   // to upsert on, so check first.
   const existing = toCarry.length
     ? await prisma.goal.findMany({
         where: {
-          weekStart: currentWeek,
+          weekStart: targetWeek,
           roleId: { in: [...new Set(toCarry.map((g) => g.roleId))] },
         },
         select: { roleId: true, title: true },
@@ -103,7 +116,7 @@ export async function POST(req: Request) {
   const created = await prisma.$transaction(
     fresh.map((g) =>
       prisma.goal.create({
-        data: { roleId: g.roleId, title: g.title, weekStart: currentWeek },
+        data: { roleId: g.roleId, title: g.title, weekStart: targetWeek },
       }),
     ),
   );
@@ -112,6 +125,9 @@ export async function POST(req: Request) {
 
   return NextResponse.json({
     carriedCount: created.length,
+    // The week carried goals went to; the client sends Sunday reviewers on
+    // to plan it (/goals?week=next).
+    carriedInto: dayKey(targetWeek),
     nextUnreviewedWeekStart,
   });
 }

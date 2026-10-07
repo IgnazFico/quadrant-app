@@ -22,7 +22,7 @@ async function getUserId(): Promise<string | null> {
   return null;
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   const userId = await getUserId();
   if (!userId) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
@@ -30,7 +30,9 @@ export async function GET() {
 
   // Run calm evaluation first to detect any new milestones or schedule focus
   try {
-    await evaluateNotificationsForUser(userId);
+    // Browser timezone: lets the Sunday Reset fire on the user's own Sunday.
+    const tz = new URL(req.url).searchParams.get("tz");
+    await evaluateNotificationsForUser(userId, tz);
   } catch (err) {
     console.error("Failed evaluating notifications:", err);
   }

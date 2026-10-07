@@ -2,13 +2,17 @@
 
 import { useState } from "react";
 import { domainColor } from "../../lib/domainColors";
-import { startOfWeek } from "../../lib/week";
+import { addDays } from "../../lib/week";
 import type { Choice, ReviewData, ReviewGoal } from "../../hooks/useReview";
+
+/** Week keys are UTC midnight; format in UTC so the label never slips a day. */
+function fmtWeek(d: Date) {
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+}
 
 export function WeeklyReviewPage({ review }: { review: ReviewData }) {
   const {
     weekStart,
-    weekOptions,
     roles,
     loading,
     error,
@@ -19,14 +23,12 @@ export function WeeklyReviewPage({ review }: { review: ReviewData }) {
     totalCount,
     pct,
     canFinish,
-    goToPreviousWeek,
-    goToNextWeek,
-    setWeekStart,
     toggleCarry,
     startReflect,
     cancelReflect,
     submitReflection,
     completeReview,
+    early,
   } = review;
 
   if (loading || !weekStart) {
@@ -46,43 +48,20 @@ export function WeeklyReviewPage({ review }: { review: ReviewData }) {
               Quadrant
             </span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={goToPreviousWeek}
-              className="rounded-lg border border-[#E5E1D8] px-2 py-1 text-[11px] font-medium text-[#6B7280] hover:bg-[#F3F4F6] disabled:opacity-40"
-              disabled={loading}
-              aria-label="Previous week"
-            >
-              &larr;
-            </button>
-            <select
-              value={weekStart.toISOString().slice(0, 10)}
-              onChange={(e) => setWeekStart(new Date(e.target.value))}
-              className="rounded-lg border border-[#E5E1D8] bg-white px-2 py-1 text-[11px] font-mono text-[#9CA3AF] focus:border-[#FB923C] outline-none"
-              aria-label="Select week"
-            >
-              {weekOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-            <button
-              onClick={goToNextWeek}
-              className="rounded-lg border border-[#E5E1D8] px-2 py-1 text-[11px] font-medium text-[#6B7280] hover:bg-[#F3F4F6] disabled:opacity-40"
-              disabled={loading || weekStart.getTime() >= startOfWeek().getTime()}
-              aria-label="Next week"
-            >
-              &rarr;
-            </button>
-          </div>
+          {/* No week browsing: the review shows the week the server picks
+              (the oldest one due, or the Sunday review). */}
+          <span className="font-mono text-[11px] text-[#9CA3AF]">
+            {fmtWeek(weekStart)} – {fmtWeek(addDays(weekStart, 6))}
+          </span>
         </div>
 
         <h1 className="mb-1 font-serif text-2xl font-semibold text-[#1F2937]">
           Weekly review
         </h1>
         <p className="mb-5 text-[13px] text-[#6B7280]">
-          See what got done, what didn&apos;t, and decide what happens next.
+          {early
+            ? "Your week is wrapping up. Look back on it, then plan the week ahead."
+            : "See what got done, what didn't, and decide what happens next."}
         </p>
 
         {!masterKey && (
@@ -154,7 +133,7 @@ export function WeeklyReviewPage({ review }: { review: ReviewData }) {
               onClick={completeReview}
               className="mt-2 w-full rounded-[11px] bg-[#F97316] py-3.5 text-sm font-semibold text-white hover:bg-[#EA6A0C] disabled:bg-[#F0D9C6]"
             >
-              Complete review
+              {early ? "Complete review, then plan next week" : "Complete review"}
             </button>
             <p className="mt-2 text-center text-[11.5px] text-[#9CA3AF]">
               {canFinish

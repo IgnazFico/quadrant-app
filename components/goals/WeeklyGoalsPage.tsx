@@ -5,6 +5,7 @@ import Link from "next/link";
 import { domainColor } from "../../lib/domainColors";
 import { NotificationBell } from "../notifications/NotificationBell";
 import type { WeekData } from "../../hooks/useWeek";
+import { WeekToggle, weekRangeLabel } from "../week/WeekToggle";
 
 function formatHour(h: number) {
   const period = h >= 12 ? "PM" : "AM";
@@ -29,7 +30,17 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
     deleteBlock,
     scheduleForToday,
     blockForGoal,
+    view,
+    setView,
+    days,
+    loadedOnce,
   } = week;
+  const planning = view === "next";
+  // Sunday: the week is ending, so the review is open (lib/weeklyReviewGate.ts
+  // getReviewWindow). Look back first, then plan next week.
+  const isSunday = new Date().getDay() === 0;
+  // Links into the schedule keep the week the user is looking at.
+  const scheduleHref = planning ? "/schedule?week=next" : "/schedule";
 
   const [openRoleId, setOpenRoleId] = useState<string | null>(null);
   // Lazily default the expanded role to the first one once roles arrive.
@@ -78,7 +89,7 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
     0,
   );
 
-  if (loading) {
+  if (!loadedOnce) {
     return (
       <div className="flex min-h-screen items-center justify-center text-sm text-[#9CA3AF]">
         Loading your week...
@@ -95,23 +106,21 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
               Quadrant
             </span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="font-mono text-[11px] text-[#9CA3AF]">
-              {new Date().toLocaleDateString("en-US", {
-                weekday: "long",
-                month: "short",
-                day: "numeric",
-              })}
-            </span>
-            <NotificationBell />
-          </div>
+          <NotificationBell />
+        </div>
+
+        <div className="mb-2.5 flex items-center justify-between gap-3">
+          <WeekToggle view={view} onChange={setView} size="sm" />
+          <span className="font-mono text-[11px] text-[#9CA3AF]">{weekRangeLabel(days)}</span>
         </div>
 
         <h1 className="mb-1 font-serif text-2xl font-semibold text-[#1F2937]">
-          This week
+          {planning ? "Next week" : "This week"}
         </h1>
         <p className="mb-6 text-[13px] text-[#6B7280]">
-          Your roles, their goals, and where today fits in.
+          {planning
+            ? "Two or three goals per role for the week ahead. Give them a day once they're set."
+            : "Your roles, their goals, and where today fits in."}
         </p>
 
         {error && (
@@ -120,7 +129,33 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
           </p>
         )}
 
-        {/* TODAY */}
+        {isSunday && !planning && (
+          <Link
+            href="/weekly-review"
+            className="mb-5 flex items-center justify-between gap-3 rounded-[14px] border border-[#FED7AA] bg-[#FFF7ED] px-4 py-3.5"
+          >
+            <span>
+              <span className="block text-[13.5px] font-semibold text-[#1F2937]">Your week is wrapping up</span>
+              <span className="block text-[12px] text-[#6B7280]">Look back on it, then plan next week</span>
+            </span>
+            <span className="font-mono text-sm text-[#C2410C]">&rarr;</span>
+          </Link>
+        )}
+
+        <div aria-busy={loading} className={loading ? "pointer-events-none opacity-50 transition-opacity" : "transition-opacity"}>
+        {planning ? (
+          <Link
+            href={scheduleHref}
+            className="mb-7 flex items-center justify-between gap-3 rounded-[14px] border border-[#FED7AA] bg-[#FFF7ED] px-4 py-3.5"
+          >
+            <span>
+              <span className="block text-[13.5px] font-semibold text-[#1F2937]">Give these goals a day</span>
+              <span className="block text-[12px] text-[#6B7280]">Open next week&apos;s schedule</span>
+            </span>
+            <span className="font-mono text-sm text-[#C2410C]">&rarr;</span>
+          </Link>
+        ) : (
+        /* TODAY */
         <section className="mb-7">
           <div className="mb-3 flex items-baseline justify-between">
             <div className="flex items-baseline gap-2">
@@ -128,7 +163,7 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
                 Today
               </h2>
               <Link
-                href="/schedule"
+                href={scheduleHref}
                 className="font-mono text-[11px] text-[#F97316] hover:text-[#EA6A0C]"
               >
                 View full schedule
@@ -255,6 +290,7 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
             </div>
           )}
         </section>
+        )}
 
         {/* WEEKLY GOALS */}
         <section>
@@ -263,7 +299,7 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
               Weekly goals by role
             </h2>
             <span className="font-mono text-[11px] text-[#9CA3AF]">
-              {doneGoals} of {totalGoals} done
+              {planning ? `${totalGoals} planned` : `${doneGoals} of ${totalGoals} done`}
             </span>
           </div>
 
@@ -285,8 +321,9 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
                       {role.label}
                     </span>
                     <span className="font-mono text-[11px] text-[#9CA3AF]">
-                      {role.goals.filter((g) => g.status === "DONE").length}/
-                      {role.goals.length}
+                      {planning
+                        ? role.goals.length
+                        : `${role.goals.filter((g) => g.status === "DONE").length}/${role.goals.length}`}
                     </span>
                   </div>
                   <svg
@@ -306,11 +343,15 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
 
                 {open && (
                   <div className="px-3.5 pb-3.5">
+                    {planning && role.goals.length === 0 && (
+                      <p className="px-0.5 pb-1 text-[12.5px] text-[#8A8579]">Nothing planned yet.</p>
+                    )}
                     {role.goals.map((g) => (
                       <div
                         key={g.id}
                         className="mb-1.5 flex items-center gap-2 rounded-lg bg-white py-2 pl-2.5 pr-2"
                       >
+                        {!planning && (
                         <button
                           onClick={() => toggleGoal(g, role.id)}
                           className={`flex h-[17px] w-[17px] shrink-0 items-center justify-center rounded-[5px] border-[1.5px] ${
@@ -334,6 +375,7 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
                             </svg>
                           )}
                         </button>
+                        )}
                         <input
                           value={g.title}
                           onChange={(e) =>
@@ -348,11 +390,19 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
                         />
                         {blockForGoal(g.id) ? (
                           <Link
-                            href="/schedule"
+                            href={scheduleHref}
                             className="shrink-0 rounded-md bg-[#FFF7ED] px-1.5 py-0.5 font-mono text-[10px] font-medium text-[#C2410C]"
                             aria-label="Scheduled — view in schedule"
                           >
                             Scheduled
+                          </Link>
+                        ) : planning ? (
+                          <Link
+                            href={scheduleHref}
+                            className="shrink-0 rounded-md px-1.5 py-0.5 font-mono text-[10px] font-medium text-[#9CA3AF] hover:text-[#F97316]"
+                            aria-label="Give it a day in next week's schedule"
+                          >
+                            Give it a day
                           </Link>
                         ) : (
                         <button
@@ -406,6 +456,7 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
             );
           })}
         </section>
+        </div>
       </div>
     </div>
   );

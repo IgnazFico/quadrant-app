@@ -79,6 +79,76 @@ export function addDays(d: Date, n: number): Date {
 }
 
 // ---------------------------------------------------------------------------
+// Review window (Habit 3: look back as the week ends, then plan the next).
+// Pure, UTC-only date math so it behaves the same on any server clock.
+
+/** The user's local calendar date in `timeZone`, as UTC midnight (the @db.Date convention). */
+export function todayInTimeZone(now: Date, timeZone: string): Date {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(now);
+  const get = (t: string) => Number(parts.find((p) => p.type === t)?.value);
+  return new Date(Date.UTC(get("year"), get("month") - 1, get("day")));
+}
+
+/** Monday (UTC midnight) of a UTC-midnight calendar day. */
+export function mondayOf(utcDay: Date): Date {
+  return addDays(utcDay, -((utcDay.getUTCDay() + 6) % 7));
+}
+
+/** The user's current week: from their timezone when known, else the server clock. */
+export function currentWeekFor(now: Date, timeZone: string | null | undefined): Date {
+  return timeZone && isValidTimeZone(timeZone)
+    ? mondayOf(todayInTimeZone(now, timeZone))
+    : startOfWeek(now);
+}
+
+/**
+ * The week the user may review before the server-side gate counts it as
+ * past, or null. The gate (lib/weeklyReviewGate.ts) only sees weeks up to
+ * `serverPastWeek` (last week by the server clock), which makes the review
+ * *required*. This adds the week that is ending for the user:
+ *   - on their Sunday: the current week ("early", the Sunday review)
+ *   - ahead of UTC on their Monday morning: last week, which the server
+ *     still treats as current for a few hours
+ * Offering it never requires it; the gate is unchanged.
+ */
+export function reviewCandidateWeek(
+  now: Date,
+  timeZone: string | null | undefined,
+  serverPastWeek: Date,
+): { week: Date; early: boolean } | null {
+  if (!timeZone || !isValidTimeZone(timeZone)) return null;
+  const today = todayInTimeZone(now, timeZone);
+  const early = today.getUTCDay() === 0;
+  const week = early ? mondayOf(today) : addDays(mondayOf(today), -7);
+  return week.getTime() > serverPastWeek.getTime() ? { week, early } : null;
+}
+
+/**
+ * Where a review carries goals: the week after the reviewed one, but never a
+ * week that's already over (catching up on an old week carries into the
+ * current one). Sunday review of the current week -> next week.
+ */
+export function carryTargetWeek(reviewedWeek: Date, currentWeek: Date): Date {
+  const after = addDays(reviewedWeek, 7);
+  return after.getTime() > currentWeek.getTime() ? after : currentWeek;
+}
+
+/**
+ * Monday of the latest week that has started somewhere on Earth (UTC+14 is
+ * the furthest ahead). A goal in a later week hasn't started for anyone, so
+ * it can't be done yet.
+ */
+export function latestStartedWeek(now: Date = new Date()): Date {
+  const ahead = new Date(now.getTime() + 14 * 3_600_000);
+  return mondayOf(new Date(Date.UTC(ahead.getUTCFullYear(), ahead.getUTCMonth(), ahead.getUTCDate())));
+}
+
+// ---------------------------------------------------------------------------
 // Patterns month selection (client) and weekday-in-timezone (server)
 
 export type YearMonth = { year: number; month: number }; // month 1..12

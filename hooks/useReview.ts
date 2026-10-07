@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { addDays, startOfWeek } from "../lib/week";
+import { dayKey, startOfWeek } from "../lib/week";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "../store/authStore";
 import {
@@ -29,6 +29,15 @@ export type ReviewRole = { id: string; label: string; domain: string; goals: Rev
 
 export type ReviewData = ReturnType<typeof useReview>;
 
+/** Browser IANA zone: lets the server open the review on the user's own Sunday. */
+function browserTimeZone() {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * Shared data/mutation hook for the "Reflect" surface (weekly review half).
  * Extracted from WeeklyReviewPage.tsx so the mobile page and the desktop
@@ -48,6 +57,10 @@ export function useReview() {
   // True while some past week still needs reflecting (server's gate check).
   // Null until the first load answers.
   const [due, setDue] = useState<boolean | null>(null);
+  // `open`: some week can be reviewed now (due, or the user's Sunday).
+  // `early`: the week shown is still in progress (the Sunday review).
+  const [open, setOpen] = useState<boolean | null>(null);
+  const [early, setEarly] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeReflect, setActiveReflect] = useState<{
@@ -55,7 +68,6 @@ export function useReview() {
     goal: ReviewGoal;
   } | null>(null);
   const [toast, setToast] = useState<string | null>(null);
-  const [weekOptions, setWeekOptions] = useState<{ value: string; label: string }[]>([]);
   const masterKey = useAuthStore((s) => s.masterKey);
   const masterKeyRef = useRef(masterKey);
   masterKeyRef.current = masterKey;
@@ -64,27 +76,16 @@ export function useReview() {
     setWeekStartState(d);
   }
 
-  // Build a list of recent weeks for the dropdown selector
-  useEffect(() => {
-    const options: { value: string; label: string }[] = [];
-    for (let i = 0; i < 12; i++) {
-      const ws = addDays(startOfWeek(), -i * 7);
-      const we = addDays(ws, 6);
-      options.push({
-        value: ws.toISOString().slice(0, 10),
-        label: `${ws.toLocaleDateString("en-US", { month: "short", day: "numeric" })} – ${we.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`,
-      });
-    }
-    setWeekOptions(options);
-  }, []);
-
   const load = useCallback(
     async (ws: Date | null) => {
       setLoading(true);
       setError(null);
       try {
-        const qs = ws ? `?weekStart=${ws.toISOString().slice(0, 10)}` : "";
-        const res = await fetch(`/api/review${qs}`);
+        const params = new URLSearchParams();
+        if (ws) params.set("weekStart", ws.toISOString().slice(0, 10));
+        const tz = browserTimeZone();
+        if (tz) params.set("tz", tz);
+        const res = await fetch(`/api/review?${params}`);
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
           throw new Error(body.error ?? `HTTP ${res.status}`);
@@ -92,12 +93,14 @@ export function useReview() {
         const body = await res.json();
         // The server may have resolved a different week than requested
         // (e.g. the initial no-param load); always sync local state to
-        // what was actually returned so the dropdown/arrows and the next
+        // what was actually returned so the week label and the next
         // fetch-dedup key agree with the data on screen.
         const resolvedWeekStart = new Date(body.weekStart);
         setWeekStartState(resolvedWeekStart);
         setFetchedWeekStart(resolvedWeekStart.toISOString().slice(0, 10));
         setDue(Boolean(body.due));
+        setOpen(Boolean(body.open));
+        setEarly(Boolean(body.early));
         const withReasons: ReviewRole[] = await Promise.all(
           body.roles.map(async (r: ReviewRole) => {
             const goalsWithReasons = await Promise.all(
@@ -133,7 +136,8 @@ export function useReview() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Subsequent loads: user explicitly changed the week (arrows/dropdown).
+  // Subsequent loads: completeReview advances to the next outstanding week.
+  // (No user week browsing: past weeks are reviewed in order, not picked.)
   useEffect(() => {
     if (!weekStart) return;
     const key = weekStart.toISOString().slice(0, 10);
@@ -141,19 +145,6 @@ export function useReview() {
     load(weekStart);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [weekStart]);
-
-  const goToPreviousWeek = () => {
-    if (!weekStart) return;
-    setWeekStart(addDays(weekStart, -7));
-  };
-
-  const goToNextWeek = () => {
-    if (!weekStart) return;
-    const next = addDays(weekStart, 7);
-    if (next <= startOfWeek()) {
-      setWeekStart(next);
-    }
-  };
 
   const allGoals = roles.flatMap((r) => r.goals);
   const doneCount = allGoals.filter((g) => g.status === "DONE").length;
@@ -240,15 +231,26 @@ export function useReview() {
     const res = await fetch("/api/review/complete", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ weekStart: weekStart.toISOString().slice(0, 10) }),
+      body: JSON.stringify({
+        weekStart: weekStart.toISOString().slice(0, 10),
+        tz: browserTimeZone(),
+      }),
     });
     if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
       setError(
-        "Every missed goal needs a reflection before this can be completed.",
+        typeof body.error === "string"
+          ? body.error
+          : "Every missed goal needs a reflection before this can be completed.",
       );
       return;
     }
-    const { carriedCount, nextUnreviewedWeekStart } = await res.json();
+    const { carriedCount, carriedInto, nextUnreviewedWeekStart } = await res.json();
+    // Carried into a week after the user's current one: this was the Sunday
+    // review, so planning that week comes next (Habit 3: look back, then
+    // organize the week ahead).
+    const plansNext =
+      typeof carriedInto === "string" && carriedInto > dayKey(startOfWeek());
     // The server just accepted this week as complete, so it can never be the
     // next outstanding week. If it is, the gate and this page disagree about
     // what the week contains; advancing "in place" would reload the same week
@@ -262,7 +264,9 @@ export function useReview() {
       return;
     }
     setToast(
-      `Review complete — ${carriedCount} goal${carriedCount === 1 ? "" : "s"} carried into next week`,
+      plansNext
+        ? `Week closed — ${carriedCount} goal${carriedCount === 1 ? "" : "s"} carried into next week. Now plan it.`
+        : `Review complete — ${carriedCount} goal${carriedCount === 1 ? "" : "s"} carried into this week`,
     );
     setTimeout(() => {
       setToast(null);
@@ -276,7 +280,7 @@ export function useReview() {
         setFetchedWeekStart(null);
         setWeekStart(next);
       } else {
-        router.push("/goals");
+        router.push(plansNext ? "/goals?week=next" : "/goals");
         router.refresh();
       }
     }, 1500);
@@ -285,7 +289,8 @@ export function useReview() {
   return {
     weekStart,
     due,
-    weekOptions,
+    open,
+    early,
     roles,
     loading,
     error,
@@ -297,9 +302,6 @@ export function useReview() {
     totalCount,
     pct,
     canFinish,
-    goToPreviousWeek,
-    goToNextWeek,
-    setWeekStart,
     toggleCarry,
     startReflect,
     cancelReflect,

@@ -8,6 +8,7 @@ import { NotificationBell } from "../notifications/NotificationBell";
 import { BottomNav } from "./BottomNav";
 import { Toaster } from "../toast/Toaster";
 import { QuadrantMark } from "../brand/QuadrantMark";
+import { SegmentedToggle } from "../ui/SegmentedToggle";
 
 /**
  * App chrome for every (app) route.
@@ -105,29 +106,16 @@ function TopBar({ pathname, email }: { pathname: string; email: string }) {
         Quadrant
       </Link>
 
-      {/* Centre: primary switcher */}
-      <nav
-        aria-label="Main"
-        className="flex items-center gap-0.5 rounded-xl border border-[#ECE8DF] bg-[#F3EEE6] p-[3px]"
-      >
-        {NAV.map((item) => {
-          const active = item.match.some((m) => matches(pathname, m));
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              aria-current={active ? "page" : undefined}
-              className={`flex h-[30px] min-w-[104px] items-center justify-center rounded-[9px] px-4 text-[13.5px] font-semibold transition-colors ${
-                active
-                  ? "bg-white text-[#1F2937] shadow-[0_0_0_1px_#ECE8DF,0_2px_6px_rgba(31,41,55,0.06)]"
-                  : "text-[#6B7280] hover:text-[#1F2937]"
-              }`}
-            >
-              {item.label}
-            </Link>
-          );
-        })}
-      </nav>
+      {/* Centre: primary switcher, the one place the brand's Quadrant II
+          arc rides on the active thumb (components/ui/SegmentedToggle.tsx). */}
+      <SegmentedToggle
+        as="nav"
+        ariaLabel="Main"
+        size="lg"
+        signature
+        items={NAV.map((item) => ({ value: item.href, label: item.label, href: item.href }))}
+        value={NAV.find((item) => item.match.some((m) => matches(pathname, m)))?.href ?? null}
+      />
 
       {/* Right: date, bell, account (→ Identity), sign out */}
       <div className="flex min-w-0 items-center gap-3 justify-self-end">

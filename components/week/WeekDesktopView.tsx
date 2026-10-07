@@ -308,7 +308,11 @@ export function WeekDesktopView({ week }: { week: WeekData }) {
             </p>
           </div>
           <div className="flex flex-wrap gap-2.5">
-            <Stat value={`${doneGoals}/${totalGoals}`} label="Goals done" />
+            {view === "next" ? (
+              <Stat value={String(totalGoals)} label="Goals planned" />
+            ) : (
+              <Stat value={`${doneGoals}/${totalGoals}`} label="Goals done" />
+            )}
             <Stat value={String(totalBlocks)} label="Blocks placed" />
             <Stat value={String(roles.length)} label="Roles in play" />
           </div>
@@ -332,7 +336,7 @@ export function WeekDesktopView({ week }: { week: WeekData }) {
                 Goals by role
               </h2>
               <span className="font-mono text-[11px] text-[#9CA3AF]">
-                {doneGoals} of {totalGoals} done
+                {view === "next" ? `${totalGoals} planned` : `${doneGoals} of ${totalGoals} done`}
               </span>
             </div>
 
@@ -378,7 +382,7 @@ export function WeekDesktopView({ week }: { week: WeekData }) {
                     <div className="px-3 pb-3">
                       {role.goals.length === 0 && (
                         <p className="px-0.5 pb-2 text-[12.5px] text-[#8A8579]">
-                          No goals for this role yet this week.
+                          {view === "next" ? "Nothing planned for this role yet." : "No goals for this role yet this week."}
                         </p>
                       )}
                       {role.goals.map((g) => (
@@ -386,7 +390,7 @@ export function WeekDesktopView({ week }: { week: WeekData }) {
                           key={g.id}
                           goal={g}
                           onDragStart={(e) => onGoalDragStart(e, g.id)}
-                          onToggle={() => toggleGoal(g, role.id)}
+                          onToggle={view === "next" ? null : () => toggleGoal(g, role.id)}
                           onEdit={(title) => editGoalTitleLocal(g.id, role.id, title)}
                           onCommit={(title) => commitGoalTitle(g.id, title)}
                           scheduled={blockForGoal(g.id)}
@@ -713,7 +717,8 @@ function GoalRow({
 }: {
   goal: Goal;
   onDragStart: (e: React.DragEvent) => void;
-  onToggle: () => void;
+  /** Null for next week: a week that hasn't started can't have done goals. */
+  onToggle: (() => void) | null;
   onEdit: (title: string) => void;
   onCommit: (title: string) => void;
   /** The goal's one block, if it has a place in the week already. */
@@ -739,19 +744,21 @@ function GoalRow({
           <circle cx="9" cy="18" r="1.6" /><circle cx="15" cy="18" r="1.6" />
         </svg>
       </span>
-      <button
-        onClick={onToggle}
-        aria-pressed={done}
-        className={`flex h-[17px] w-[17px] shrink-0 items-center justify-center rounded-[5px] border-[1.5px] ${
-          done ? "border-[#22C55E] bg-[#22C55E]" : "border-[#D6D2C8] bg-white"
-        }`}
-      >
-        {done && (
-          <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-        )}
-      </button>
+      {onToggle && (
+        <button
+          onClick={onToggle}
+          aria-pressed={done}
+          className={`flex h-[17px] w-[17px] shrink-0 items-center justify-center rounded-[5px] border-[1.5px] ${
+            done ? "border-[#22C55E] bg-[#22C55E]" : "border-[#D6D2C8] bg-white"
+          }`}
+        >
+          {done && (
+            <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          )}
+        </button>
+      )}
       <input
         value={goal.title}
         title={goal.title}

@@ -1,5 +1,5 @@
 import { prisma } from "./prisma";
-import { startOfWeek, addDays, weekRange } from "./week";
+import { startOfWeek, addDays, weekRange, reviewCandidateWeek } from "./week";
 
 /**
  * Checks if the user has any unreviewed goals from past weeks.
@@ -88,4 +88,55 @@ export async function getWeeklyReviewGateStatus(userId: string) {
     required: earliestUnreviewedWeekStart !== null,
     earliestUnreviewedWeekStart,
   };
+}
+
+/** True if `week` has a goal that is neither done nor reflected on. */
+async function hasUnresolvedGoalsIn(userId: string, week: Date): Promise<boolean> {
+  const count = await prisma.goal.count({
+    where: { ...reviewWeekGoalsWhere(userId, week), status: { not: "DONE" }, reviewEntry: null },
+  });
+  return count > 0;
+}
+
+/**
+ * Whether `week` may be completed now: any week the gate counts as past, or
+ * the week ending for the user (their Sunday, or their Monday morning ahead
+ * of UTC). Stops an ongoing week from being closed out mid-week, which would
+ * carry its open goals into next week early.
+ */
+export function isReviewableWeek(
+  week: Date,
+  now: Date,
+  timeZone: string | null | undefined,
+): boolean {
+  const serverPastWeek = addDays(startOfWeek(now), -7);
+  if (week.getTime() <= serverPastWeek.getTime()) return true;
+  return reviewCandidateWeek(now, timeZone, serverPastWeek)?.week.getTime() === week.getTime();
+}
+
+/**
+ * Which week the review should show, and whether it's required.
+ *
+ *   required  a past week is unresolved: the layout gate redirects (unchanged)
+ *   open      `week` can be reviewed now, required or not
+ *
+ * On top of the gate, the review opens on the user's own Sunday for the week
+ * that's ending (Habit 3: look back, then plan the coming week). That early
+ * review is offered, never forced: the gate still only fires once the week
+ * is over. `timeZone` is the browser's IANA zone; without it only the gate
+ * applies.
+ */
+export async function getReviewWindow(
+  userId: string,
+  timeZone: string | null | undefined,
+  now: Date = new Date(),
+): Promise<{ required: boolean; week: Date | null }> {
+  const earliest = await getEarliestUnreviewedWeekStart(userId);
+  if (earliest) return { required: true, week: startOfWeek(earliest) };
+
+  const candidate = reviewCandidateWeek(now, timeZone, addDays(startOfWeek(now), -7));
+  if (candidate && (await hasUnresolvedGoalsIn(userId, candidate.week))) {
+    return { required: false, week: candidate.week };
+  }
+  return { required: false, week: null };
 }
