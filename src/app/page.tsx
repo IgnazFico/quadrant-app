@@ -286,7 +286,10 @@ export default async function HomePage() {
             "radial-gradient(120% 70% at 50% 0%, #FDFBF7 0%, #FAF7F2 50%, #F5EEE3 100%)",
         }}
       >
-        <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+        <div
+          className="pointer-events-none absolute inset-0"
+          aria-hidden="true"
+        >
           {SECTION_STARS.map((s, i) => (
             <span
               key={i}
@@ -310,8 +313,8 @@ export default async function HomePage() {
               An interface designed to keep you centered.
             </h2>
             <p className="mt-2 text-sm text-[#5E5247]">
-              Plan by role, watch your year fill with stars, and close each
-              week without guilt. Try the examples below.
+              Plan by role, watch your year fill with stars, and close each week
+              without guilt. Try the examples below.
             </p>
           </div>
 
@@ -348,7 +351,7 @@ export default async function HomePage() {
             >
               {session?.user
                 ? "Enter Your Dashboard"
-                : "Start Your Constellation Free"}
+                : "Start Your Journey Free"}
             </Link>
           </div>
 
