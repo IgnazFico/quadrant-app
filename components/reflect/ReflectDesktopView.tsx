@@ -11,7 +11,7 @@ import type { Role } from "../../hooks/useWeek";
 import { GoalRow } from "../review/WeeklyReviewPage";
 import { ReflectModal } from "./ReflectModal";
 import { CARD_ORDER, CARD_THEME, renderPatternCard } from "../patterns/cardContent";
-import { SplitNote, monthName } from "../patterns/PatternsMonth";
+import { SplitNote } from "../patterns/PatternsMonth";
 
 /**
  * Desktop "Reflect": a page header, then a review rail on the left and the
@@ -49,18 +49,11 @@ export function ReflectDesktopView({
   patterns: PatternsState;
   thisWeek: WeekSnapshot;
 }) {
-  // The page eyebrow always shows the current month.
-  const monthLabel = monthName(patterns.currentMonth, { withYear: true });
-
   return (
     <div className="mx-auto max-w-[1600px] px-6 pb-20 pt-[34px] lg:px-8 2xl:px-10">
       <header className="mb-[26px] border-b border-[#ECE8DF] pb-[22px]">
         <div>
-          <div className="inline-flex items-center gap-2.5 font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-[#9CA3AF]">
-            <b className="rounded border border-[#FED7AA] bg-[#FFF7ED] px-1.5 py-0.5 text-[#C2410C]">B-01</b>
-            <span>{monthLabel}</span>
-          </div>
-          <h1 className="my-3 font-serif text-[40px] font-semibold leading-[1.1] tracking-[-0.015em] text-[#1F2937]">
+          <h1 className="mb-3 font-serif text-[40px] font-semibold leading-[1.1] tracking-[-0.015em] text-[#1F2937]">
             Reflect
           </h1>
           <p className="max-w-[580px] text-[15px] text-[#6B7280]">
