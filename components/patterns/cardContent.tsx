@@ -1,6 +1,8 @@
 export type PatternsData = {
   year: number;
   month: number;
+  /** Goals with a weekStart in this month, any status. */
+  goalCount: number;
   rhythm: {
     weekday: { label: string; count: number }[];
     daypart: { morning: number; afternoon: number; evening: number } | null;
@@ -47,9 +49,13 @@ function topDaypart(d: { morning: number; afternoon: number; evening: number }) 
 export function renderPatternCard(
   id: string,
   data: PatternsData,
-  opts: { fill?: boolean } = {},
+  opts: { fill?: boolean; showMonth?: boolean } = {},
 ): React.ReactNode {
   const fill = !!opts.fill;
+  // "SEP 2026" next to the eyebrow; shown while the page is split across months.
+  const tag = opts.showMonth ? `${MONTHS[data.month - 1].slice(0, 3).toUpperCase()} ${data.year}` : undefined;
+  // "this month" for the current month, "in September" for any other.
+  const when = isCurrentMonth(data) ? "this month" : `in ${MONTHS[data.month - 1]}`;
   if (id === "rhythm") {
     const maxCount = Math.max(1, ...data.rhythm.weekday.map((w) => w.count));
     const busiest = [...data.rhythm.weekday].sort((a, b) => b.count - a.count)[0];
@@ -58,7 +64,7 @@ export function renderPatternCard(
         <Icon color="#B98900">
           <circle cx="12" cy="12" r="5" /><path d="M12 1v3M12 20v3M4.2 4.2l2 2M17.8 17.8l2 2M1 12h3M20 12h3M4.2 19.8l2-2M17.8 6.2l2-2" />
         </Icon>
-        <Eyebrow color="#B98900">Rhythm</Eyebrow>
+        <Eyebrow color="#B98900" tag={tag}>Rhythm</Eyebrow>
         <Title color="#5C4A00">
           {busiest && busiest.count > 0 ? `${expandDay(busiest.label)}s are usually where things come together.` : "Not enough finished goals yet to see a shape here."}
         </Title>
@@ -78,7 +84,7 @@ export function renderPatternCard(
           ))}
         </div>
         <Caption color="#8A7000">
-          {data.rhythm.daypart ? `Most of your scheduled goals land in the ${topDaypart(data.rhythm.daypart)}.` : "Nothing scheduled to a specific time yet this month."}
+          {data.rhythm.daypart ? `Most of your scheduled goals land in the ${topDaypart(data.rhythm.daypart)}.` : `Nothing scheduled to a specific time ${when}.`}
         </Caption>
       </>
     );
@@ -90,9 +96,9 @@ export function renderPatternCard(
         <Icon color="#B4432A">
           <path d="M12 21s-7-4.35-9.5-9A5.5 5.5 0 0 1 12 5a5.5 5.5 0 0 1 9.5 7c-2.5 4.65-9.5 9-9.5 9z" />
         </Icon>
-        <Eyebrow color="#B4432A">Presence</Eyebrow>
+        <Eyebrow color="#B4432A" tag={tag}>Presence</Eyebrow>
         <div className="mb-1.5 font-serif text-[46px] font-bold leading-none" style={{ color: "#8A331F" }}>{data.presence.activeDaysCount}</div>
-        <p className="mb-4.5 text-[13px] font-medium" style={{ color: "#A6482E" }}>separate days you opened Quadrant this month.</p>
+        <p className="mb-4.5 text-[13px] font-medium" style={{ color: "#A6482E" }}>separate days you opened Quadrant {when}.</p>
 
         <div className={`mb-4 grid grid-cols-7 gap-1.5 ${fill ? "max-w-[280px]" : ""}`}>
           {data.presence.heatmap.map((d) => (
@@ -110,12 +116,12 @@ export function renderPatternCard(
         <Icon color="#1F8A46">
           <path d="M12 3v18M5 8l-3 6a4 4 0 0 0 6 0zM19 8l3 6a4 4 0 0 1-6 0zM5 8h14M12 3l-4 5h8z" />
         </Icon>
-        <Eyebrow color="#1F8A46">Balance</Eyebrow>
+        <Eyebrow color="#1F8A46" tag={tag}>Balance</Eyebrow>
         <Title color="#175E33">Where your finished goals actually landed.</Title>
 
         <div className="flex-1">
           {data.balance.roles.length === 0 ? (
-            <p className="text-[13px]" style={{ color: "#3E7A57" }}>No completed goals yet this month.</p>
+            <p className="text-[13px]" style={{ color: "#3E7A57" }}>No completed goals {when}.</p>
           ) : (
             data.balance.roles.slice(0, 4).map((r, i) => (
               <div key={r.roleId} className="mb-3.5 flex items-center gap-3">
@@ -131,7 +137,7 @@ export function renderPatternCard(
           )}
         </div>
         <Caption color="#3E7A57">
-          {data.balance.rolesWithActivity} of your {data.balance.totalRoles} roles saw at least one finished goal this month.
+          {data.balance.rolesWithActivity} of your {data.balance.totalRoles} roles saw at least one finished goal {when}.
         </Caption>
       </>
     );
@@ -143,7 +149,7 @@ export function renderPatternCard(
         <Icon color="#B5560B">
           <path d="M12 19l7-7 3 3-7 7-3-3z" /><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" /><path d="M2 2l7.586 7.586" /><circle cx="11" cy="11" r="2" />
         </Icon>
-        <Eyebrow color="#B5560B">Style</Eyebrow>
+        <Eyebrow color="#B5560B" tag={tag}>Style</Eyebrow>
         {data.style ? (
           <>
             <Title color="#7A3B0F">
@@ -153,7 +159,7 @@ export function renderPatternCard(
             <SplitStat label="Tied to a goal vs. standalone" left={data.style.linkedPct} leftColor="#1E3A8A" leftLabel="Linked to a goal" rightLabel="Standalone" textColor="#8A5220" />
           </>
         ) : (
-          <p className="text-[13px]" style={{ color: "#8A5220" }}>Nothing scheduled yet this month.</p>
+          <p className="text-[13px]" style={{ color: "#8A5220" }}>Nothing scheduled {when}.</p>
         )}
       </>
     );
@@ -167,14 +173,21 @@ export function renderPatternCard(
       <Icon color="#2C4A9E">
         <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z" />
       </Icon>
-      <Eyebrow color="#2C4A9E">Honesty</Eyebrow>
+      <Eyebrow color="#2C4A9E" tag={tag}>Honesty</Eyebrow>
       <div className="mb-1.5 font-serif text-[46px] font-bold leading-none" style={{ color: "#1F3A7A" }}>{h.reflectedCount}</div>
-      <p className="mb-5 text-[13px] font-medium" style={{ color: "#3C579C" }}>honest reflections this month &mdash; the truth-telling counts too.</p>
+      <p className="mb-5 text-[13px] font-medium" style={{ color: "#3C579C" }}>honest reflections {when} &mdash; the truth-telling counts too.</p>
       {h.reflectedCount > 0 && (
         <SplitStat left={carryShare} leftColor="#2C4A9E" leftLabel={`${h.carriedCount} carried forward`} rightLabel={`${h.cancelledCount} let go`} textColor="#3C579C" />
       )}
     </>
   );
+}
+
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+function isCurrentMonth(data: PatternsData) {
+  const now = new Date();
+  return data.year === now.getFullYear() && data.month === now.getMonth() + 1;
 }
 
 function Icon({ color, children }: { color: string; children: React.ReactNode }) {
@@ -184,8 +197,17 @@ function Icon({ color, children }: { color: string; children: React.ReactNode })
     </svg>
   );
 }
-function Eyebrow({ color, children }: { color: string; children: React.ReactNode }) {
-  return <p className="mb-1.5 text-[11.5px] font-bold uppercase tracking-wide" style={{ color }}>{children}</p>;
+function Eyebrow({ color, tag, children }: { color: string; tag?: string; children: React.ReactNode }) {
+  return (
+    <p className="mb-1.5 flex items-center justify-between gap-2 text-[11.5px] font-bold uppercase tracking-wide" style={{ color }}>
+      <span>{children}</span>
+      {tag && (
+        <span className="rounded-full bg-white/75 px-2 py-0.5 font-mono text-[10.5px] font-semibold tracking-[0.06em] ring-1 ring-black/5">
+          {tag}
+        </span>
+      )}
+    </p>
+  );
 }
 function Title({ color, children }: { color: string; children: React.ReactNode }) {
   return <p className="mb-5 max-w-[22ch] font-serif text-[21px] font-semibold leading-tight" style={{ color }}>{children}</p>;

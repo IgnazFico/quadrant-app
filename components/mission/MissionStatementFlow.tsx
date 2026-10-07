@@ -5,6 +5,7 @@ import { useAuthStore } from "../../store/authStore";
 import { encryptField, toBase64 } from "../../lib/crypto";
 import Link from "next/link";
 import { QuadrantMark } from "../brand/QuadrantMark";
+import { signatureFont } from "../../lib/signatureFont";
 
 type Screen =
   | "intro"
@@ -252,11 +253,12 @@ export function MissionStatementFlow() {
             </p>
             <input
               type="text"
-              placeholder="Type your name"
+              placeholder="Your name"
+              aria-label="Your signature"
+              autoComplete="name"
               value={signedName}
               onChange={(e) => setSignedName(e.target.value)}
-              className="mb-2 w-full border-b border-[#DAD5C9] bg-transparent pb-2.5 pt-1.5 text-center font-serif text-[34px] text-[#1F2937] outline-none focus:border-[#F97316]"
-              style={{ fontFamily: "'Caveat', cursive" }}
+              className={`${signatureFont.className} mb-2 w-full border-b border-[#DAD5C9] bg-transparent pb-1 pt-1.5 text-center text-[46px] leading-[1.25] text-[#1F2937] outline-none placeholder:text-[#C9C3B6] focus:border-[#F97316]`}
             />
             <p className="mb-8 font-mono text-[11px] text-[#B7B2A7]">{today}</p>
             <button
@@ -278,10 +280,7 @@ export function MissionStatementFlow() {
             <h1 className="mb-2 font-serif text-xl font-semibold text-[#1F2937]">
               Committed
             </h1>
-            <p
-              className="mb-0.5 text-[26px]"
-              style={{ fontFamily: "'Caveat', cursive" }}
-            >
+            <p className={`${signatureFont.className} mb-1 text-[38px] leading-[1.25] text-[#1F2937]`}>
               {signedName}
             </p>
             <p className="mb-6 font-mono text-[11px] text-[#B7B2A7]">{today}</p>
@@ -289,11 +288,16 @@ export function MissionStatementFlow() {
               Quadrant will surface this again next January — not to change it
               on the spot, but to see if it still sounds like you.
             </p>
+            {/*
+              To the week, not "/": "/" is the public landing page. The week
+              (goals) is where a mission turns into what you'll do next, and
+              it's the app's home everywhere else (login, manifest start_url).
+            */}
             <Link
-              href="/"
+              href="/goals"
               className="w-full rounded-[10px] bg-[#F97316] py-3.5 text-center text-sm font-semibold text-white hover:bg-[#EA6A0C]"
             >
-              Enter Quadrant
+              Plan this week
             </Link>
           </div>
         )}

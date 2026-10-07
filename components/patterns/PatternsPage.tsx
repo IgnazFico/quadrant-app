@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { CARD_ORDER, CARD_THEME, renderPatternCard } from "./cardContent";
+import { SplitNote } from "./PatternsMonth";
 import type { PatternsState } from "../../hooks/usePatterns";
 
 /**
@@ -15,14 +16,14 @@ import type { PatternsState } from "../../hooks/usePatterns";
 const NAV_CLEARANCE = "64px";
 
 export function PatternsPage({ patterns }: { patterns: PatternsState }) {
-  const { data, loading } = patterns;
+  const { current, loading, split, dataFor } = patterns;
   const containerRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<(HTMLElement | null)[]>([]);
   const [visible, setVisible] = useState<Set<number>>(new Set([0]));
   const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
-    if (!data) return;
+    if (!current) return;
     const io = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -38,7 +39,7 @@ export function PatternsPage({ patterns }: { patterns: PatternsState }) {
     );
     cardRefs.current.forEach((el) => el && io.observe(el));
     return () => io.disconnect();
-  }, [data]);
+  }, [current]);
 
   function goTo(i: number) {
     cardRefs.current[i]?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -47,7 +48,7 @@ export function PatternsPage({ patterns }: { patterns: PatternsState }) {
   if (loading) {
     return <div className="flex min-h-screen items-center justify-center text-sm text-[#9CA3AF]">Gathering your patterns...</div>;
   }
-  if (!data) {
+  if (!current) {
     return <div className="flex min-h-screen items-center justify-center text-sm text-[#9CA3AF]">Couldn&apos;t load this right now.</div>;
   }
 
@@ -65,7 +66,10 @@ export function PatternsPage({ patterns }: { patterns: PatternsState }) {
           className="fixed left-1/2 top-0 w-full max-w-[440px] -translate-x-1/2 snap-y snap-mandatory overflow-y-auto"
           style={{ bottom: `calc(${NAV_CLEARANCE} + env(safe-area-inset-bottom))` }}
         >
-          {CARD_ORDER.map((id, i) => (
+          {CARD_ORDER.map((id, i) => {
+            const data = dataFor(id);
+            if (!data) return null;
+            return (
             <section
               key={id}
               ref={(el) => { cardRefs.current[i] = el; }}
@@ -78,10 +82,16 @@ export function PatternsPage({ patterns }: { patterns: PatternsState }) {
                 }`}
               >
                 <Brand />
-                {renderPatternCard(id, data)}
+                {i === 0 && (
+                  <div className="-mt-1 mb-5 empty:hidden">
+                    <SplitNote patterns={patterns} tone="card" />
+                  </div>
+                )}
+                {renderPatternCard(id, data, { showMonth: split })}
               </div>
             </section>
-          ))}
+            );
+          })}
         </div>
 
         {/* side dots */}
@@ -104,7 +114,7 @@ export function PatternsPage({ patterns }: { patterns: PatternsState }) {
 
 function Brand() {
   return (
-    <div className="mb-5 flex items-center gap-2">
+    <div className="mb-5">
       <span className="font-serif text-[13px] font-semibold text-black/35">Quadrant &middot; Patterns</span>
     </div>
   );

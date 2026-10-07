@@ -9,7 +9,7 @@
      --font-yc-display  Fraunces (SOFT/WONK axes): Quadrant speaking
      --font-yc-serif    Source Serif 4 italic: the user's own words
      --font-sans        app sans in spaced caps: quiet facts, kickers
-     --font-yc-hand     Caveat: the signature
+     --font-signature   Ms Madi: the signature (lib/signatureFont.ts)
    Fonts are loaded only on this route: src/app/(app)/year-review/layout.tsx
 
    Atmosphere (back to front): dawn-to-dusk sky, drifting warm
@@ -38,7 +38,7 @@
   --yc-display: var(--font-yc-display), var(--font-yc-serif), Georgia, serif;
   --yc-serif: var(--font-yc-serif), Georgia, Cambria, 'Times New Roman', serif;
   --yc-sans: var(--font-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --yc-hand: var(--font-yc-hand), 'Segoe Script', cursive;
+  --yc-hand: var(--font-signature), 'Segoe Script', cursive;
 
   --yc-ease: cubic-bezier(0.16, 1, 0.3, 1);
   --yc-slow: cubic-bezier(0.45, 0, 0.2, 1);
@@ -396,7 +396,7 @@
   display: block;
   margin-top: 18px;
   text-align: right;
-  font: 600 36px/1 var(--yc-hand);
+  font: 400 46px/1.15 var(--yc-hand);
   color: var(--yc-bark);
   clip-path: inset(-10px 100% -10px 0);
   transition: clip-path 2000ms var(--yc-slow) 700ms;

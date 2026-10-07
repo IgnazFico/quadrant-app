@@ -11,6 +11,7 @@ import type { Role } from "../../hooks/useWeek";
 import { GoalRow } from "../review/WeeklyReviewPage";
 import { ReflectModal } from "./ReflectModal";
 import { CARD_ORDER, CARD_THEME, renderPatternCard } from "../patterns/cardContent";
+import { SplitNote, monthName } from "../patterns/PatternsMonth";
 
 /**
  * Desktop "Reflect": a page header, then a review rail on the left and the
@@ -47,13 +48,12 @@ export function ReflectDesktopView({
   patterns: PatternsState;
   thisWeek: WeekSnapshot;
 }) {
-  const goals = thisWeek.roles.flatMap((r) => r.goals);
-  const done = goals.filter((g) => g.status === "DONE").length;
-  const monthLabel = new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  // The page eyebrow always shows the current month.
+  const monthLabel = monthName(patterns.currentMonth, { withYear: true });
 
   return (
     <div className="mx-auto max-w-[1600px] px-6 pb-20 pt-[34px] lg:px-8 2xl:px-10">
-      <header className="mb-[26px] flex flex-wrap items-end justify-between gap-6 border-b border-[#ECE8DF] pb-[22px]">
+      <header className="mb-[26px] border-b border-[#ECE8DF] pb-[22px]">
         <div>
           <div className="inline-flex items-center gap-2.5 font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-[#9CA3AF]">
             <b className="rounded border border-[#FED7AA] bg-[#FFF7ED] px-1.5 py-0.5 text-[#C2410C]">B-01</b>
@@ -66,17 +66,6 @@ export function ReflectDesktopView({
             What happened, and what it&apos;s teaching you. The review opens each
             Monday for the week that just ended. Patterns update as you go.
           </p>
-        </div>
-        <div className="flex flex-wrap gap-2.5">
-          <Stat value={thisWeek.loading ? "–" : `${done}/${goals.length}`} label="Done this week" />
-          <Stat
-            value={patterns.data ? String(patterns.data.presence.activeDaysCount) : "–"}
-            label="Days present"
-          />
-          <Stat
-            value={patterns.data ? String(patterns.data.honesty.reflectedCount) : "–"}
-            label="Reflections"
-          />
         </div>
       </header>
 
@@ -100,15 +89,6 @@ export function ReflectDesktopView({
 /** Week keys are UTC midnight; format in UTC so the label never slips a day. */
 function fmt(d: Date) {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
-}
-
-function Stat({ value, label }: { value: string; label: string }) {
-  return (
-    <div className="min-w-[110px] rounded-xl border border-[#ECE8DF] bg-white px-4 py-2.5">
-      <div className="font-serif text-[26px] font-semibold leading-[1.15] text-[#1F2937]">{value}</div>
-      <div className="font-mono text-[10.5px] uppercase tracking-[0.06em] text-[#9CA3AF]">{label}</div>
-    </div>
-  );
 }
 
 function RailShell({
@@ -494,22 +474,22 @@ function LookBackGoal({ goal }: { goal: ReviewGoal }) {
 // Patterns
 
 function PatternsPanel({ patterns }: { patterns: PatternsState }) {
-  const { data, loading } = patterns;
+  const { current, loading, split, dataFor } = patterns;
 
   return (
     <section aria-label="Patterns" className="min-w-0">
-      <div className="mb-3.5 flex items-baseline justify-between gap-3">
+      <div className="mb-3.5">
         <h2 className="font-serif text-xl font-semibold text-[#1F2937]">Patterns</h2>
-        <span className="whitespace-nowrap font-mono text-[11px] text-[#9CA3AF]">
-          This month · updates as you go
-        </span>
+      </div>
+      <div className="mb-4 empty:hidden">
+        <SplitNote patterns={patterns} />
       </div>
 
       {loading ? (
         <p className="rounded-2xl border border-[#ECE8DF] bg-white p-5 text-sm text-[#9CA3AF]">
           Gathering your patterns...
         </p>
-      ) : !data ? (
+      ) : !current ? (
         <p className="rounded-2xl border border-[#ECE8DF] bg-white p-5 text-sm text-[#9CA3AF]">
           Couldn&apos;t load this right now.
         </p>
@@ -518,15 +498,19 @@ function PatternsPanel({ patterns }: { patterns: PatternsState }) {
         // ~1440), Rhythm spans 2. `fill` lets each card's content use the
         // height the row gives it (see renderPatternCard).
         <div className="grid grid-cols-[repeat(auto-fill,minmax(290px,1fr))] gap-3">
-          {CARD_ORDER.map((id) => (
-            <div
-              key={id}
-              className={`flex flex-col gap-2.5 rounded-2xl p-5 ${id === "rhythm" ? "col-span-2" : ""}`}
-              style={{ background: CARD_THEME[id] }}
-            >
-              {renderPatternCard(id, data, { fill: true })}
-            </div>
-          ))}
+          {CARD_ORDER.map((id) => {
+            const data = dataFor(id);
+            if (!data) return null;
+            return (
+              <div
+                key={id}
+                className={`flex flex-col gap-2.5 rounded-2xl p-5 ${id === "rhythm" ? "col-span-2" : ""}`}
+                style={{ background: CARD_THEME[id] }}
+              >
+                {renderPatternCard(id, data, { fill: true, showMonth: split })}
+              </div>
+            );
+          })}
         </div>
       )}
     </section>

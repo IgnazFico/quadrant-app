@@ -71,6 +71,11 @@ jobs:
         # caused the endless GET /weekly-review?_rsc=... loop.
         run: npx tsx scripts/verify-gate-layout.ts
 
+      - name: Patterns month + timezone weekday (unit)
+        # Early-month fallback to the previous month, switch dates, Dec->Jan,
+        # and Rhythm's weekday computed in the user's timezone, not UTC.
+        run: npx tsx scripts/verify-patterns-month.ts
+
       - name: Schedule rules regression
         # One block per goal (schedule_blocks.goalId UNIQUE; moving is a
         # PATCH) and at most 2 Anytime blocks per user per day (DB trigger).

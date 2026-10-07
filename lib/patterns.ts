@@ -1,4 +1,5 @@
 import { prisma } from "./prisma";
+import { weekdayInTimeZone } from "./week";
 
 function monthRange(year: number, month: number) {
   // month is 1-indexed (1 = January) to match how the API/query params read
@@ -10,7 +11,13 @@ function monthRange(year: number, month: number) {
 
 const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-export async function getPatterns(userId: string, year: number, month: number) {
+/**
+ * Monthly patterns. Goals and reflections belong to the month of their week
+ * (goals.weekStart), matching the weekly review; activity and schedule
+ * blocks to their calendar day. `timeZone` (IANA, from the browser) only
+ * decides which weekday a completion happened on; it defaults to UTC.
+ */
+export async function getPatterns(userId: string, year: number, month: number, timeZone = "UTC") {
   const { start, end } = monthRange(year, month);
 
   const roles = await prisma.role.findMany({
@@ -35,7 +42,9 @@ export async function getPatterns(userId: string, year: number, month: number) {
 
   // ---------------- rhythm ----------------
   const weekdayCounts = new Array(7).fill(0);
-  completedGoals.forEach((g) => weekdayCounts[g.completedAt!.getUTCDay()]++);
+  // Weekday in the user's timezone: completedAt is an instant, and at UTC+7
+  // a goal finished at 01:00 Thursday is still Wednesday in UTC.
+  completedGoals.forEach((g) => weekdayCounts[weekdayInTimeZone(g.completedAt!, timeZone)]++);
   const weekday = WEEKDAY_LABELS.map((label, i) => ({ label, count: weekdayCounts[i] }));
 
   const timedBlocks = scheduleBlocks.filter((b) => !b.isPriority && b.hour !== null);
@@ -99,6 +108,9 @@ export async function getPatterns(userId: string, year: number, month: number) {
   return {
     year,
     month,
+    // Goals with a weekStart in this month, any status. Drives the Patterns
+    // split rule (no goals last month -> no split).
+    goalCount: allGoals.length,
     rhythm: { weekday, daypart },
     presence: { activeDaysCount: activeDates.size, heatmap },
     balance: { roles: balance, rolesWithActivity, totalRoles: roles.length },

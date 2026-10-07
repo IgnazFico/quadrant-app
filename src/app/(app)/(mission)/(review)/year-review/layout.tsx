@@ -1,4 +1,5 @@
-import { Caveat, Fraunces, Source_Serif_4 } from "next/font/google";
+import { Fraunces, Source_Serif_4 } from "next/font/google";
+import { signatureFont } from "../../../../../../lib/signatureFont";
 
 /**
  * Fonts used only by the year-end ceremony, so the rest of the app
@@ -6,7 +7,7 @@ import { Caveat, Fraunces, Source_Serif_4 } from "next/font/google";
  *
  *   Fraunces (SOFT/WONK/opsz axes, italic)  Quadrant's voice
  *   Source Serif 4 italic                   the user's own words
- *   Caveat                                  the signature
+ *   Ms Madi (lib/signatureFont)             the signature, same hand as signing
  */
 const display = Fraunces({
   subsets: ["latin"],
@@ -23,15 +24,8 @@ const serif = Source_Serif_4({
   display: "swap",
 });
 
-const hand = Caveat({
-  subsets: ["latin"],
-  weight: ["600"],
-  variable: "--font-yc-hand",
-  display: "swap",
-});
-
 export default function YearReviewLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className={`${display.variable} ${serif.variable} ${hand.variable}`}>{children}</div>
+    <div className={`${display.variable} ${serif.variable} ${signatureFont.variable}`}>{children}</div>
   );
 }

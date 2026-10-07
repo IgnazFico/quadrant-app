@@ -12,7 +12,7 @@ export default async function MissionStatementPage() {
 
   // Already written — nothing to force here, send them back into the app.
   if (await hasWrittenMissionStatement(userId)) {
-    redirect("/");
+    redirect("/goals");
   }
 
   return <MissionStatementFlow />;
