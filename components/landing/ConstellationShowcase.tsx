@@ -371,7 +371,15 @@ export function ConstellationShowcase() {
             {message}
           </div>
 
-          {/* Role switcher: each chip is that role's own small badge */}
+          {/* Role switcher: each chip is that role's own small badge.
+              All or nothing: each chip is a size container, and the label +
+              month count only appear once the chip is wide enough to show
+              them in full: badge 34 + gap 8 + text ~48 = 90px, cut at 96px
+              (6rem) for headroom. Measured: every phone width (content
+              37-73px) gets badges only; tablet/desktop (109px) the full text. Below
+              that the chip is the badge alone, centred, never a cut-off
+              word. The badge's own aria-label ("Founder: showed up in 9
+              months") names the button either way. */}
           <div className="mt-4 grid w-full grid-cols-3 gap-2" role="group" aria-label="Roles">
             {roles.map((r) => {
               const on = r.id === active.id;
@@ -382,12 +390,14 @@ export function ConstellationShowcase() {
                   aria-pressed={on}
                   onClick={() => setActiveId(r.id)}
                   onMouseEnter={() => setActiveId(r.id)}
-                  className={`flex items-center gap-2 rounded-xl border px-2 py-1.5 text-left transition-all ${
+                  title={`${r.label}: ${describeYear(r.months)}`}
+                  className={`@container rounded-xl border px-2 py-1.5 text-left transition-all ${
                     on
                       ? "border-[#D9CDB8] bg-white shadow-xs"
                       : "border-transparent hover:border-[#EEE6D8] hover:bg-white/60"
                   }`}
                 >
+                  <span className="flex items-center justify-center gap-2 @min-[6rem]:justify-start">
                   <YearBadge
                     months={shown(r)}
                     peak={peakOf(shown(r))}
@@ -397,11 +407,12 @@ export function ConstellationShowcase() {
                     currentMonth={DEMO_MONTH}
                     label={r.label}
                   />
-                  <span className="min-w-0">
-                    <span className="block truncate text-xs font-semibold text-[#2B2420]">{r.label}</span>
-                    <span className="block truncate font-mono text-[9px] text-[#8C7F72]">
+                  <span aria-hidden="true" className="hidden whitespace-nowrap @min-[6rem]:block">
+                    <span className="block text-xs font-semibold text-[#2B2420]">{r.label}</span>
+                    <span className="block font-mono text-[9px] text-[#8C7F72]">
                       {describeYear(r.months).replace("showed up in ", "")}
                     </span>
+                  </span>
                   </span>
                 </button>
               );
