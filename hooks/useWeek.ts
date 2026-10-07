@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   startOfWeek,
   startOfDay,
@@ -59,6 +59,9 @@ function errorMessage(body: { error?: unknown }, fallback: string): string {
   return typeof body.error === "string" ? body.error : fallback;
 }
 
+/** Which week the Week pages show: the ongoing one, or the one being planned. */
+export type WeekView = "this" | "next";
+
 /**
  * Shared data + mutation logic for a week of roles/goals + schedule blocks.
  *
@@ -67,14 +70,28 @@ function errorMessage(body: { error?: unknown }, fallback: string): string {
  * truth instead of duplicating fetch/mutation logic. UI state (which role is
  * expanded, which form/sheet is open) stays in each component — this hook
  * only owns server data and the calls that mutate it.
+ *
+ * Only two weeks are reachable: the current one and the next one. That is
+ * Covey's Habit 3 weekly organizing: "look at the week ahead" (often on
+ * Sunday) and set roles, goals and a schedule for the next seven days. There
+ * is no browsing back (past weeks belong to the weekly review) or further
+ * ahead. See WeekToggle.tsx.
  */
-export function useWeek(initialWeekStart?: Date) {
-  const [weekStart, setWeekStart] = useState(
-    () => initialWeekStart ?? startOfWeek(),
-  );
+export function useWeek() {
+  const [view, setView] = useState<WeekView>("this");
+  // Recomputed per render so the page follows the calendar if it's left
+  // open across midnight on Sunday; only re-fetches when the key changes.
+  const thisWeekKey = dayKey(startOfWeek());
+  const weekStart = useMemo(() => {
+    const thisWeek = new Date(`${thisWeekKey}T00:00:00.000Z`);
+    return view === "next" ? addDays(thisWeek, 7) : thisWeek;
+  }, [thisWeekKey, view]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [blocks, setBlocks] = useState<ScheduleBlock[]>([]);
   const [loading, setLoading] = useState(true);
+  /** False until the first week has loaded; lets views keep their header
+   *  (and the week toggle) on screen while switching weeks. */
+  const [loadedOnce, setLoadedOnce] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const days = useMemo(
@@ -83,7 +100,11 @@ export function useWeek(initialWeekStart?: Date) {
   );
   const todayKey = toDateKey(new Date());
 
+  // Switching This week / Next week fires a second load while the first may
+  // still be in flight; only the latest request may write state.
+  const latestLoad = useRef(0);
   const load = useCallback(async (ws: Date) => {
+    const id = ++latestLoad.current;
     setLoading(true);
     setError(null);
     try {
@@ -94,28 +115,23 @@ export function useWeek(initialWeekStart?: Date) {
       if (!goalsRes.ok || !weekRes.ok) throw new Error();
       const goalsBody = await goalsRes.json();
       const weekBody = await weekRes.json();
+      if (id !== latestLoad.current) return;
       setRoles(goalsBody.roles);
       setBlocks(weekBody.blocks);
     } catch {
+      if (id !== latestLoad.current) return;
       setError("Couldn't load your week — try refreshing.");
     } finally {
-      setLoading(false);
+      if (id === latestLoad.current) {
+        setLoading(false);
+        setLoadedOnce(true);
+      }
     }
   }, []);
 
   useEffect(() => {
     load(weekStart);
   }, [weekStart, load]);
-
-  const goToPreviousWeek = useCallback(
-    () => setWeekStart((w) => addDays(w, -7)),
-    [],
-  );
-  const goToNextWeek = useCallback(
-    () => setWeekStart((w) => addDays(w, 7)),
-    [],
-  );
-  const goToWeek = useCallback((d: Date) => setWeekStart(startOfWeek(d)), []);
 
   // ---------- Derived lookups (by day index within `days`) ----------
   const blocksForDay = useCallback(
@@ -347,16 +363,16 @@ export function useWeek(initialWeekStart?: Date) {
 
   return {
     weekStart,
+    view,
+    setView,
     days,
     todayKey,
     roles,
     blocks,
     todayBlocks,
     loading,
+    loadedOnce,
     error,
-    goToPreviousWeek,
-    goToNextWeek,
-    goToWeek,
     blocksForDay,
     blockForGoal,
     timedBlockFor,

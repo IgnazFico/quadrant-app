@@ -4,6 +4,7 @@ import { Fragment, useState } from "react";
 import { domainColor } from "../../lib/domainColors";
 import { dayKey } from "../../lib/week";
 import { NotificationBell } from "../notifications/NotificationBell";
+import { WeekToggle, weekRangeLabel } from "../week/WeekToggle";
 import type { WeekData, Role, ScheduleBlock } from "../../hooks/useWeek";
 import { ANYTIME_LIMIT_MESSAGE, ANYTIME_LIMIT_REACHED } from "../../lib/scheduleRules";
 import { showToast } from "../../store/toastStore";
@@ -38,8 +39,8 @@ export function WeeklySchedulePage({ week }: { week: WeekData }) {
     deleteBlock,
     blockForGoal,
     canAddAnytime,
-    goToPreviousWeek,
-    goToNextWeek,
+    view,
+    setView,
   } = week;
 
   const [sheet, setSheet] = useState<SheetState | null>(null);
@@ -111,62 +112,21 @@ export function WeeklySchedulePage({ week }: { week: WeekData }) {
               Quadrant
             </span>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={goToPreviousWeek}
-              className="flex h-[26px] w-[26px] items-center justify-center rounded-md border border-[#E5E1D8] bg-white text-[#6B7280] hover:bg-[#F3F4F6]"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                width="13"
-                height="13"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <polyline points="15 18 9 12 15 6" />
-              </svg>
-            </button>
-            <span className="font-mono text-[11px] text-[#6B7280]">
-              {days[0].toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-              })}{" "}
-              &ndash;{" "}
-              {days[6].toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-              })}
-            </span>
-            <button
-              onClick={goToNextWeek}
-              className="flex h-[26px] w-[26px] items-center justify-center rounded-md border border-[#E5E1D8] bg-white text-[#6B7280] hover:bg-[#F3F4F6]"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                width="13"
-                height="13"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </button>
-            <NotificationBell />
-          </div>
+          <NotificationBell />
+        </div>
+
+        <div className="mb-2.5 flex items-center justify-between gap-3">
+          <WeekToggle view={view} onChange={setView} size="sm" />
+          <span className="font-mono text-[11px] text-[#9CA3AF]">{weekRangeLabel(days)}</span>
         </div>
 
         <h1 className="mb-1 font-serif text-2xl font-semibold text-[#1F2937]">
           Weekly schedule
         </h1>
         <p className="mb-4 text-[13px] text-[#6B7280]">
-          Tap a block to schedule a goal by the hour. Tap + above a day for
-          things without a fixed time.
+          {view === "next"
+            ? "Planning the week ahead. Give what matters a place before the week fills up."
+            : "Tap a block to schedule a goal by the hour. Tap + above a day for things without a fixed time."}
         </p>
 
         <div className="mb-3.5 flex flex-wrap gap-3.5">

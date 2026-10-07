@@ -11,6 +11,7 @@ import {
   ANYTIME_PER_DAY,
 } from "../../lib/scheduleRules";
 import { showToast } from "../../store/toastStore";
+import { WeekToggle, weekRangeLabel } from "./WeekToggle";
 
 const DAY_NAMES_LONG = [
   "Monday",
@@ -75,6 +76,7 @@ export function WeekDesktopView({ week }: { week: WeekData }) {
     roles,
     blocks,
     loading,
+    loadedOnce,
     error,
     blocksForDay,
     blockForGoal,
@@ -88,8 +90,8 @@ export function WeekDesktopView({ week }: { week: WeekData }) {
     updateBlock,
     moveBlock,
     deleteBlock,
-    goToPreviousWeek,
-    goToNextWeek,
+    view,
+    setView,
   } = week;
 
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
@@ -277,7 +279,7 @@ export function WeekDesktopView({ week }: { week: WeekData }) {
     }
   }
 
-  if (loading) {
+  if (!loadedOnce) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center text-sm text-[#9CA3AF]">
         Loading your week...
@@ -290,34 +292,19 @@ export function WeekDesktopView({ week }: { week: WeekData }) {
       <div className="mx-auto max-w-[1600px] px-6 pb-20 pt-[34px] lg:px-8 2xl:px-10">
         <header className="mb-[26px] flex flex-wrap items-end justify-between gap-6 border-b border-[#ECE8DF] pb-[22px]">
           <div>
-            <div className="inline-flex items-center gap-2.5 font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-[#9CA3AF]">
-              <b className="rounded border border-[#FED7AA] bg-[#FFF7ED] px-1.5 py-0.5 text-[#C2410C]">A-01</b>
-              <button
-                onClick={goToPreviousWeek}
-                className="flex h-6 w-6 items-center justify-center rounded-md border border-[#ECE8DF] bg-white text-[#6B7280] hover:bg-[#F3F4F6]"
-                aria-label="Previous week"
-              >
-                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="15 18 9 12 15 6" />
-                </svg>
-              </button>
-              <span>Week of {fmtShort(days[0])} – {fmtShort(days[6])}</span>
-              <button
-                onClick={goToNextWeek}
-                className="flex h-6 w-6 items-center justify-center rounded-md border border-[#ECE8DF] bg-white text-[#6B7280] hover:bg-[#F3F4F6]"
-                aria-label="Next week"
-              >
-                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="9 18 15 12 9 6" />
-                </svg>
-              </button>
+            <div className="flex flex-wrap items-center gap-3">
+              <WeekToggle view={view} onChange={setView} />
+              <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-[#9CA3AF]">
+                {weekRangeLabel(days)}
+              </span>
             </div>
             <h1 className="my-3 font-serif text-[40px] font-semibold leading-[1.1] tracking-[-0.015em] text-[#1F2937]">
-              This week
+              {view === "next" ? "Next week" : "This week"}
             </h1>
             <p className="max-w-[580px] text-[15px] text-[#6B7280]">
-              Your roles, their goals, and where each day fits in. Drag a goal
-              onto a day to give it a place.
+              {view === "next"
+                ? "Look at the week ahead with each role in mind. Set a few goals, then give them a day before the week fills up."
+                : "Your roles, their goals, and where each day fits in. Drag a goal onto a day to give it a place."}
             </p>
           </div>
           <div className="flex flex-wrap gap-2.5">
@@ -333,7 +320,11 @@ export function WeekDesktopView({ week }: { week: WeekData }) {
           </p>
         )}
 
-        <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[280px_minmax(0,1fr)] xl:gap-5 2xl:grid-cols-[300px_minmax(0,1fr)] 2xl:gap-6">
+        {/* Dimmed, not replaced, while switching weeks so the header stays put. */}
+        <div
+          aria-busy={loading}
+          className={`grid grid-cols-1 items-start gap-6 transition-opacity xl:grid-cols-[280px_minmax(0,1fr)] xl:gap-5 2xl:grid-cols-[300px_minmax(0,1fr)] 2xl:gap-6 ${loading ? "pointer-events-none opacity-50" : ""}`}
+        >
           {/* ---------- Left: roles + goals ---------- */}
           <section aria-label="Goals by role" className="sticky top-[84px] max-xl:static">
             <div className="mb-3.5 flex items-baseline justify-between">
