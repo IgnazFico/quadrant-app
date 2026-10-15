@@ -63,7 +63,7 @@ const STATS_DATA: StatCardProps[] = [
     brief: "The global moment employees realized doing more doesn't equal living well.",
     fullExplanation:
       "In 2022, tens of millions realized that donating all their discretionary energy to an urgent employer inbox while their fitness, relationships, and craft wither away isn't dedication—it's just bad math. It wasn't about quitting effort; it was about reclaiming human life.",
-    takeaway: "Why Quadrant balances 6 human domains so nothing is forgotten.",
+    takeaway: "Why Quadrant balances 7 human domains so nothing is forgotten.",
     takeawayColor: "text-[#2563EB]",
     backBgGradient: "from-[#EFF6FF] via-[#DBEAFE] to-[#BFDBFE]",
   },

@@ -169,7 +169,7 @@ export function ParadigmComparison() {
               }`}
             />
             <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-[#9A3412]">
-              {quadrantHovered ? "ARCHITECTURE: INTERLOCKED & GROUNDED" : "STRUCTURE: 6 LOAD-BEARING DOMAINS"}
+              {quadrantHovered ? "ARCHITECTURE: INTERLOCKED & GROUNDED" : "STRUCTURE: 7 LOAD-BEARING DOMAINS"}
             </span>
           </div>
           <span className="rounded bg-[#FED7AA]/60 px-2 py-0.5 font-mono text-[10px] font-bold text-[#9A3412]">
