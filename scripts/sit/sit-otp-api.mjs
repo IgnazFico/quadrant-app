@@ -161,7 +161,6 @@ check("resend-code on an unknown address answers 200 ok, same shape", rsUnk.stat
 // 7. Unverified sign-up re-registered: taken over, new code, old password dead.
 const B = emailFor("b");
 await register(B);
-const codeB1 = codeOf(await mockLast(B));
 const reB = await register(B, {});
 check("re-register an unverified address inside the cooldown -> 429", reB.status === 429 && reB.json?.code === "cooldown", `status=${reB.status}`);
 
