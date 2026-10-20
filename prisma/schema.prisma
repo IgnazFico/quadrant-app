@@ -22,6 +22,10 @@ model User {
   email        String   @unique
   passwordHash String
   createdAt    DateTime @default(now())
+  // Set when the user proves control of the address with the emailed code
+  // (WO-012). NULL = cannot sign in. Rows that existed before the migration
+  // are back-filled to createdAt by the migration itself.
+  emailVerifiedAt DateTime?
 
   authKey           AuthKey?
   devices           Device[]
@@ -29,8 +33,27 @@ model User {
   missionStatements MissionStatement[]
   activityDays ActivityDay[]
   notifications Notification[]
+  emailVerification EmailVerification?
 
   @@map("users")
+}
+
+// One pending sign-up code per user (WO-012). Only a keyed hash of the code is
+// stored, never the code. The row is deleted when the code is used.
+model EmailVerification {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  codeHash        String
+  expiresAt       DateTime
+  attempts        Int      @default(0)
+  sentAt          DateTime
+  sendCount       Int      @default(1)
+  sendWindowStart DateTime
+  createdAt       DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("email_verifications")
 }
 
 // Holds both wrapped copies of the same master encryption key.

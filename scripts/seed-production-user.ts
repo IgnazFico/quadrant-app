@@ -52,6 +52,7 @@ async function seedProductionUser() {
     data: {
       email: SEED_EMAIL,
       passwordHash,
+      emailVerifiedAt: new Date(), // counts as verified (WO-012)
       authKey: {
         create: {
           saltPassword: Buffer.from(saltPassword),

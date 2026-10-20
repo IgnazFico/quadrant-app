@@ -1,9 +1,5 @@
 import crypto from "crypto";
-
-const TOKEN_SECRET =
-  process.env.AUTH_SECRET ||
-  process.env.NEXTAUTH_SECRET ||
-  "quadrant-recovery-token-default-secret";
+import { getAppSecret } from "./appSecret";
 
 // 15 minutes expiration window
 const TOKEN_TTL_MS = 15 * 60 * 1000;
@@ -14,10 +10,28 @@ interface RecoveryTokenPayload {
   hash: string;
 }
 
+function sign(
+  email: string,
+  userPasswordHash: string,
+  expiresAt: number,
+  code: string,
+): string {
+  // The secret is read here, per call, and has NO fallback value: with no
+  // server secret configured this throws and the caller fails closed.
+  return crypto
+    .createHmac("sha256", getAppSecret())
+    .update(`${email}:${userPasswordHash}:${expiresAt}:${code}`)
+    .digest("hex");
+}
+
 /**
- * Generates a signed, tamper-proof recovery verification token.
- * Incorporates a hash of the user's current password hash so that once
- * the password is reset, the token becomes immediately invalidated.
+ * Generates a signed recovery ticket plus a 6-digit code.
+ *
+ * The ticket goes to the browser. The code goes ONLY into the email. The
+ * ticket does not contain the code, so holding the ticket proves nothing:
+ * /api/auth/recover needs ticket AND code, and only someone who can read the
+ * mailbox has the code. The signature also covers a hash of the user's current
+ * password hash, so once the password is reset the ticket stops working.
  */
 export function generateRecoveryVerificationToken(
   email: string,
@@ -26,54 +40,45 @@ export function generateRecoveryVerificationToken(
   const expiresAt = Date.now() + TOKEN_TTL_MS;
   const normalizedEmail = email.trim().toLowerCase();
 
-  // 6-digit numeric verification code for email delivery
-  const code = Math.floor(100000 + Math.random() * 900000).toString();
-
-  const signature = crypto
-    .createHmac("sha256", TOKEN_SECRET)
-    .update(`${normalizedEmail}:${userPasswordHash}:${expiresAt}:${code}`)
-    .digest("hex");
+  // Cryptographically secure, uniform 6 digits (WO-012: was Math.random).
+  const code = crypto.randomInt(0, 1_000_000).toString().padStart(6, "0");
 
   const payload: RecoveryTokenPayload = {
     email: normalizedEmail,
     expiresAt,
-    hash: signature,
+    hash: sign(normalizedEmail, userPasswordHash, expiresAt, code),
   };
 
-  const serialized = Buffer.from(JSON.stringify(payload)).toString("base64url");
-  const fullToken = `${serialized}.${code}`;
-
-  return { token: fullToken, code };
+  return {
+    token: Buffer.from(JSON.stringify(payload)).toString("base64url"),
+    code,
+  };
 }
 
 /**
- * Verifies that a recovery token is genuine, non-expired, and matches the account.
+ * Verifies ticket + emailed code: genuine, non-expired, same account.
  */
 export function verifyRecoveryVerificationToken(
   email: string,
-  tokenWithCode: string,
+  token: string,
+  code: string,
   userPasswordHash: string,
 ): boolean {
   try {
-    const parts = tokenWithCode.split(".");
-    if (parts.length !== 2) return false;
-
-    const [serialized, code] = parts;
-    const jsonStr = Buffer.from(serialized, "base64url").toString("utf8");
+    if (!/^\d{6}$/.test(code)) return false;
+    const jsonStr = Buffer.from(token, "base64url").toString("utf8");
     const payload: RecoveryTokenPayload = JSON.parse(jsonStr);
 
-    if (payload.email !== email.trim().toLowerCase()) return false;
+    const normalizedEmail = email.trim().toLowerCase();
+    if (payload.email !== normalizedEmail) return false;
     if (Date.now() > payload.expiresAt) return false;
 
-    const expectedSignature = crypto
-      .createHmac("sha256", TOKEN_SECRET)
-      .update(`${payload.email}:${userPasswordHash}:${payload.expiresAt}:${code}`)
-      .digest("hex");
-
-    return crypto.timingSafeEqual(
-      Buffer.from(payload.hash, "hex"),
-      Buffer.from(expectedSignature, "hex"),
+    const expected = Buffer.from(
+      sign(payload.email, userPasswordHash, payload.expiresAt, code),
+      "hex",
     );
+    const given = Buffer.from(payload.hash, "hex");
+    return given.length === expected.length && crypto.timingSafeEqual(given, expected);
   } catch {
     return false;
   }

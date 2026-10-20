@@ -14,7 +14,10 @@ export async function proxy(request: NextRequest) {
 
     const isHighSensitivity =
       pathname.endsWith("/register") ||
+      pathname.endsWith("/verify-email") ||
+      pathname.endsWith("/resend-code") ||
       pathname.endsWith("/recover") ||
+      pathname.endsWith("/recover-request") ||
       pathname.includes("/login");
 
     const limitConfig = isHighSensitivity
