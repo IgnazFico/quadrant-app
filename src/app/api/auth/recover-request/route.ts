@@ -46,7 +46,7 @@ export async function POST(req: Request) {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            from: process.env.EMAIL_FROM || "Quadrant Security <security@quadrant.me>",
+            from: process.env.EMAIL_FROM || "Quadrant Security <quadrant.base@gmail.com>",
             to: email,
             subject: "Your Quadrant Account Recovery Verification Code",
             text: `Your recovery verification code is: ${code}. This code expires in 15 minutes.`,

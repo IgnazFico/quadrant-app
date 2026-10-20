@@ -150,12 +150,12 @@ export function FeedbackModal({
 
             <div className="flex items-center justify-between pt-2">
               <a
-                href={`mailto:support@quadrant.me?subject=[Beta Feedback] ${category}&body=${encodeURIComponent(
+                href={`mailto:quadrant.base@gmail.com?subject=[Beta Feedback] ${category}&body=${encodeURIComponent(
                   message,
                 )}`}
                 className="text-[11px] font-medium text-[#6B7280] underline hover:text-[#1F2937]"
               >
-                Or email support@quadrant.me
+                Or email quadrant.base@gmail.com
               </a>
               <button
                 type="submit"

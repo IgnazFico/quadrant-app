@@ -49,7 +49,7 @@ export async function POST(req: Request) {
   } catch (err: any) {
     console.error("Error processing feedback:", err);
     return NextResponse.json(
-      { error: "Failed to submit feedback. Please try again or email support@quadrant.me." },
+      { error: "Failed to submit feedback. Please try again or email quadrant.base@gmail.com." },
       { status: 500 },
     );
   }
