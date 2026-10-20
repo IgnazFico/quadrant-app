@@ -1,105 +1,123 @@
+/* Phone layout of /schedule (WO-015). Used only by WeeklySchedulePage,
+   which renders below the md breakpoint; the desktop split view has its own
+   styles. A week strip on top, one day's timeline filling the rest. */
+
 .schedule-app {
-  --col-w: 90px;
-  --time-w: 50px;
-  --head-h: 46px;
-}
-
-.schedule-scroll {
-  overflow: auto;
-  -webkit-overflow-scrolling: touch;
-  border-radius: 14px;
-  background: #fff;
-  border: 1px solid #ece8df;
-  max-height: 64vh;
-}
-
-.sgrid {
-  display: grid;
-  grid-template-columns: var(--time-w) repeat(7, var(--col-w));
+  --row-h: 56px; /* keep equal to ROW_H in WeeklySchedulePage.tsx */
+  --label-w: 52px;
+  --nav-h: 64px; /* BottomNav: fixed, about 64 px plus the safe area */
   position: relative;
-  min-width: max-content;
+  /* The page is exactly one screen tall; only the day timeline scrolls. */
+  height: calc(100dvh - var(--nav-h) - env(safe-area-inset-bottom));
+  min-height: 420px;
+  overflow: hidden;
+  padding-bottom: 8px;
 }
 
-.corner {
-  grid-column: 1;
-  grid-row: 1 / 3;
-  position: sticky;
-  top: 0;
-  left: 0;
-  z-index: 5;
-  background: #f3f4f6;
-  border-right: 1px solid #ece8df;
-  border-bottom: 1px solid #ece8df;
-}
+/* ---- week strip ---------------------------------------------------- */
 
-.day-head {
-  grid-row: 1;
-  position: sticky;
-  top: 0;
-  z-index: 4;
-  background: #f3f4f6;
+.day-chip {
   display: flex;
+  min-height: 56px;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: var(--head-h);
-  border-bottom: 1px solid #ece8df;
-  border-right: 1px solid #f1eee7;
+  gap: 1px;
+  padding: 4px 0 3px;
+  border: 1px solid #ece8df;
+  border-radius: 12px;
+  background: #fff;
+  color: #1f2937;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
-.day-head .dname {
+.day-chip-letter {
   font-size: 11px;
   font-weight: 600;
-  color: #9ca3af;
+  color: #8a8579;
   letter-spacing: 0.02em;
 }
-.day-head .dnum {
-  font-size: 14px;
-  font-weight: 600;
-  color: #1f2937;
-}
-.day-head.today {
-  background: #fff3e0;
-}
-.day-head.today .dname {
-  color: #f97316;
-}
-.day-head.today .dnum {
-  color: #fff;
-  background: #f97316;
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
+.day-chip-num {
   display: flex;
+  height: 24px;
+  width: 24px;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+}
+.day-chip-dots {
+  display: flex;
+  height: 5px;
+  gap: 2px;
+  align-items: center;
+}
+.day-chip-dots > span {
+  height: 4px;
+  width: 4px;
+  border-radius: 999px;
+}
+/* Today: the orange marker the page always had. */
+.day-chip.is-today .day-chip-letter {
+  color: #f97316;
+}
+.day-chip.is-today .day-chip-num {
+  background: #f97316;
+  color: #fff;
+}
+/* Selected: a warm fill and an orange outline; works with or without today. */
+.day-chip.is-selected {
+  border-color: #f97316;
+  background: #fff3e0;
+  box-shadow: 0 0 0 1px #f97316;
+}
+.day-chip:focus-visible,
+.hour-row:focus-visible,
+.legend-toggle:focus-visible,
+.add-pill:focus-visible,
+.priority-chip:focus-visible,
+.priority-add:focus-visible {
+  outline: 2px solid #f97316;
+  outline-offset: 2px;
 }
 
-.priorities-cell {
-  grid-row: 2;
-  position: sticky;
-  top: var(--head-h);
-  z-index: 3;
-  background: #f3f4f6;
-  border-bottom: 1px solid #ece8df;
-  border-right: 1px solid #f1eee7;
-  padding: 6px 5px;
+.legend-toggle {
+  display: inline-flex;
+  min-height: 44px;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  margin: -8px -4px -8px 0;
+  padding: 0 6px;
+  border-radius: 10px;
+  font-size: 11px;
+  color: #6b7280;
+}
+
+/* ---- no-fixed-time items ------------------------------------------- */
+
+.priority-chip,
+.priority-add {
   display: flex;
-  flex-direction: column;
+  min-height: 32px;
+  min-width: 0;
+  max-width: 100%;
+  align-items: center;
+  justify-content: center;
   gap: 4px;
-  min-height: 56px;
+  border-radius: 8px;
+  padding: 0 10px;
+  font-size: 12px;
+  line-height: 1.2;
 }
 .priority-chip {
-  display: flex;
-  align-items: center;
-  gap: 4px;
   background: #fff;
+  border: 1px solid #ece8df;
   border-left: 3px solid var(--dot, #f97316);
-  border-radius: 5px;
-  padding: 3px 5px;
-  font-size: 10.5px;
-  line-height: 1.2;
-  cursor: pointer;
+  color: #1f2937;
+  text-align: left;
 }
 .priority-chip span {
   overflow: hidden;
@@ -107,62 +125,128 @@
   white-space: nowrap;
 }
 .priority-add {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
   border: 1px dashed #d6d2c8;
-  border-radius: 5px;
   background: transparent;
-  color: #b0aa9c;
-  font-size: 10.5px;
-  padding: 3px;
-  cursor: pointer;
-}
-.priority-add:hover {
-  background: #efebe1;
+  color: #8a8579;
 }
 
-.time-label {
-  position: sticky;
-  left: 0;
-  z-index: 2;
-  background: #f3f4f6;
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-end;
-  padding: 2px 6px 0 0;
-  font-family: monospace;
-  font-size: 10px;
-  color: #9ca3af;
-  border-right: 1px solid #ece8df;
-  border-bottom: 1px solid #f1eee7;
-}
+/* ---- the day ------------------------------------------------------- */
 
-.hour-cell {
-  position: relative;
-  cursor: pointer;
+.day-frame {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 14px;
   background: #fff;
-  border-bottom: 1px solid #f1eee7;
-  border-right: 1px solid #f1eee7;
+  border: 1px solid #ece8df;
 }
-.hour-cell:hover {
-  background: #fff9f0;
+.day-scroll {
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  /* Room above the first row so the hour label that sits on its line is
+     never cut off when the view is scrolled to a row. */
+  padding-top: 6px;
 }
-.hour-cell.today-col {
-  background: #fffcf6;
+/* Room so the last hours clear the floating Add button. */
+.day-scroll-end {
+  height: 76px;
 }
 
+.hour-row {
+  display: flex;
+  width: 100%;
+  height: var(--row-h);
+  align-items: stretch;
+  text-align: left;
+  background: transparent;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.hour-label {
+  width: var(--label-w);
+  flex: none;
+  padding: 0 8px 0 0;
+  text-align: right;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 10px;
+  line-height: 1;
+  color: #9ca3af;
+  /* sits on the hour line, as in the Samsung week view */
+  transform: translateY(-5px);
+}
+.hour-lane {
+  position: relative;
+  min-width: 0;
+  flex: 1;
+  /* solid line on the hour, faint line on the half hour */
+  border-top: 1px solid #e3ded3;
+  background-image: linear-gradient(to bottom, transparent calc(50% - 1px), #f1eee7 calc(50% - 1px), #f1eee7 50%, transparent 50%);
+}
+.hour-row:active .hour-lane {
+  background-color: #fff9f0;
+}
+
+/* A block takes the full width of its hour. */
 .hblock {
   position: absolute;
-  inset: 2px;
-  border-radius: 6px;
+  inset: 3px 8px 3px 4px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+  overflow: hidden;
+  border-radius: 8px;
   border-left: 3px solid var(--dot, #f97316);
   background: var(--blockbg, #fff1e4);
-  padding: 3px 5px;
-  font-size: 10px;
-  line-height: 1.2;
-  overflow: hidden;
-  font-weight: 500;
+  padding: 2px 10px;
   color: #1f2937;
+}
+.hblock-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.25;
+}
+.hblock-role {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  line-height: 1.2;
+  color: #6b7280;
+}
+
+/* ---- the one add action -------------------------------------------- */
+
+.add-pill {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  z-index: 5;
+  display: inline-flex;
+  min-height: 48px;
+  min-width: 200px;
+  transform: translateX(-50%);
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-radius: 999px;
+  background: #f97316;
+  padding: 0 20px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(249, 115, 22, 0.3);
+  touch-action: manipulation;
+}
+.add-pill:active {
+  background: #ea6a0c;
+}
+.add-pill:disabled {
+  background: #d6d2c8;
+  box-shadow: none;
 }
