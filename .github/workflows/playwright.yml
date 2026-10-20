@@ -109,10 +109,29 @@ jobs:
         # Throwaway users on the job database.
         run: npx tsx scripts/verify-schedule-rules.ts
 
+      - name: Build the app (production build)
+        # tests/production.spec.ts asserts that the test-only routes return
+        # 404, which the app does only when NODE_ENV=production. The
+        # Playwright webServer (`npm run dev`) cannot satisfy that, so CI
+        # tests a production build, like the one Vercel deploys.
+        run: npm run build
+
+      - name: Start the app
+        run: |
+          nohup npm start > server.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -fs -o /dev/null http://localhost:3000/login; then echo "up after ${i}s"; exit 0; fi
+            sleep 1
+          done
+          echo "app did not start"; cat server.log; exit 1
+
       - name: Run Playwright tests
-        # PR runs: smoke project only (excludes live-login.spec.ts which needs
-        # a seeded DB with a real user). The full E2E suite is available via
-        # workflow_dispatch.
+        # PR runs: smoke project only. The full E2E suite is available via
+        # workflow_dispatch. BASE_URL points Playwright at the production
+        # server started above (playwright.config.ts then skips its dev
+        # webServer).
+        env:
+          BASE_URL: http://localhost:3000
         run: npx playwright test --project=smoke
 
       - uses: actions/upload-artifact@v4
