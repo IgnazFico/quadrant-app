@@ -36,7 +36,20 @@ export default defineConfig({
   projects: [
     {
       name: 'smoke',
-      testMatch: ['**/*.spec.ts', '!live-login.spec.ts', '!week-desktop.spec.ts', '!weekly-review-loop.spec.ts', '!reflect-desktop.spec.ts', '!identity-desktop.spec.ts', '!year-review-ceremony.spec.ts', '!week-next-planning.spec.ts'],
+      testMatch: ['**/*.spec.ts'],
+      // WO-004: these seven specs were meant to be excluded here (each says so
+      // in its header comment), but Playwright's testMatch does not support
+      // "!file" negation, so they all ran in "smoke". testIgnore is the
+      // supported way. The same specs still run in the "e2e" project.
+      testIgnore: [
+        '**/live-login.spec.ts',
+        '**/week-desktop.spec.ts',
+        '**/weekly-review-loop.spec.ts',
+        '**/reflect-desktop.spec.ts',
+        '**/identity-desktop.spec.ts',
+        '**/year-review-ceremony.spec.ts',
+        '**/week-next-planning.spec.ts',
+      ],
       use: { ...devices['Desktop Chrome'] },
       fullyParallel: true,
       workers: process.env.CI ? 1 : undefined,
