@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { constellationTint } from "../../lib/domainColors";
+import { isRecapWindowOpen } from "../../lib/yearRecapWindow";
 import { NotificationBell } from "../notifications/NotificationBell";
 import { FeedbackModal } from "../feedback/FeedbackModal";
 import { YearBadge } from "../constellation/YearBadge";
@@ -28,6 +29,8 @@ export function ProfilePage({ profile }: { profile: ProfileData }) {
   }
 
   const currentMonth = new Date().getMonth();
+  // "Your year in Quadrant" is a once-a-year ceremony: only offered Dec 20 to Dec 31 (D-032).
+  const showYearReview = isRecapWindowOpen();
   const featured = roles.filter((r) => r.isFeatured).slice(0, 2);
   const longestYears = roles.reduce(
     (max, r) => Math.max(max, r.tenureYears),
@@ -271,29 +274,31 @@ export function ProfilePage({ profile }: { profile: ProfileData }) {
             </Link>
           </div>
         </section>
-        <Link
-          href="/year-review"
-          className="mt-4 flex w-full items-center justify-between rounded-xl border border-[#ECE8DF] bg-white px-4 py-3.5 text-sm font-semibold text-[#1F2937] hover:bg-[#F3F4F6]"
-        >
-          Your year in Quadrant
-          <svg
-            viewBox="0 0 24 24"
-            width="16"
-            height="16"
-            fill="none"
-            stroke="#9CA3AF"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+        {showYearReview && (
+          <Link
+            href="/year-review"
+            className="mt-4 flex w-full items-center justify-between rounded-xl border border-[#ECE8DF] bg-white px-4 py-3.5 text-sm font-semibold text-[#1F2937] hover:bg-[#F3F4F6]"
           >
-            <polyline points="9 18 15 12 9 6" />
-          </svg>
-        </Link>
+            Your year in Quadrant
+            <svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="#9CA3AF"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </Link>
+        )}
 
         <button
           type="button"
           onClick={() => setShowFeedbackModal(true)}
-          className="mt-3 flex w-full items-center justify-between rounded-xl border border-[#ECE8DF] bg-white px-4 py-3.5 text-sm font-semibold text-[#1F2937] transition hover:bg-[#F3F4F6]"
+          className={`${showYearReview ? "mt-3" : "mt-4"} flex w-full items-center justify-between rounded-xl border border-[#ECE8DF] bg-white px-4 py-3.5 text-sm font-semibold text-[#1F2937] transition hover:bg-[#F3F4F6]`}
         >
           <span className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-[#F97316]" />

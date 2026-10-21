@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { constellationTint } from "../../lib/domainColors";
+import { isRecapWindowOpen } from "../../lib/yearRecapWindow";
 import { YearBadge } from "../constellation/YearBadge";
 import { RoleBadgeTile } from "../constellation/RoleBadgeTile";
 import type { ProfileData } from "../../hooks/useProfile";
@@ -41,6 +42,8 @@ function ProfileColumn({ profile }: { profile: ProfileData }) {
   const [flipped, setFlipped] = useState(false);
   const [barcode, setBarcode] = useState<number[]>([]);
   const currentMonth = new Date().getMonth();
+  // "Your year in Quadrant" is a once-a-year ceremony: only offered Dec 20 to Dec 31 (D-032).
+  const showYearReview = isRecapWindowOpen();
 
   useEffect(() => {
     setBarcode(Array.from({ length: 14 }, () => 8 + Math.random() * 14));
@@ -220,15 +223,17 @@ function ProfileColumn({ profile }: { profile: ProfileData }) {
         </Link>
       </div>
 
-      <Link
-        href="/year-review"
-        className="mt-4 flex w-full items-center justify-between rounded-xl border border-[#ECE8DF] bg-white px-4 py-3.5 text-sm font-semibold text-[#1F2937] hover:bg-[#F3F4F6]"
-      >
-        Your year in Quadrant
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="9 18 15 12 9 6" />
-        </svg>
-      </Link>
+      {showYearReview && (
+        <Link
+          href="/year-review"
+          className="mt-4 flex w-full items-center justify-between rounded-xl border border-[#ECE8DF] bg-white px-4 py-3.5 text-sm font-semibold text-[#1F2937] hover:bg-[#F3F4F6]"
+        >
+          Your year in Quadrant
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </Link>
+      )}
     </section>
   );
 }

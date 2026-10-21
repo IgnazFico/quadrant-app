@@ -63,8 +63,11 @@ test.describe("Identity desktop merged view", () => {
     expect(copy).not.toMatch(/growth ring|streak|%/i);
   });
 
+  // D-032 (WO-016): the link only exists Dec 20 to Dec 31, so the date is faked.
+  // The closed-window cases are in tests/profile-year-review-button.spec.ts.
   test("Your year in Quadrant link navigates to /year-review", async ({ page }) => {
     await loginAsSeededUser(page);
+    await page.clock.setFixedTime(new Date("2026-12-20T12:00:00+07:00"));
     await page.goto("/profile");
 
     await page.getByRole("link", { name: "Your year in Quadrant" }).click();
