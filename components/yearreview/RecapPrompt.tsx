@@ -6,6 +6,14 @@ import Link from "next/link";
 import { isRecapWindowOpen } from "../../lib/yearRecapWindow";
 import { QuadrantMark } from "../brand/QuadrantMark";
 
+// No recap card over the focused flows, where it would float over the
+// primary controls (WO-020 / NB-1).
+const HIDDEN_ROUTES = ["/mission-statement", "/onboarding"];
+
+function isHiddenRoute(pathname: string | null) {
+  return HIDDEN_ROUTES.some((r) => pathname === r || pathname?.startsWith(r + "/"));
+}
+
 function dismissedKey(year: number) {
   return `quadrant:recap-dismissed:${year}`;
 }
@@ -27,6 +35,7 @@ export function RecapPrompt() {
     const now = new Date();
     if (!isRecapWindowOpen(now)) return;
     if (pathname?.startsWith("/year-review")) return; // already there, no need to nudge
+    if (isHiddenRoute(pathname)) return;
 
     const y = now.getFullYear();
     if (typeof window !== "undefined" && localStorage.getItem(dismissedKey(y)))
@@ -40,7 +49,7 @@ export function RecapPrompt() {
     setYear(null);
   }
 
-  if (year === null) return null;
+  if (year === null || isHiddenRoute(pathname)) return null;
 
   return (
     <div className="fixed inset-x-0 bottom-[76px] z-20 flex justify-center px-4">

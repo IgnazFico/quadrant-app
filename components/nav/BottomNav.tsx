@@ -62,10 +62,16 @@ export function BottomNav() {
           <Link
             key={item.href}
             href={item.href}
-            className={`flex flex-1 flex-col items-center gap-[3px] py-1 text-[10px] font-medium ${
-              active ? "text-[#F97316]" : "text-[#B7B2A7]"
+            aria-current={active ? "page" : undefined}
+            className={`relative flex flex-1 flex-col items-center gap-[3px] py-1 text-[10px] ${
+              active ? "font-bold text-[#C2410C]" : "font-medium text-[#6B7280]"
             }`}
           >
+            {/* WO-020 / NB-1: non-colour cue for the active tab. Absolute, so the
+                bar's height is unchanged. Labels: #6B7280 4.83:1, #C2410C 5.18:1 on white. */}
+            {active && (
+              <span aria-hidden="true" className="absolute -top-2.5 left-1/4 right-1/4 h-0.5 rounded-full bg-[#C2410C]" />
+            )}
             <span className="h-[19px] w-[19px]">{item.icon}</span>
             {item.label}
           </Link>

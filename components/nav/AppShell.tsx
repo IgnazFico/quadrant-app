@@ -42,6 +42,12 @@ import { SegmentedToggle } from "../ui/SegmentedToggle";
 
 const FOCUSED_ROUTES = ["/mission-statement", "/onboarding", "/year-review"];
 
+// Focused routes that also hide the phone BottomNav (WO-020 / NB-1). The bar
+// covered their last control, and a tab tap mid-flow restarted the wizard.
+// These pages reserve their own safe bottom padding instead.
+// /year-review is not listed: its ceremony is position:fixed above the bar.
+const NO_BOTTOM_NAV_ROUTES = ["/mission-statement", "/onboarding"];
+
 const NAV = [
   { href: "/goals", label: "Week", match: ["/goals", "/schedule"] },
   // /patterns and /weekly-review render the same merged desktop view; when
@@ -62,14 +68,17 @@ export function AppShell({
 }) {
   const pathname = usePathname() ?? "";
   const focused = FOCUSED_ROUTES.some((r) => matches(pathname, r));
+  const noBottomNav = NO_BOTTOM_NAV_ROUTES.some((r) => matches(pathname, r));
 
   if (focused) {
     return (
       <>
         {children}
-        <div className="hidden max-md:block">
-          <BottomNav />
-        </div>
+        {!noBottomNav && (
+          <div className="hidden max-md:block">
+            <BottomNav />
+          </div>
+        )}
         <Toaster />
       </>
     );
