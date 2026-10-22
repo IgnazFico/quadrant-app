@@ -12,7 +12,7 @@
 | **Live Production URL** | [https://quadrant-app.vercel.app](https://quadrant-app.vercel.app) |
 | **PWA Installable** | Yes (iOS Safari, Android Chrome, Desktop Chrome/Edge) |
 | **Architecture** | 100% Zero-Knowledge Client-Side Encryption (Libsodium Sumo) |
-| **Support & Feedback Channel** | In-app **Beta Feedback** on Profile tab, or email `support@quadrant.me` |
+| **Support & Feedback Channel** | In-app **Beta Feedback** on Profile tab, or email `quadrant.base@gmail.com` |
 
 ---
 
@@ -87,6 +87,6 @@ Please test any of the following scenarios and let us know how the experience fe
 We are building Quadrant to bring sanity, presence, and intentional craft back to modern knowledge workers. If you encounter any rough edges or have ideas on how to improve the experience:
 
 - Tap **Beta Feedback & Friction Report** on your Profile page.
-- Email the founding team directly at: [`support@quadrant.me`](mailto:support@quadrant.me).
+- Email the founding team directly at: [`quadrant.base@gmail.com`](mailto:quadrant.base@gmail.com).
 
 Thank you for being part of the Quadrant pilot cohort!

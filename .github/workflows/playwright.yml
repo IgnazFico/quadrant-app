@@ -18,22 +18,36 @@ jobs:
   test:
     timeout-minutes: 30
     runs-on: ubuntu-latest
-    env:
-      # Staging database — the Next.js dev server (spun up by Playwright's
-      # webServer config) connects to this DB. Must point at the same staging
-      # Neon DB that Vercel Preview deployments use, so the seeded test user
-      # (ignaz.fico@quadrant.com) is available.
-      DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
-      DIRECT_URL: ${{ secrets.STAGING_DIRECT_URL }}
 
-      # Auth + crypto secrets the app needs at runtime.
-      # Must match the values configured as Preview env vars on Vercel.
-      AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
-      NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
-      BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
-      FAKE_SALT_SECRET: ${{ secrets.FAKE_SALT_SECRET }}
-      FAKE_KEY_SECRET: ${{ secrets.FAKE_KEY_SECRET }}
-      CRON_SECRET: ${{ secrets.CRON_SECRET }}
+    # WO-004: the `test` job no longer needs any repository secret. It runs
+    # against a throwaway PostgreSQL service container that exists only for
+    # this job, so CI works on pull requests from any branch, never touches
+    # the staging or production Neon databases, and needs no owner action.
+    # (Before: DATABASE_URL came from secrets.STAGING_DATABASE_URL, which is
+    # not set on the repository -> "CI: DATABASE_URL is not set".)
+    # The `e2e` job below still uses the staging secrets; it is manual only.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: quadrant
+          POSTGRES_PASSWORD: quadrant_ci_only
+          POSTGRES_DB: quadrant_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U quadrant -d quadrant_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      # Throwaway database inside the job's service container (not a secret:
+      # it is reachable only from this runner, and is deleted with the job).
+      # scripts/lib/env.mjs refuses the production host and takes the CI path
+      # when there is no .env.staging.
+      DATABASE_URL: postgresql://quadrant:quadrant_ci_only@localhost:5432/quadrant_ci
+      DIRECT_URL: postgresql://quadrant:quadrant_ci_only@localhost:5432/quadrant_ci
 
     steps:
       - uses: actions/checkout@v4
@@ -42,25 +56,38 @@ jobs:
         with:
           node-version: lts/*
 
+      - name: Generate throwaway app secrets
+        # Random per run, masked in logs, never stored. Auth.js needs
+        # AUTH_SECRET to sign sessions; the others have fallbacks but are set
+        # so the job exercises the same code paths as a deployed environment.
+        run: |
+          for name in AUTH_SECRET FAKE_SALT_SECRET FAKE_KEY_SECRET CRON_SECRET; do
+            value="$(openssl rand -hex 32)"
+            echo "::add-mask::${value}"
+            echo "${name}=${value}" >> "$GITHUB_ENV"
+          done
+
       - name: Install dependencies
         run: npm ci
 
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
 
-      - name: Seed staging database
+      - name: Apply database migrations
+        # The weekly review relies on the goals_weekStart_is_monday CHECK
+        # constraint. The database starts empty, so migrations run first
+        # (they used to run after the seed, which only worked on a database
+        # that already had its tables).
+        run: npx prisma migrate deploy
+
+      - name: Seed test database
         # Idempotent — skips if the test user already exists.
         # Creates the test user + dashboard data for the current week,
         # so live-login.spec.ts can authenticate and see content.
         run: npm run seed
 
-      - name: Apply database migrations
-        # The weekly review relies on the goals_weekStart_is_monday CHECK
-        # constraint; staging must have every migration before tests run.
-        run: npx prisma migrate deploy
-
       - name: Weekly review loop regression (gate vs review week)
-        # Drives the real gate + review week resolution against staging with a
+        # Drives the real gate + review week resolution against the job database with a
         # throwaway user. Fails if the gate can point at a week the review page
         # cannot load or clear (the /weekly-review redirect loop).
         run: npx tsx scripts/verify-weekly-review-loop.ts
@@ -79,13 +106,32 @@ jobs:
       - name: Schedule rules regression
         # One block per goal (schedule_blocks.goalId UNIQUE; moving is a
         # PATCH) and at most 2 Anytime blocks per user per day (DB trigger).
-        # Throwaway users on staging.
+        # Throwaway users on the job database.
         run: npx tsx scripts/verify-schedule-rules.ts
 
+      - name: Build the app (production build)
+        # tests/production.spec.ts asserts that the test-only routes return
+        # 404, which the app does only when NODE_ENV=production. The
+        # Playwright webServer (`npm run dev`) cannot satisfy that, so CI
+        # tests a production build, like the one Vercel deploys.
+        run: npm run build
+
+      - name: Start the app
+        run: |
+          nohup npm start > server.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -fs -o /dev/null http://localhost:3000/login; then echo "up after ${i}s"; exit 0; fi
+            sleep 1
+          done
+          echo "app did not start"; cat server.log; exit 1
+
       - name: Run Playwright tests
-        # PR runs: smoke project only (excludes live-login.spec.ts which needs
-        # a seeded DB with a real user). The full E2E suite is available via
-        # workflow_dispatch.
+        # PR runs: smoke project only. The full E2E suite is available via
+        # workflow_dispatch. BASE_URL points Playwright at the production
+        # server started above (playwright.config.ts then skips its dev
+        # webServer).
+        env:
+          BASE_URL: http://localhost:3000
         run: npx playwright test --project=smoke
 
       - uses: actions/upload-artifact@v4

@@ -148,15 +148,7 @@ export function FeedbackModal({
               </p>
             )}
 
-            <div className="flex items-center justify-between pt-2">
-              <a
-                href={`mailto:support@quadrant.me?subject=[Beta Feedback] ${category}&body=${encodeURIComponent(
-                  message,
-                )}`}
-                className="text-[11px] font-medium text-[#6B7280] underline hover:text-[#1F2937]"
-              >
-                Or email support@quadrant.me
-              </a>
+            <div className="flex items-center justify-end pt-2">
               <button
                 type="submit"
                 disabled={status === "submitting" || !message.trim()}
