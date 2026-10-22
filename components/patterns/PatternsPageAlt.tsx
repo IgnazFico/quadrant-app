@@ -24,7 +24,7 @@ import { CARD_ORDER, renderPatternCard, type PatternsData } from "./cardContent"
  * PatternsPage in app/(app)/patterns/page.tsx is a one-line import change
  * — no other wiring needed.
  */
-const NAV_CLEARANCE = "64px";
+const NAV_CLEARANCE = "var(--bar-clear)"; // globals.css: bar height + safe area
 
 export function PatternsPageAlt() {
   const [data, setData] = useState<PatternsData | null>(null);
@@ -76,7 +76,7 @@ export function PatternsPageAlt() {
       <div className="w-full max-w-[440px]">
         <div
           className="fixed left-1/2 top-0 w-full max-w-[440px] -translate-x-1/2 overflow-hidden"
-          style={{ bottom: `calc(${NAV_CLEARANCE} + env(safe-area-inset-bottom))` }}
+          style={{ bottom: NAV_CLEARANCE }}
           onWheel={onWheel}
           onTouchStart={onTouchStart}
           onTouchEnd={onTouchEnd}

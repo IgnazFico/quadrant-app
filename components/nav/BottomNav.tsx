@@ -2,45 +2,30 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { NAV_ICONS, type NavIconKey } from "./navIcons";
+import "./bottomNav.css";
 
-const ITEMS = [
-  {
-    href: "/goals",
-    label: "This week",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="9" /><polyline points="12 7 12 12 15 14" />
-      </svg>
-    ),
-  },
-  {
-    href: "/schedule",
-    label: "Schedule",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="4" width="18" height="17" rx="2" /><path d="M3 9h18" />
-      </svg>
-    ),
-  },
-  {
-    href: "/patterns",
-    label: "Patterns",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M3 3v18h18" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" />
-      </svg>
-    ),
-  },
-  {
-    href: "/profile",
-    label: "Profile",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 4-6 8-6s8 2 8 6" />
-      </svg>
-    ),
-  },
+/**
+ * Phone bottom bar v2 (WO-022 / NB-4; design WO-021 v2, approved D-048).
+ * Icons only: every tab keeps its name as aria-label. Height is the one
+ * shared --bar-h in globals.css. Icons live in ./navIcons.tsx.
+ * Visuals and motion: ./bottomNav.css.
+ */
+const ITEMS: { href: string; label: string; icon: NavIconKey }[] = [
+  { href: "/goals", label: "This week", icon: "goals" },
+  { href: "/schedule", label: "Schedule", icon: "schedule" },
+  { href: "/patterns", label: "Patterns", icon: "patterns" },
+  { href: "/profile", label: "Profile", icon: "profile" },
 ];
+
+function isActive(href: string, pathname: string | null) {
+  return (
+    pathname === href ||
+    !!pathname?.startsWith(href + "/") ||
+    (href === "/patterns" && (pathname === "/review" || !!pathname?.startsWith("/review/")))
+  );
+}
 
 /**
  * IMPORTANT: every internal link here uses next/link's <Link>, never <a href>.
@@ -50,33 +35,59 @@ const ITEMS = [
  */
 export function BottomNav() {
   const pathname = usePathname();
+  // The bar answers the tap at once instead of waiting for the new page
+  // (pathname changes only when it is ready). A pending tap only counts while
+  // the path is still the one it was made on, so it clears itself when the
+  // route changes; the timer is a safeguard if the navigation never lands.
+  const [pending, setPending] = useState<{ href: string; from: string | null } | null>(null);
+  useEffect(() => {
+    if (!pending) return;
+    const t = setTimeout(() => setPending(null), 3000);
+    return () => clearTimeout(t);
+  }, [pending]);
+
+  const pendingHref = pending && pending.from === pathname ? pending.href : null;
+  const activeIndex = ITEMS.findIndex((item) =>
+    pendingHref ? item.href === pendingHref : isActive(item.href, pathname),
+  );
 
   return (
-    <nav className="fixed bottom-0 left-1/2 z-10 flex w-full max-w-[440px] -translate-x-1/2 gap-1 border-t border-[#ECE8DF] bg-white px-2 pb-[calc(10px+env(safe-area-inset-bottom))] pt-2.5">
-      {ITEMS.map((item) => {
-        const active =
-          pathname === item.href ||
-          pathname?.startsWith(item.href + "/") ||
-          (item.href === "/patterns" && (pathname === "/review" || pathname?.startsWith("/review/")));
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            aria-current={active ? "page" : undefined}
-            className={`relative flex flex-1 flex-col items-center gap-[3px] py-1 text-[10px] ${
-              active ? "font-bold text-[#C2410C]" : "font-medium text-[#6B7280]"
-            }`}
-          >
-            {/* WO-020 / NB-1: non-colour cue for the active tab. Absolute, so the
-                bar's height is unchanged. Labels: #6B7280 4.83:1, #C2410C 5.18:1 on white. */}
-            {active && (
-              <span aria-hidden="true" className="absolute -top-2.5 left-1/4 right-1/4 h-0.5 rounded-full bg-[#C2410C]" />
-            )}
-            <span className="h-[19px] w-[19px]">{item.icon}</span>
-            {item.label}
-          </Link>
-        );
-      })}
+    <nav className="bn fixed" aria-label="Main">
+      <div className="bn-row">
+        <span
+          aria-hidden="true"
+          className="bn-pill"
+          data-testid="bn-pill"
+          style={{
+            transform: `translateX(${Math.max(activeIndex, 0) * 100}%)`,
+            opacity: activeIndex < 0 ? 0 : 1,
+          }}
+        />
+        {ITEMS.map((item, i) => {
+          const selected = i === activeIndex;
+          const icons = NAV_ICONS[item.icon];
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              aria-label={item.label}
+              aria-current={selected ? "page" : undefined}
+              data-selected={selected}
+              onClick={() => setPending({ href: item.href, from: pathname })}
+              className="bn-tab"
+            >
+              <span className="bn-ic">
+                <svg className="bn-off" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  {icons.outline}
+                </svg>
+                <svg className="bn-on" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  {icons.filled}
+                </svg>
+              </span>
+            </Link>
+          );
+        })}
+      </div>
     </nav>
   );
 }

@@ -14,7 +14,7 @@ export function Toaster() {
   return (
     <div
       aria-live="polite"
-      className="pointer-events-none fixed inset-x-0 bottom-[calc(88px+env(safe-area-inset-bottom))] z-[60] flex justify-center px-4 md:bottom-8"
+      className="pointer-events-none fixed inset-x-0 bottom-[calc(var(--bar-clear)+16px)] z-[60] flex justify-center px-4 md:bottom-8"
     >
       {toast && (
         <button

@@ -193,7 +193,7 @@ test.describe("bar still shows on the other pages (phone)", () => {
       test.setTimeout(120_000);
       await loginAsSeededUser(page);
       await page.goto(route);
-      await expect(page.locator("nav.fixed").filter({ hasText: "Schedule" })).toBeVisible({ timeout: 20_000 });
+      await expect(page.locator("nav.fixed").filter({ has: page.getByRole("link", { name: "Schedule" }) })).toBeVisible({ timeout: 20_000 });
     });
   }
 });

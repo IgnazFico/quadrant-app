@@ -3,6 +3,11 @@
 :root {
   --background: #FAF7F2;
   --foreground: #1F2937;
+  /* Phone bottom bar (WO-022 / NB-4). THE one shared height: BottomNav,
+     schedule.css, PatternsPage, Toaster, RecapPrompt and the page paddings
+     all read --bar-clear. Change the bar here only. */
+  --bar-h: 72px;
+  --bar-clear: calc(var(--bar-h) + env(safe-area-inset-bottom));
 }
 
 @theme inline {

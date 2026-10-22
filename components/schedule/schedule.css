@@ -5,10 +5,9 @@
 .schedule-app {
   --row-h: 56px; /* keep equal to ROW_H in WeeklySchedulePage.tsx */
   --label-w: 52px;
-  --nav-h: 64px; /* BottomNav: fixed, about 64 px plus the safe area */
   position: relative;
   /* The page is exactly one screen tall; only the day timeline scrolls. */
-  height: calc(100dvh - var(--nav-h) - env(safe-area-inset-bottom));
+  height: calc(100dvh - var(--bar-clear)); /* --bar-clear: globals.css, includes the safe area */
   min-height: 420px;
   overflow: hidden;
   padding-bottom: 8px;
