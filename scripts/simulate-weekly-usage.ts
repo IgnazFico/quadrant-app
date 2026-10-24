@@ -103,6 +103,7 @@ async function runWeeklySimulation() {
       data: {
         email,
         passwordHash,
+        emailVerifiedAt: new Date(), // counts as verified (WO-012)
         authKey: {
           create: {
             saltPassword: Buffer.from(saltPassword),

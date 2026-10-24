@@ -91,6 +91,7 @@ async function main() {
         data: {
           email: TEST_EMAIL,
           passwordHash,
+          emailVerifiedAt: new Date(), // seeded test account counts as verified (WO-012)
           authKey: {
             // Prisma 7 Bytes fields are Uint8Array<ArrayBuffer>; libsodium returns
             // Uint8Array<ArrayBufferLike>. new Uint8Array() copies into a plain ArrayBuffer.

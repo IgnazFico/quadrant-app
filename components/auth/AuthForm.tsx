@@ -25,6 +25,7 @@ import { useRouter } from "next/navigation";
 import { AssuranceNote } from "./AssuranceNote";
 import { PasswordStrength } from "./PasswordStrength";
 import { RecoveryCodeReveal } from "./RecoveryCodeReveal";
+import { EmailCodeStep } from "./EmailCodeStep";
 
 type Tab = "login" | "signup";
 
@@ -35,6 +36,14 @@ export function AuthForm() {
     null,
   );
   const [serverError, setServerError] = useState<string | null>(null);
+  // Set after "Create account" succeeded and a code was emailed (WO-012). The
+  // master key and recovery code stay in memory only until the code is entered.
+  const [pendingVerify, setPendingVerify] = useState<{
+    email: string;
+    masterKey: Uint8Array;
+    recoveryCode: string;
+    retryAfter: number;
+  } | null>(null);
   const setMasterKey = useAuthStore((s) => s.setMasterKey);
 
   const loginForm = useForm<LoginInput>({ resolver: zodResolver(loginSchema) });
@@ -73,6 +82,17 @@ export function AuthForm() {
         redirect: false,
       });
       if (result?.error) {
+        if (result.code === "email_not_verified") {
+          // Right password, address never verified. The recovery code is only
+          // shown at sign-up, so verification happens by signing up again
+          // (the server replaces the unverified account and sends a new code).
+          signupForm.setValue("email", data.email);
+          setTab("signup");
+          setServerError(
+            "This email isn't verified yet. Create your account again with the same email to get a new code.",
+          );
+          return;
+        }
         setServerError("Incorrect email or password");
         return;
       }
@@ -119,16 +139,21 @@ export function AuthForm() {
         }),
       });
 
+      const body = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
         setServerError(
           body.error ?? "Something went wrong creating your account",
         );
         return;
       }
 
-      setMasterKey(masterKey);
-      setPendingRecoveryCode(recoveryCode); // gate: must confirm before continuing
+      // Not signed in yet: the emailed code comes first (WO-012).
+      setPendingVerify({
+        email: data.email,
+        masterKey,
+        recoveryCode,
+        retryAfter: typeof body.retryAfter === "number" ? body.retryAfter : 60,
+      });
     } catch (err: any) {
       setServerError(
         err?.message ?? "Something went wrong creating your account",
@@ -148,6 +173,22 @@ export function AuthForm() {
   if (pendingRecoveryCode) {
     return (
       <RecoveryCodeReveal code={pendingRecoveryCode} onConfirm={finishSignup} />
+    );
+  }
+
+  // Email code step: the account cannot sign in until this is done.
+  if (pendingVerify) {
+    return (
+      <EmailCodeStep
+        email={pendingVerify.email}
+        initialCooldown={pendingVerify.retryAfter}
+        onBack={() => setPendingVerify(null)}
+        onVerified={() => {
+          setMasterKey(pendingVerify.masterKey);
+          setPendingRecoveryCode(pendingVerify.recoveryCode); // gate: must confirm before continuing
+          setPendingVerify(null);
+        }}
+      />
     );
   }
 

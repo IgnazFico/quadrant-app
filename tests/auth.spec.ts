@@ -14,14 +14,31 @@ test("signup shows recovery code", async ({ page }) => {
   const password = "Test-password-123!";
 
   // Intercept the register request and return a successful response.
+  // D-024 / WO-012: sign-up now emails a code first; the recovery code is
+  // shown only after the code is verified. Stub both calls and walk the step.
   await page.route("**/api/auth/register", (route) =>
-    route.fulfill({ status: 200, body: JSON.stringify({}) }),
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ ok: true, verificationRequired: true, retryAfter: 60 }),
+    }),
+  );
+  await page.route("**/api/auth/verify-email", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ ok: true }),
+    }),
   );
 
   // Fill form and submit
   await page.locator('input[type="email"]').fill(email);
   await page.locator('input[type="password"]').fill(password);
   await page.getByRole("button", { name: "Create account" }).nth(1).click();
+
+  // New step (D-024): enter the emailed code.
+  await page.getByLabel("6-digit code").fill("123456");
+  await page.getByRole("button", { name: "Verify email" }).click();
 
   // Wait for the recovery code reveal to appear.
   const reveal = page.getByText(/-/).first();

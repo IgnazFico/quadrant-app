@@ -11,6 +11,7 @@ const bodySchema = z.object({
   saltPassword: z.string(), // newly generated on the client for the new password
   wrappedKeyPassword: z.string(), // master key re-wrapped client-side with the new password
   verificationToken: z.string().optional(),
+  verificationCode: z.string().optional(),
 });
 
 /**
@@ -33,16 +34,21 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   }
-  const { email, newPassword, saltPassword, wrappedKeyPassword, verificationToken } = parsed.data;
+  const { email, newPassword, saltPassword, wrappedKeyPassword, verificationToken, verificationCode } = parsed.data;
 
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user) {
     return NextResponse.json({ error: "No account found" }, { status: 404 });
   }
 
-  // Verify email proof-of-control token when supplied or in enforced production mode
+  // Verify email proof-of-control (ticket + emailed code) when supplied or in enforced production mode
   if (verificationToken) {
-    const isValid = verifyRecoveryVerificationToken(email, verificationToken, user.passwordHash);
+    const isValid = verifyRecoveryVerificationToken(
+      email,
+      verificationToken,
+      verificationCode ?? "",
+      user.passwordHash,
+    );
     if (!isValid) {
       return NextResponse.json(
         { error: "Invalid or expired recovery verification token" },

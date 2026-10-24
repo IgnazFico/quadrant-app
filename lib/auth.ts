@@ -1,8 +1,18 @@
-import NextAuth from "next-auth";
+import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
 import { loginSchema } from "./validators";
+
+/**
+ * Thrown from authorize() after the password was correct but the email has not
+ * been verified yet. Only a caller who knows the password sees this, so it does
+ * not reveal which addresses have accounts. The code travels to the browser in
+ * `result.code` (Auth.js), which the sign-in form uses to open the code step.
+ */
+class EmailNotVerified extends CredentialsSignin {
+  code = "email_not_verified";
+}
 
 /**
  * Auth.js is responsible for ONE thing: verifying a login and issuing a
@@ -34,6 +44,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const valid = await bcrypt.compare(password, user.passwordHash);
         if (!valid) return null;
 
+        // WO-012: an account whose email was never verified cannot sign in.
+        if (!user.emailVerifiedAt) throw new EmailNotVerified();
+
         return { id: user.id, email: user.email };
       },
     }),
@@ -50,7 +63,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const user = await prisma.user.findUnique({
           where: { id: token.userId as string },
         });
-        if (user) {
+        if (user && user.emailVerifiedAt) {
           session.user.id = user.id;
           session.user.email = user.email;
         } else {

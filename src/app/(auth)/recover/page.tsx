@@ -25,6 +25,9 @@ export default function RecoverPage() {
   const [masterKey, setMasterKey] = useState<Uint8Array | null>(null);
   const [email, setEmail] = useState("");
   const [verificationToken, setVerificationToken] = useState<string | null>(null);
+  // Code from the recovery email. Only needed when a ticket was issued, i.e.
+  // when mail is configured (WO-012). `devCode` exists only outside production.
+  const [verificationCode, setVerificationCode] = useState("");
 
   const identifyForm = useForm({ resolver: zodResolver(recoverStartSchema) });
   const passwordForm = useForm({ resolver: zodResolver(recoverFinishSchema) });
@@ -50,6 +53,7 @@ export default function RecoverPage() {
       if (tokenRes.ok) {
         const tokenData = await tokenRes.json();
         if (tokenData.token) setVerificationToken(tokenData.token);
+        if (tokenData.devCode) setVerificationCode(String(tokenData.devCode));
       }
 
       const salt = await fromBase64(saltRecovery);
@@ -83,7 +87,7 @@ export default function RecoverPage() {
           newPassword: data.newPassword,
           saltPassword: await toBase64(saltPassword),
           wrappedKeyPassword: await toBase64(wrappedKeyPassword),
-          ...(verificationToken ? { verificationToken } : {}),
+          ...(verificationToken ? { verificationToken, verificationCode } : {}),
         }),
       });
 
@@ -142,6 +146,21 @@ export default function RecoverPage() {
             className="flex flex-col gap-4"
             onSubmit={passwordForm.handleSubmit(onSetNewPassword)}
           >
+            {verificationToken && (
+              <input
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={6}
+                aria-label="6-digit code from your email"
+                placeholder="6-digit code from your email"
+                className="auth-input font-mono"
+                value={verificationCode}
+                onChange={(e) =>
+                  setVerificationCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+                }
+              />
+            )}
             <input
               type="password"
               placeholder="Choose a new password"
