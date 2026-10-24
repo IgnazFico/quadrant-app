@@ -91,6 +91,11 @@ async function check(
  * (NAVBAR_EMAIL / NAVBAR_PASSWORD, created through the signup form). Both
  * write endpoints are stubbed, so the account stays empty and reusable.
  */
+// CI does not provide the throwaway account (D-068 A): those flows skip there
+// and run only where NAVBAR_EMAIL and NAVBAR_PASSWORD are set.
+const HAS_FRESH_USER = Boolean(process.env.NAVBAR_EMAIL && process.env.NAVBAR_PASSWORD);
+const FRESH_USER_SKIP = "NAVBAR_EMAIL and NAVBAR_PASSWORD not set";
+
 async function loginAsFreshUser(page: Page) {
   const email = process.env.NAVBAR_EMAIL;
   const password = process.env.NAVBAR_PASSWORD;
@@ -115,6 +120,7 @@ for (const c of CONFIGS) {
     });
 
     test("mission statement: 8 screens", async ({ page }) => {
+      test.skip(!HAS_FRESH_USER, FRESH_USER_SKIP);
       test.setTimeout(180_000);
       await page.route("**/api/mission-statement", (route) =>
         route.request().method() === "POST"
@@ -149,6 +155,7 @@ for (const c of CONFIGS) {
     });
 
     test("role onboarding: 4 steps", async ({ page }) => {
+      test.skip(!HAS_FRESH_USER, FRESH_USER_SKIP);
       test.setTimeout(180_000);
       await page.route("**/api/roles", (route) =>
         route.request().method() === "POST"
@@ -208,6 +215,7 @@ test.describe("RecapPrompt on 22 Dec (fixed clock)", () => {
   const RECAP = "Your year in Quadrant is nearly written";
 
   test("hidden on /mission-statement and /onboarding, shown elsewhere", async ({ page }) => {
+    test.skip(!HAS_FRESH_USER, FRESH_USER_SKIP);
     test.setTimeout(150_000);
     await page.clock.setFixedTime(new Date("2026-12-22T10:00:00+07:00"));
     await loginAsFreshUser(page);
