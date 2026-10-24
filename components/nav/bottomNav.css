@@ -1,0 +1,128 @@
+/* Phone bottom bar v2 (WO-022 / NB-4, design WO-021 v2, approved D-048).
+   Spec: outputs/WO-021-navbar-design-v2.md §3, §5, §6. CSS only, no package.
+   The bar height is --bar-h in globals.css (one shared value). */
+
+.bn {
+  --bn-amber: #ea580c;
+  --bn-idle: #8a8579;
+  --bn-pill: #fff7ed;
+  --bn-pill-ring: #fed7aa;
+  --bn-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  z-index: 10;
+  width: 100%;
+  max-width: 440px;
+  transform: translateX(-50%);
+  box-sizing: border-box;
+  height: var(--bar-clear);
+  padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+  /* Opaque on purpose: a see-through bar fails 3:1 over a dark toast. */
+  background: #fff;
+  box-shadow: 0 -1px 0 #ece8df, 0 -10px 24px -14px rgba(46, 42, 38, 0.14);
+}
+
+.bn-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  height: 60px;
+}
+
+/* One pill element that slides between the cells (transform only). */
+.bn-pill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 25%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  transition: transform 220ms var(--bn-ease), opacity 160ms ease-out;
+}
+.bn-pill::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 64px;
+  height: 40px;
+  margin: -20px 0 0 -32px;
+  border-radius: 15px;
+  background: var(--bn-pill);
+  box-shadow: 0 0 0 1px var(--bn-pill-ring);
+}
+
+.bn-tab {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 60px;
+  color: var(--bn-idle);
+  text-decoration: none;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: color 160ms ease-out;
+}
+.bn-tab:focus-visible {
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.6);
+  border-radius: 14px;
+}
+.bn-tab[data-selected="true"] {
+  color: var(--bn-amber);
+}
+
+.bn-ic {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  transition: transform 90ms ease-out;
+}
+.bn-tab:active .bn-ic {
+  transform: scale(0.92);
+}
+.bn-ic svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: opacity 160ms ease-out;
+}
+.bn-ic .bn-on {
+  opacity: 0;
+  fill: currentColor;
+}
+.bn-ic .bn-on .cut {
+  stroke: var(--bn-pill);
+  fill: none;
+}
+.bn-tab[data-selected="true"] .bn-off {
+  opacity: 0;
+}
+.bn-tab[data-selected="true"] .bn-on {
+  opacity: 1;
+}
+
+/* Reduced motion: every duration 0, no press scale. The pill jumps, the icon
+   swaps, the colour changes at once. */
+@media (prefers-reduced-motion: reduce) {
+  .bn-pill,
+  .bn-tab,
+  .bn-ic,
+  .bn-ic svg {
+    transition-duration: 0s !important;
+    animation: none !important;
+  }
+  .bn-tab:active .bn-ic {
+    transform: none;
+  }
+}

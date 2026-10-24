@@ -44,7 +44,7 @@ export function ProfilePage({ profile }: { profile: ProfileData }) {
       : "Set up your featured roles";
 
   return (
-    <div className="flex justify-center bg-[#FFF9F2] px-[18px] pb-24 pt-5">
+    <div className="flex justify-center bg-[#FFF9F2] px-[18px] pb-[calc(var(--bar-clear)+24px)] pt-5">
       <div className="w-full max-w-[440px]">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">

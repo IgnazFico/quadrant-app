@@ -85,7 +85,7 @@ export function MissionStatementFlow() {
   }
 
   return (
-    <div className="flex min-h-screen justify-center bg-[#FFF9F2] px-6 py-10">
+    <div className="flex min-h-screen justify-center bg-[#FFF9F2] px-6 pb-[max(2.5rem,env(safe-area-inset-bottom))] pt-10">
       <div className="w-full max-w-[460px]">
         <div className="mb-2 flex items-center gap-2">
           <span className="font-serif text-[15px] font-semibold text-[#C9CBCF]">
@@ -348,7 +348,7 @@ function Question({
       <div className="mt-9 flex items-center justify-between">
         <button
           onClick={onBack}
-          className="px-1 py-2 text-[13px] text-[#B7B2A7] hover:text-[#6B7280]"
+          className="min-h-11 min-w-11 px-1 py-2 text-left text-[13px] text-[#B7B2A7] hover:text-[#6B7280]"
         >
           Back
         </button>

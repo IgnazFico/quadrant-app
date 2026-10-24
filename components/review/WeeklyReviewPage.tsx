@@ -40,7 +40,7 @@ export function WeeklyReviewPage({ review }: { review: ReviewData }) {
   }
 
   return (
-    <div className="flex justify-center bg-[#FFF9F2] px-[18px] pb-24 pt-5">
+    <div className="flex justify-center bg-[#FFF9F2] px-[18px] pb-[calc(var(--bar-clear)+24px)] pt-5">
       <div className="w-full max-w-[440px]">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -154,7 +154,7 @@ export function WeeklyReviewPage({ review }: { review: ReviewData }) {
       )}
 
       {toast && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 rounded-lg bg-[#1F2937] px-4 py-2.5 text-sm text-white">
+        <div className="fixed bottom-[calc(var(--bar-clear)+16px)] left-1/2 -translate-x-1/2 rounded-lg bg-[#1F2937] px-4 py-2.5 text-sm text-white">
           {toast}
         </div>
       )}

@@ -6,14 +6,14 @@ import { SplitNote } from "./PatternsMonth";
 import type { PatternsState } from "../../hooks/usePatterns";
 
 /**
- * Approximate rendered height of the global <BottomNav /> (pt-2.5 + 19px
- * icon + gap + label line + pb-2.5, rounded up for breathing room). The
+ * Height of the global <BottomNav />: the one shared --bar-clear in
+ * globals.css (WO-022; bar height plus the safe-area inset). The
  * scroll region below is sized to the viewport MINUS this, so a card at
  * height:100% of that region can never be partially hidden behind the
  * nav — that's what "no leakage" actually depends on, not the snap
  * behavior itself.
  */
-const NAV_CLEARANCE = "64px";
+const NAV_CLEARANCE = "var(--bar-clear)"; // globals.css: bar height + safe area
 
 export function PatternsPage({ patterns }: { patterns: PatternsState }) {
   const { current, loading, split, dataFor } = patterns;
@@ -64,7 +64,7 @@ export function PatternsPage({ patterns }: { patterns: PatternsState }) {
         <div
           ref={containerRef}
           className="fixed left-1/2 top-0 w-full max-w-[440px] -translate-x-1/2 snap-y snap-mandatory overflow-y-auto"
-          style={{ bottom: `calc(${NAV_CLEARANCE} + env(safe-area-inset-bottom))` }}
+          style={{ bottom: NAV_CLEARANCE }}
         >
           {CARD_ORDER.map((id, i) => {
             const data = dataFor(id);

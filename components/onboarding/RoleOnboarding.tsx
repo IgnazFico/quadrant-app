@@ -113,7 +113,7 @@ export function RoleOnboarding() {
   }
 
   return (
-    <div className="flex min-h-screen justify-center bg-[#FFF9F2] px-6 py-8">
+    <div className="flex min-h-screen justify-center bg-[#FFF9F2] px-6 pb-[max(2.5rem,env(safe-area-inset-bottom))] pt-8">
       <div className="w-full max-w-[560px]">
         <div className="mb-8 flex items-center gap-2.5">
           <span className="font-serif text-[19px] font-semibold text-[#1F2937]">
