@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { loginAsSeededUser } from "./helpers/auth";
+import { isRecapWindowOpenOnServer } from "../lib/yearRecapWindow";
 
 /**
  * Year-end ceremony at /year-review (components/yearreview/ceremony/).
@@ -9,10 +10,21 @@ import { loginAsSeededUser } from "./helpers/auth";
  *
  * Runs with reduced motion so every scene reveals instantly and the
  * assertions don't depend on animation timing.
+ *
+ * WO-033 (D-039 C): the server answers /year-review only from Dec 20 to 31
+ * (Asia/Jakarta), so these tests can only run against a server whose clock is
+ * in that window. SERVER_NOW is the instant the server was started with (see
+ * tests/year-review-guard.spec.ts); unset means the real clock. Outside the
+ * window the guard is what is tested, in year-review-guard.spec.ts.
  */
+const SERVER_NOW = process.env.SERVER_NOW ? new Date(process.env.SERVER_NOW) : new Date();
 const YEAR = new Date().getFullYear();
 
 test.describe("Year-end ceremony", () => {
+  test.skip(
+    !isRecapWindowOpenOnServer(SERVER_NOW),
+    "server clock is outside Dec 20-31 (D-039 C): the ceremony is closed; see year-review-guard.spec.ts",
+  );
   test.use({ viewport: { width: 1280, height: 860 } });
   test.beforeEach(async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
