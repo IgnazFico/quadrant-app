@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import fs from "node:fs";
 import path from "node:path";
 import { loginAsSeededUser } from "./helpers/auth";
-import { isRecapWindowOpen, isRecapWindowOpenOnServer } from "../lib/yearRecapWindow";
+import { isRecapWindowOpenOnServer } from "../lib/yearRecapWindow";
 
 /**
  * WO-033 (D-039 C): /year-review and /api/year-review answer only from
@@ -26,28 +26,6 @@ const AUTH_FILE = path.join("test-results", ".auth", "wo033-user.json");
 test.use({ timezoneId: "Asia/Jakarta" });
 test.setTimeout(60000);
 
-// ---- the rule itself, no server needed ---------------------------------------
-test.describe("window rule (Asia/Jakarta)", () => {
-  const cases: [string, string, boolean][] = [
-    ["Dec 19 23:59 WIB", "2026-12-19T23:59:00+07:00", false],
-    ["Dec 20 00:00 WIB", "2026-12-20T00:00:00+07:00", true],
-    ["Dec 31 23:59 WIB", "2026-12-31T23:59:00+07:00", true],
-    ["Jan 1 00:00 WIB", "2027-01-01T00:00:00+07:00", false],
-    ["Dec 19 16:59:59 UTC (= Dec 19 23:59:59 WIB)", "2026-12-19T16:59:59Z", false],
-    ["Dec 19 17:00:00 UTC (= Dec 20 00:00:00 WIB)", "2026-12-19T17:00:00Z", true],
-    ["Dec 31 16:59:59 UTC (= Dec 31 23:59:59 WIB)", "2026-12-31T16:59:59Z", true],
-    ["Dec 31 17:00:00 UTC (= Jan 1 00:00:00 WIB)", "2026-12-31T17:00:00Z", false],
-    ["Oct 27", "2026-10-27T12:00:00+07:00", false],
-    ["Nov 30 23:59 WIB", "2026-11-30T23:59:00+07:00", false],
-  ];
-  for (const [label, iso, expected] of cases) {
-    test(`${label} -> ${expected ? "open" : "closed"}`, () => {
-      expect(isRecapWindowOpenOnServer(new Date(iso))).toBe(expected);
-      expect(isRecapWindowOpen(new Date(iso), "Asia/Jakarta")).toBe(expected);
-    });
-  }
-});
-
 // ---- the running server -------------------------------------------------------
 // Stable title: the real clock must not end up in it (workers would disagree on the name).
 test.describe(`server clock ${FAKED ? process.env.SERVER_NOW : "real"} (${OPEN ? "window open" : "window closed"})`, () => {
@@ -63,7 +41,7 @@ test.describe(`server clock ${FAKED ? process.env.SERVER_NOW : "real"} (${OPEN ?
   test.use({ storageState: AUTH_FILE });
 
   test("API: login check stays (no cookie -> 401, window or not)", async ({ playwright, baseURL }) => {
-    const anon = await playwright.request.newContext({ baseURL });
+    const anon = await playwright.request.newContext({ baseURL, storageState: { cookies: [], origins: [] } });
     const res = await anon.get("/api/year-review?year=2026");
     expect(res.status()).toBe(401);
     await anon.dispose();

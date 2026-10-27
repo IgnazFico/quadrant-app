@@ -48,6 +48,8 @@ export default defineConfig({
         '**/reflect-desktop.spec.ts',
         '**/identity-desktop.spec.ts',
         '**/year-review-ceremony.spec.ts',
+        // WO-033: needs a server on a known clock and the seeded user, like the ceremony spec.
+        '**/year-review-guard.spec.ts',
         '**/week-next-planning.spec.ts',
       ],
       use: { ...devices['Desktop Chrome'] },
