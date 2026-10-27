@@ -1,4 +1,5 @@
 import { prisma } from "./prisma";
+import { toWire } from "./sealed";
 import type { RoleConstellation, YearStars } from "../types/constellation";
 
 // GROWTH-RING-REDESIGN: monthly stars behind the constellation badge and sky.
@@ -88,6 +89,7 @@ export async function getRoleConstellations(
       });
     }
 
-    return { roleId: role.id, label: role.label, domain: role.domain, peak, years };
+    // label is ciphertext (WO-029): base64 on the wire, opened in the browser.
+    return { roleId: role.id, label: toWire(role.label), domain: role.domain, peak, years };
   });
 }

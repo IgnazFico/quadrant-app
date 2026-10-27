@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "../../../../lib/auth";
 import { prisma } from "../../../../lib/prisma";
+import { serializeGoal, serializeRole } from "../../../../lib/sealed";
 import {
   addDays,
   currentWeekFor,
@@ -76,9 +77,9 @@ export async function GET(req: Request) {
   });
 
   const serialized = roles.map((r: any) => ({
-    ...r,
+    ...serializeRole(r),
     goals: r.goals.map((g: any) => ({
-      ...g,
+      ...serializeGoal(g),
       reviewEntry: g.reviewEntry
         ? {
             id: g.reviewEntry.id,

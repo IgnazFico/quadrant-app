@@ -3,6 +3,7 @@ import { z } from "zod";
 import { auth } from "../../../../lib/auth";
 import { prisma } from "../../../../lib/prisma";
 import { startOfDay, parseDayKey } from "../../../../lib/week";
+import { scheduleTitleSchema, serializeBlock } from "../../../../lib/sealed";
 import {
   anytimeDayFull,
   anytimeLimitReached,
@@ -29,7 +30,7 @@ export async function GET() {
     orderBy: { hour: "asc" },
   });
 
-  return NextResponse.json({ blocks });
+  return NextResponse.json({ blocks: blocks.map(serializeBlock) });
 }
 
 const createSchema = z
@@ -39,7 +40,7 @@ const createSchema = z
     day: z.string().optional(), // ISO date string; defaults to today
     hour: z.number().int().min(0).max(23).nullable().optional(),
     isPriority: z.boolean().optional().default(false),
-    title: z.string().min(1).max(140),
+    title: scheduleTitleSchema, // base64 ciphertext (WO-029)
   })
   .refine((data) => (data.isPriority ? data.hour == null : data.hour != null), {
     message: "A timed block needs an hour; a priority item must not have one",
@@ -108,5 +109,5 @@ export async function POST(req: Request) {
     throw e;
   }
 
-  return NextResponse.json({ block });
+  return NextResponse.json({ block: serializeBlock(block) });
 }

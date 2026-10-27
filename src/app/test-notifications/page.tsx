@@ -47,7 +47,7 @@ const NOTIFICATION_CATALOG = [
   {
     type: "ROLE_MILESTONE",
     title: "Role Milestone",
-    sample: "Showed up 25 times as Craft this year. That counts.",
+    sample: "Showed up 25 times in one of your roles this year. That counts.",
     desc: "Marks every 25 goals finished in a role this year.",
     target: "/goals",
   },

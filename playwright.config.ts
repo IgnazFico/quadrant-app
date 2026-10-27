@@ -49,6 +49,7 @@ export default defineConfig({
         '**/identity-desktop.spec.ts',
         '**/year-review-ceremony.spec.ts',
         '**/week-next-planning.spec.ts',
+        '**/sealed-titles.spec.ts', // WO-029: needs a real backend and creates an account
       ],
       use: { ...devices['Desktop Chrome'] },
       fullyParallel: true,

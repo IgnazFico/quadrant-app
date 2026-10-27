@@ -36,7 +36,10 @@ import {
   deriveKey,
   generateMasterKey,
   wrapMasterKey,
+  unwrapMasterKey,
   generateRecoveryCode,
+  encryptField,
+  decryptField,
 } from '../lib/crypto';
 
 const TEST_EMAIL = 'ignaz.fico@quadrant.com';
@@ -108,24 +111,60 @@ async function main() {
       console.log(`Recovery Code: ${recoveryCode}`);
     }
 
+    // ---- Master key (WO-029) ----
+    // Role labels, goal titles and schedule titles are sealed with the user's
+    // master key, exactly as the browser does. The seed knows the test password,
+    // so it opens the stored wrapped key the same way sign-in does.
+    const authKey = await prisma.authKey.findUniqueOrThrow({ where: { userId: user.id } });
+    const seedKey = await unwrapMasterKey(
+      new Uint8Array(authKey.wrappedKeyPassword),
+      await deriveKey(TEST_PASSWORD, new Uint8Array(authKey.saltPassword)),
+    );
+    // Prisma 7 Bytes fields want Uint8Array<ArrayBuffer>; copy into a plain buffer.
+    const seal = async (text: string) => new Uint8Array(await encryptField(text, seedKey));
+    const open = async (bytes: Uint8Array): Promise<string | null> => {
+      try {
+        return await decryptField(new Uint8Array(bytes), seedKey);
+      } catch {
+        return null; // legacy readable bytes, or another key
+      }
+    };
+
     // ---- Roles ----
     console.log('Ensuring roles exist...');
     const roleData = [
       { domain: 'career', label: 'Software Architect', isFeatured: true },
       { domain: 'health', label: 'Physical Vitality', isFeatured: true },
     ];
+    // Labels are ciphertext, so match by opening the user's existing roles.
+    const existingRoles = await prisma.role.findMany({ where: { userId: user.id } });
+    const openedRoles = await Promise.all(
+      existingRoles.map(async (r) => ({ role: r, text: await open(r.label) })),
+    );
+    // The seed user is a staging test account: a role from before WO-029 holds
+    // readable bytes nobody can open, so drop it (cascades its goals and blocks)
+    // and let the sealed role below replace it.
+    const staleIds = openedRoles.filter((o) => o.text === null).map((o) => o.role.id);
+    if (staleIds.length) {
+      await prisma.role.deleteMany({ where: { id: { in: staleIds } } });
+      console.log(`Removed ${staleIds.length} unreadable pre-WO-029 seed role(s)`);
+    }
     const roles = await Promise.all(
       roleData.map(async (r) => {
-        const existing = await prisma.role.findFirst({
-          where: { userId: user.id, label: r.label },
-        });
+        const existing = openedRoles.find((o) => o.text === r.label)?.role;
         if (existing) return existing;
         return prisma.role.create({
-          data: { userId: user.id, ...r, createdAt: now },
+          data: {
+            userId: user.id,
+            domain: r.domain,
+            label: await seal(r.label),
+            isFeatured: r.isFeatured,
+            createdAt: now,
+          },
         });
       }),
     );
-    console.log(`Roles: ${roles.map((r) => r.label).join(', ')}`);
+    console.log(`Roles: ${roleData.map((r) => r.label).join(', ')}`);
 
     // ---- Goals for CURRENT week (recreated every run) ----
     console.log('(Re)creating goals for current week...');
@@ -146,13 +185,19 @@ async function main() {
       { roleId: roles[1].id, title: 'Run 5km three times this week' },
     ];
     const goals = await Promise.all(
-      goalData.map((g) =>
+      goalData.map(async (g) =>
         prisma.goal.create({
-          data: { ...g, status: 'IN_PROGRESS' as const, weekStart, createdAt: now },
+          data: {
+            roleId: g.roleId,
+            title: await seal(g.title),
+            status: 'IN_PROGRESS' as const,
+            weekStart,
+            createdAt: now,
+          },
         }),
       ),
     );
-    console.log(`Goals: ${goals.map((g) => g.title).join(', ')}`);
+    console.log(`Goals: ${goalData.map((g) => g.title).join(', ')}`);
 
     // ---- Schedule blocks for TODAY (recreated every run) ----
     console.log('(Re)creating schedule blocks for today...');
@@ -166,9 +211,9 @@ async function main() {
       { roleId: roles[1].id, goalId: goals[1].id, day: today, hour: null, isPriority: true, title: 'Morning run' },
     ];
     await Promise.all(
-      blockData.map((b) =>
+      blockData.map(async (b) =>
         prisma.scheduleBlock.create({
-          data: { ...b, isPriority: b.isPriority ?? false, createdAt: now },
+          data: { ...b, title: await seal(b.title), isPriority: b.isPriority ?? false, createdAt: now },
         }),
       ),
     );

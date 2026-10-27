@@ -3,6 +3,9 @@
 import { useMemo, useState } from "react";
 import { DOMAINS, domainLabel } from "../../lib/domains";
 import Link from "next/link";
+import { useAuthStore } from "../../store/authStore";
+import { LOCKED_MESSAGE, sealText } from "../../lib/sealedFields";
+import { ROLE_LABEL_MAX } from "../../lib/sealed";
 
 type Step = 1 | 2 | 3 | 4; // 4 = done
 
@@ -54,6 +57,8 @@ export function RoleOnboarding() {
   const [labels, setLabels] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // WO-029: role names are sealed in the browser with the master key.
+  const masterKey = useAuthStore((s) => s.masterKey);
 
   function toggleDomain(id: string) {
     setDomains((prev) => {
@@ -84,18 +89,32 @@ export function RoleOnboarding() {
   const canContinueStep2 = roles.size > 0;
 
   async function finish() {
-    setSubmitting(true);
     setError(null);
+    if (!masterKey) {
+      setError(LOCKED_MESSAGE);
+      return;
+    }
+    const trimmed = selectedRoleEntries.map((r) => ({ ...r, label: r.label.trim() }));
+    if (trimmed.some((r) => !r.label)) {
+      setError("Give every role a name.");
+      return;
+    }
+    if (trimmed.some((r) => r.label.length > ROLE_LABEL_MAX)) {
+      setError(`Role names can be up to ${ROLE_LABEL_MAX} characters.`);
+      return;
+    }
+    setSubmitting(true);
     try {
+      const sealed = await Promise.all(
+        trimmed.map(async (r) => ({
+          domain: r.domainId,
+          label: await sealText(r.label, masterKey),
+        })),
+      );
       const res = await fetch("/api/roles", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          roles: selectedRoleEntries.map((r) => ({
-            domain: r.domainId,
-            label: r.label,
-          })),
-        }),
+        body: JSON.stringify({ roles: sealed }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
@@ -238,6 +257,7 @@ export function RoleOnboarding() {
                   </span>
                   <input
                     className="flex-1 border-b border-transparent bg-transparent py-1 text-[15px] font-medium text-[#1F2937] focus:border-[#F97316] focus:outline-none"
+                    maxLength={ROLE_LABEL_MAX}
                     value={labels[r.key] ?? r.roleName}
                     onChange={(e) =>
                       setLabels((prev) => ({

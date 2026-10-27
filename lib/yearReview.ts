@@ -1,5 +1,6 @@
 import { prisma } from "./prisma";
 import { getRoleConstellations } from "./constellation";
+import { toWire } from "./sealed";
 
 const MONTH_NAMES = [
   "January",
@@ -80,7 +81,7 @@ export async function getYearReview(userId: string, year: number) {
     (a, b) => a.completedAt!.getTime() - b.completedAt!.getTime(),
   )[0];
   const firstCompleted = first
-    ? { title: first.title, date: first.completedAt! }
+    ? { title: toWire(first.title), date: first.completedAt! }
     : null;
 
   // ---------------- integrity ----------------
@@ -119,7 +120,7 @@ export async function getYearReview(userId: string, year: number) {
   );
   const rings = roles.map((r) => ({
     roleId: r.id,
-    label: r.label,
+    label: toWire(r.label),
     domain: r.domain,
     months: constellations.get(r.id)?.years[0]?.months ?? new Array(12).fill(0),
     peak: constellations.get(r.id)?.peak ?? 1,

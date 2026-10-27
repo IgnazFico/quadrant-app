@@ -70,7 +70,8 @@ server.tool("seed_test_scenario", "Seeds a test user configured for specific tes
                 data: {
                     userId: user.id,
                     domain: "health",
-                    label: "Athlete",
+                    // Dev seed only: readable bytes, not ciphertext (the app shows a placeholder for them).
+                    label: Buffer.from("Athlete"),
                 },
             });
             const lastWeekStart = new Date();
@@ -79,7 +80,7 @@ server.tool("seed_test_scenario", "Seeds a test user configured for specific tes
             await prisma.goal.create({
                 data: {
                     roleId: role.id,
-                    title: "Run 10km 3x",
+                    title: Buffer.from("Run 10km 3x"),
                     status: "MISSED",
                     weekStart: lastWeekStart,
                 },

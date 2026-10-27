@@ -170,14 +170,14 @@ async function runWeeklySimulation() {
     if (initialRoleCount !== 0) throw new Error("Expected 0 roles before onboarding");
 
     roles = await prisma.$transaction([
-      prisma.role.create({ data: { userId: user.id, domain: "career", label: "Software Engineer", isFeatured: true } }),
-      prisma.role.create({ data: { userId: user.id, domain: "growth", label: "Student", isFeatured: true } }),
-      prisma.role.create({ data: { userId: user.id, domain: "health", label: "Athlete" } }),
-      prisma.role.create({ data: { userId: user.id, domain: "relationships", label: "Friend" } }),
+      prisma.role.create({ data: { userId: user.id, domain: "career", label: Buffer.from("Software Engineer"), isFeatured: true } }),
+      prisma.role.create({ data: { userId: user.id, domain: "growth", label: Buffer.from("Student"), isFeatured: true } }),
+      prisma.role.create({ data: { userId: user.id, domain: "health", label: Buffer.from("Athlete") } }),
+      prisma.role.create({ data: { userId: user.id, domain: "relationships", label: Buffer.from("Friend") } }),
     ]);
 
     if (roles.length !== 4) throw new Error("Expected 4 roles created");
-    return `Roles initialized: ${roles.map((r) => r.label).join(", ")}`;
+    return `Roles initialized: ${roles.map((r) => Buffer.from(r.label).toString()).join(", ")}`;
   });
 
   // ==========================================
@@ -190,16 +190,16 @@ async function runWeeklySimulation() {
   await recordTest("Setting Weekly Big Rocks for Current Week", "Positive Path", async () => {
     currentGoals = await prisma.$transaction([
       prisma.goal.create({
-        data: { roleId: roles[0].id, title: "Ship Auth Feature", weekStart: currentWeek, status: "IN_PROGRESS" },
+        data: { roleId: roles[0].id, title: Buffer.from("Ship Auth Feature"), weekStart: currentWeek, status: "IN_PROGRESS" },
       }),
       prisma.goal.create({
-        data: { roleId: roles[1].id, title: "Study Distributed Systems", weekStart: currentWeek, status: "IN_PROGRESS" },
+        data: { roleId: roles[1].id, title: Buffer.from("Study Distributed Systems"), weekStart: currentWeek, status: "IN_PROGRESS" },
       }),
       prisma.goal.create({
-        data: { roleId: roles[2].id, title: "Run 5km 3x", weekStart: currentWeek, status: "IN_PROGRESS" },
+        data: { roleId: roles[2].id, title: Buffer.from("Run 5km 3x"), weekStart: currentWeek, status: "IN_PROGRESS" },
       }),
       prisma.goal.create({
-        data: { roleId: roles[3].id, title: "Sunday Family Dinner", weekStart: currentWeek, status: "IN_PROGRESS" },
+        data: { roleId: roles[3].id, title: Buffer.from("Sunday Family Dinner"), weekStart: currentWeek, status: "IN_PROGRESS" },
       }),
     ]);
 
@@ -216,7 +216,7 @@ async function runWeeklySimulation() {
         day: today,
         hour: null,
         isPriority: true,
-        title: "Priority: Ship Auth Feature",
+        title: Buffer.from("Priority: Ship Auth Feature"),
       },
     });
 
@@ -227,7 +227,7 @@ async function runWeeklySimulation() {
         day: today,
         hour: 7,
         isPriority: false,
-        title: "Morning 5k Run",
+        title: Buffer.from("Morning 5k Run"),
       },
     });
 
@@ -258,7 +258,7 @@ async function runWeeklySimulation() {
     });
 
     if (!ring || ring.votesLogged !== 1) throw new Error(`Expected votesLogged=1, got ${ring?.votesLogged}`);
-    return `Growth ring for role ${roles[0].label} has ${ring.votesLogged} vote logged`;
+    return `Growth ring for role ${Buffer.from(roles[0].label).toString()} has ${ring.votesLogged} vote logged`;
   });
 
   await recordTest("Unmarking Goal Retracts Vote (Anti-Farming Check)", "Positive Path", async () => {
@@ -366,7 +366,7 @@ async function runWeeklySimulation() {
     const missedGoal = await prisma.goal.create({
       data: {
         roleId: roles[1].id,
-        title: "Finish Chapter 4 (Past Week)",
+        title: Buffer.from("Finish Chapter 4 (Past Week)"),
         status: "MISSED",
         weekStart: pastWeek,
       },

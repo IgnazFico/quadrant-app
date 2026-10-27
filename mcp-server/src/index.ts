@@ -93,7 +93,8 @@ server.tool(
           data: {
             userId: user.id,
             domain: "health",
-            label: "Athlete",
+            // Dev seed only: readable bytes, not ciphertext (the app shows a placeholder for them).
+            label: Buffer.from("Athlete"),
           },
         });
 
@@ -104,7 +105,7 @@ server.tool(
         await prisma.goal.create({
           data: {
             roleId: role.id,
-            title: "Run 10km 3x",
+            title: Buffer.from("Run 10km 3x"),
             status: "MISSED",
             weekStart: lastWeekStart,
           },

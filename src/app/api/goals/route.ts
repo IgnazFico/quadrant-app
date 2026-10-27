@@ -3,10 +3,13 @@ import { z } from "zod";
 import { auth } from "../../../../lib/auth";
 import { prisma } from "../../../../lib/prisma";
 import { startOfWeek } from "../../../../lib/week";
+import { goalTitleSchema, serializeGoal, serializeRole } from "../../../../lib/sealed";
 
 const createGoalSchema = z.object({
   roleId: z.string().uuid(),
-  title: z.string().min(1).max(140),
+  // Base64 ciphertext sealed in the browser (WO-029). The 140-character limit
+  // is enforced by the browser; the server bounds the size (lib/sealed.ts).
+  title: goalTitleSchema,
   weekStart: z.string().optional(),
 });
 
@@ -36,7 +39,15 @@ export async function GET(req: Request) {
     },
   });
 
-  return NextResponse.json({ roles, weekStart: targetWeek });
+  // role.label and goal.title are ciphertext: they leave as base64 and are
+  // opened in the browser (lib/sealedFields.ts).
+  return NextResponse.json({
+    roles: roles.map((r) => ({
+      ...serializeRole(r),
+      goals: r.goals.map(serializeGoal),
+    })),
+    weekStart: targetWeek,
+  });
 }
 
 /**
@@ -78,5 +89,5 @@ export async function POST(req: Request) {
     },
   });
 
-  return NextResponse.json({ goal }, { status: 201 });
+  return NextResponse.json({ goal: serializeGoal(goal) }, { status: 201 });
 }

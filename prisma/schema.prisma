@@ -68,7 +68,8 @@ model Role {
   id         String   @id @default(uuid())
   userId     String
   domain     String
-  label      String
+  /// Sealed in the browser (lib/sealedFields.ts): secretbox ciphertext, never text. WO-029, D-066.
+  label      Bytes
   isFeatured Boolean  @default(false)
   createdAt  DateTime @default(now())
 
@@ -84,7 +85,8 @@ model Role {
 model Goal {
   id            String     @id @default(uuid())
   roleId        String
-  title         String
+  /// Sealed in the browser (lib/sealedFields.ts): secretbox ciphertext, never text. WO-029, D-066.
+  title         Bytes
   status        GoalStatus @default(IN_PROGRESS)
   carryForward  Boolean    @default(false)
   /// Always the Monday of the week (UTC date from lib/week startOfWeek()).
@@ -98,6 +100,13 @@ model Goal {
   reviewEntry    ReviewEntry?
   scheduleBlock  ScheduleBlock?
   completedAt DateTime?
+
+  /// The goal this one was carried forward from (weekly review). UNIQUE, so completing a
+  /// review twice cannot carry the same goal twice. Replaces the old title comparison, which
+  /// the server can no longer do now that titles are sealed. WO-029.
+  carriedFromId String?  @unique
+  carriedFrom   Goal?    @relation("GoalCarry", fields: [carriedFromId], references: [id], onDelete: SetNull)
+  carriedTo     Goal?    @relation("GoalCarry")
 
   @@index([roleId, weekStart])
   @@map("goals")
@@ -126,7 +135,8 @@ model ScheduleBlock {
   day        DateTime @db.Date
   hour       Int?
   isPriority Boolean  @default(false)
-  title      String
+  /// Sealed in the browser (lib/sealedFields.ts): secretbox ciphertext, never text. WO-029, D-066.
+  title      Bytes
   createdAt  DateTime @default(now())
 
   role Role  @relation(fields: [roleId], references: [id], onDelete: Cascade)
@@ -145,6 +155,9 @@ model GrowthRing {
   roleId      String
   year        Int
   votesLogged Int       @default(0)
+  /// Highest role-milestone tier (25, 50, ...) already announced for this role-year.
+  /// Lets the server dedupe the notice without reading the (sealed) role name. WO-029.
+  milestoneNotified Int @default(0)
   sealed      Boolean   @default(false)
   sealedAt    DateTime?
 
