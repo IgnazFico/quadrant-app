@@ -32,14 +32,16 @@ export async function POST(req: Request) {
 
     const { category, message, metadata } = parsed.data;
 
-    // Structured server log for observability & alert monitoring
+    // WO-035 (D-085): the message text and the email are NOT logged (zero-knowledge:
+    // no user words in any log). Only the shape of the report is kept.
+    // Whitelist metadata: it is client-controlled and could carry anything.
+    const path = typeof metadata?.pathname === "string" ? metadata.pathname.slice(0, 200) : "";
     console.log("[BETA_FEEDBACK]", {
       timestamp: new Date().toISOString(),
       userId: session.user.id,
-      userEmail: session.user.email,
       category,
-      message,
-      metadata: metadata || {},
+      messageLength: message.length,
+      pathname: path,
     });
 
     return NextResponse.json({

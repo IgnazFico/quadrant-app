@@ -203,7 +203,7 @@ async function seedProductionUser() {
     data: {
       userId: user.id,
       contentEncrypted: Buffer.from(encryptedMissionBytes),
-      signedName: "Ignaz Fico",
+      signedName: Buffer.from(await encryptField("Ignaz Fico", masterKey)),
       version: 1,
       signedAt: new Date(),
     },

@@ -150,7 +150,7 @@ export async function getYearReview(userId: string, year: number) {
     rings,
     missionStatement: statement
       ? {
-          signedName: statement.signedName,
+          signedName: toWire(statement.signedName),
           signedAt: statement.signedAt,
           contentEncrypted: Buffer.from(statement.contentEncrypted).toString(
             "base64",
