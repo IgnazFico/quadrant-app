@@ -173,7 +173,7 @@ model MissionStatement {
   id                String   @id @default(uuid())
   userId            String
   contentEncrypted  Bytes
-  signedName        String
+  signedName        Bytes // sealed in the browser (WO-035)
   signedAt          DateTime @default(now())
   version           Int
 

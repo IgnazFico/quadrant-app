@@ -61,6 +61,8 @@ export function sealedField(maxChars: number) {
 export const goalTitleSchema = sealedField(GOAL_TITLE_MAX);
 export const scheduleTitleSchema = sealedField(SCHEDULE_TITLE_MAX);
 export const roleLabelSchema = sealedField(ROLE_LABEL_MAX);
+export const SIGNED_NAME_MAX = 120;
+export const signedNameSchema = sealedField(SIGNED_NAME_MAX);
 
 /** Bytes (Prisma Bytes, Buffer or Uint8Array) -> base64 for JSON. */
 export function toWire(bytes: Uint8Array): string {

@@ -123,6 +123,14 @@ async function main() {
       types.length === 3 && types.every((r) => r.t === "bytea"),
       types.map((r) => `${r.c}:${r.t}`).join(" "),
     );
+    // WO-035: mission_statements.signedName is sealed too
+    const sn = await prisma.$queryRaw<{ t: string }[]>`
+      SELECT data_type AS t FROM information_schema.columns
+       WHERE table_name = 'mission_statements' AND column_name = 'signedName'`;
+    check("mission_statements.signedName is bytea", sn[0]?.t === "bytea", sn[0]?.t);
+    check("signedName schema accepts sealed 120 chars, rejects readable name",
+      sealed.signedNameSchema.safeParse(await seal("n".repeat(120))).success &&
+        !sealed.signedNameSchema.safeParse("Ignaz Fico").success);
     const readable = await prisma.$queryRaw<{ n: number }[]>`
       SELECT (
         (SELECT COUNT(*) FROM roles WHERE id = ${role.id} AND position(convert_to(${marker}, 'UTF8') in label) > 0) +
