@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { domainColor } from "../../lib/domainColors";
 import { addDays } from "../../lib/week";
 import type { Choice, ReviewData, ReviewGoal } from "../../hooks/useReview";
@@ -30,6 +31,13 @@ export function WeeklyReviewPage({ review }: { review: ReviewData }) {
     completeReview,
     early,
   } = review;
+
+  const router = useRouter();
+  // WO-034: desktop keeps this view mounted (CSS-hidden), so redirect only below md.
+  // No key means nothing can unlock here: go to /login.
+  useEffect(() => {
+    if (!masterKey && window.matchMedia("(max-width: 767px)").matches) router.replace("/login");
+  }, [masterKey, router]);
 
   if (loading || !weekStart) {
     return (
