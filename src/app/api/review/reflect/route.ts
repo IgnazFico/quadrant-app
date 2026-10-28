@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "../../../../../lib/auth";
 import { prisma } from "../../../../../lib/prisma";
+import { serializeGoal } from "../../../../../lib/sealed";
 
 const bodySchema = z.object({
   goalId: z.string().uuid(),
@@ -59,7 +60,7 @@ export async function POST(req: Request) {
   ]);
 
   return NextResponse.json({
-    goal: updatedGoal,
+    goal: serializeGoal(updatedGoal),
     reviewEntry: {
       id: reviewEntry.id,
       choice: reviewEntry.choice,

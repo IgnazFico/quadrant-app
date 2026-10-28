@@ -4,6 +4,7 @@ import { auth } from "../../../../../lib/auth";
 import { prisma } from "../../../../../lib/prisma";
 import { castVote, retractVote } from "../../../../../lib/growthRing";
 import { latestStartedWeek } from "../../../../../lib/week";
+import { goalTitleSchema, serializeGoal } from "../../../../../lib/sealed";
 
 async function loadOwnedGoal(id: string, userId: string) {
   const goal = await prisma.goal.findUnique({ where: { id }, include: { role: true } });
@@ -12,7 +13,7 @@ async function loadOwnedGoal(id: string, userId: string) {
 }
 
 const patchSchema = z.object({
-  title: z.string().min(1).max(140).optional(),
+  title: goalTitleSchema.optional(), // base64 ciphertext (WO-029)
   status: z.enum(["IN_PROGRESS", "DONE", "MISSED"]).optional(),
   carryForward: z.boolean().optional(),
 });
@@ -60,7 +61,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     await retractVote(owned.roleId);
   }
 
-  return NextResponse.json({ goal });
+  return NextResponse.json({ goal: serializeGoal(goal) });
 }
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -78,6 +79,11 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
     await retractVote(owned.roleId);
   }
 
-  await prisma.goal.delete({ where: { id } });
+  // The block's goalId is ON DELETE SET NULL, so without this the block outlives its goal
+  // and comes back on the next load (V-012 V5).
+  await prisma.$transaction([
+    prisma.scheduleBlock.deleteMany({ where: { goalId: id } }),
+    prisma.goal.delete({ where: { id } }),
+  ]);
   return NextResponse.json({ ok: true });
 }

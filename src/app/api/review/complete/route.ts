@@ -3,6 +3,7 @@ import { z } from "zod";
 import { auth } from "../../../../../lib/auth";
 import { prisma } from "../../../../../lib/prisma";
 import { carryTargetWeek, currentWeekFor, dayKey } from "../../../../../lib/week";
+import { carryGoalsForward } from "../../../../../lib/carryForward";
 import {
   getEarliestUnreviewedWeekStart,
   isReviewableWeek,
@@ -93,38 +94,13 @@ export async function POST(req: Request) {
 
   // Idempotent: completing the same week twice (a retry, a double click, or a
   // week re-opened after a data repair) must not duplicate carried goals.
-  // A goal counts as already carried when the same role already has a goal
-  // with the same title in the target week. There is no compound unique key
-  // to upsert on, so check first.
-  const existing = toCarry.length
-    ? await prisma.goal.findMany({
-        where: {
-          weekStart: targetWeek,
-          roleId: { in: [...new Set(toCarry.map((g) => g.roleId))] },
-        },
-        select: { roleId: true, title: true },
-      })
-    : [];
-  const have = new Set(existing.map((g) => `${g.roleId}\u0000${g.title}`));
-  const fresh = toCarry.filter((g) => {
-    const k = `${g.roleId}\u0000${g.title}`;
-    if (have.has(k)) return false;
-    have.add(k);
-    return true;
-  });
-
-  const created = await prisma.$transaction(
-    fresh.map((g) =>
-      prisma.goal.create({
-        data: { roleId: g.roleId, title: g.title, weekStart: targetWeek },
-      }),
-    ),
-  );
+  // WO-029: by source goal id, not by title (lib/carryForward.ts).
+  const carriedCount = await carryGoalsForward(toCarry, targetWeek);
 
   const nextUnreviewedWeekStart = await getEarliestUnreviewedWeekStart(userId);
 
   return NextResponse.json({
-    carriedCount: created.length,
+    carriedCount,
     // The week carried goals went to; the client sends Sunday reviewers on
     // to plan it (/goals?week=next).
     carriedInto: dayKey(targetWeek),

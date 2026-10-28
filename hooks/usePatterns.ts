@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import type { PatternsData } from "../components/patterns/cardContent";
+import { useAuthStore } from "../store/authStore";
+import { openPatterns } from "../lib/sealedFields";
 import { cardMonth, shouldSplit, type PatternCardId } from "../lib/patternsSplit";
 import { patternsDefaultMonth, type YearMonth } from "../lib/week";
 
@@ -24,7 +26,10 @@ export type PatternsState = {
   dataFor: (id: PatternCardId) => PatternsData | null;
 };
 
-async function fetchMonth({ year, month }: YearMonth): Promise<PatternsData | null> {
+async function fetchMonth(
+  { year, month }: YearMonth,
+  masterKey: Uint8Array | null,
+): Promise<PatternsData | null> {
   try {
     // Local month + IANA timezone: the API's defaults come from the server
     // clock (UTC on Vercel), which lags UTC+ users, and the timezone decides
@@ -35,7 +40,8 @@ async function fetchMonth({ year, month }: YearMonth): Promise<PatternsData | nu
       tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
     });
     const res = await fetch(`/api/patterns?${qs}`);
-    return res.ok ? await res.json() : null;
+    // WO-029: the Balance card's role names arrive sealed.
+    return res.ok ? await openPatterns<PatternsData>(await res.json(), masterKey) : null;
   } catch {
     return null; // the views show "Couldn't load this right now."
   }
@@ -53,6 +59,7 @@ async function fetchMonth({ year, month }: YearMonth): Promise<PatternsData | nu
  */
 export function usePatterns(): PatternsState {
   const [def] = useState(() => patternsDefaultMonth());
+  const masterKey = useAuthStore((s) => s.masterKey);
   const previousMonth = def.initial;
   const [result, setResult] = useState<{ current: PatternsData | null; previous: PatternsData | null } | null>(null);
 
@@ -60,15 +67,15 @@ export function usePatterns(): PatternsState {
     let cancelled = false;
     (async () => {
       const [current, previous] = await Promise.all([
-        fetchMonth(def.current),
-        def.fallback ? fetchMonth(def.initial) : Promise.resolve(null),
+        fetchMonth(def.current, masterKey),
+        def.fallback ? fetchMonth(def.initial, masterKey) : Promise.resolve(null),
       ]);
       if (!cancelled) setResult({ current, previous });
     })();
     return () => {
       cancelled = true;
     };
-  }, [def]);
+  }, [def, masterKey]);
 
   const current = result?.current ?? null;
   const previous = result?.previous ?? null;

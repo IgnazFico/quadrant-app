@@ -30,7 +30,7 @@ async function main() {
   });
   try {
     const role = await prisma.role.create({
-      data: { userId: user.id, label: "Tester", domain: "career" },
+      data: { userId: user.id, label: Buffer.from("Tester"), domain: "career" },
     });
     const twoWeeksAgo = addDays(startOfWeek(), -14);
     const lastWeek = addDays(startOfWeek(), -7);
@@ -39,7 +39,7 @@ async function main() {
     let rejected = false;
     try {
       const bad = await prisma.goal.create({
-        data: { roleId: role.id, title: "sunday row", weekStart: addDays(lastWeek, -1) },
+        data: { roleId: role.id, title: Buffer.from("sunday row"), weekStart: addDays(lastWeek, -1) },
       });
       await prisma.goal.delete({ where: { id: bad.id } }); // keep the flow checks below clean
     } catch (e) {
@@ -49,10 +49,10 @@ async function main() {
 
     // 2. Two outstanding weeks: the gate, GET and complete must walk them in order.
     const old = await prisma.goal.create({
-      data: { roleId: role.id, title: "old week goal", weekStart: twoWeeksAgo },
+      data: { roleId: role.id, title: Buffer.from("old week goal"), weekStart: twoWeeksAgo },
     });
     const recent = await prisma.goal.create({
-      data: { roleId: role.id, title: "last week goal", weekStart: lastWeek, carryForward: false },
+      data: { roleId: role.id, title: Buffer.from("last week goal"), weekStart: lastWeek, carryForward: false },
     });
 
     for (const [label, goal, expected] of [

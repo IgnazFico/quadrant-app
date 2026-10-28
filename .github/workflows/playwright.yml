@@ -109,6 +109,13 @@ jobs:
         # Throwaway users on the job database.
         run: npx tsx scripts/verify-schedule-rules.ts
 
+      - name: Sealed fields (WO-029, D-066)
+        # Goal titles, schedule titles and role labels are ciphertext to the
+        # server: size/base64 schemas, serializers, byte-for-byte idempotent
+        # carry-forward, bytea columns
+        # with no readable text. Throwaway user on the job database.
+        run: npx tsx scripts/verify-sealed-fields.ts
+
       - name: Build the app (production build)
         # tests/production.spec.ts asserts that the test-only routes return
         # 404, which the app does only when NODE_ENV=production. The

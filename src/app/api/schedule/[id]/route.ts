@@ -3,6 +3,7 @@ import { z } from "zod";
 import { auth } from "../../../../../lib/auth";
 import { prisma } from "../../../../../lib/prisma";
 import { parseDayKey } from "../../../../../lib/week";
+import { scheduleTitleSchema, serializeBlock } from "../../../../../lib/sealed";
 import {
   anytimeDayFull,
   anytimeLimitReached,
@@ -24,7 +25,7 @@ async function loadOwnedBlock(id: string, userId: string) {
 const patchSchema = z.object({
   roleId: z.string().uuid().optional(),
   goalId: z.string().uuid().nullable().optional(),
-  title: z.string().min(1).max(140).optional(),
+  title: scheduleTitleSchema.optional(), // base64 ciphertext (WO-029)
   /** Move the block: "YYYY-MM-DD". */
   day: z.string().optional(),
   /** Move the block in time: 0–23, or null for "anytime" (a day priority).
@@ -85,7 +86,7 @@ export async function PATCH(
   const data: {
     roleId?: string;
     goalId?: string | null;
-    title?: string;
+    title?: Uint8Array<ArrayBuffer>;
     day?: Date;
     hour?: number | null;
     isPriority?: boolean;
@@ -114,7 +115,7 @@ export async function PATCH(
       data,
       include: { role: true },
     });
-    return NextResponse.json({ block });
+    return NextResponse.json({ block: serializeBlock(block) });
   } catch (e) {
     if (isUniqueViolation(e)) return goalAlreadyScheduled(null);
     if (isAnytimeLimitError(e)) return anytimeLimitReached();

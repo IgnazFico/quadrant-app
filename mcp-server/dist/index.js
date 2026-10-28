@@ -70,7 +70,8 @@ server.tool("seed_test_scenario", "Seeds a test user configured for specific tes
                 data: {
                     userId: user.id,
                     domain: "health",
-                    label: "Athlete",
+                    // Dev seed only: readable bytes, not ciphertext (the app shows a placeholder for them).
+                    label: Buffer.from("Athlete"),
                 },
             });
             const lastWeekStart = new Date();
@@ -79,7 +80,7 @@ server.tool("seed_test_scenario", "Seeds a test user configured for specific tes
             await prisma.goal.create({
                 data: {
                     roleId: role.id,
-                    title: "Run 10km 3x",
+                    title: Buffer.from("Run 10km 3x"),
                     status: "MISSED",
                     weekStart: lastWeekStart,
                 },
@@ -220,7 +221,6 @@ server.tool("seed_test_notification", "Seeds a notification of a specified type 
         "SUNDAY_RESET",
         "SEVEN_DAY_MILESTONE",
         "MONTHLY_CHECKIN",
-        "ROLE_MILESTONE",
         "YEAR_END_REVIEW",
         "BACKUP_KEY",
     ]),
@@ -255,11 +255,6 @@ server.tool("seed_test_notification", "Seeds a notification of a specified type 
                 title: "Monthly Check-in",
                 defaultMsg: "Your monthly summary is ready. See where your focus went this month.",
                 link: "/patterns",
-            },
-            ROLE_MILESTONE: {
-                title: "Role Milestone",
-                defaultMsg: "25 votes recorded for Craft. Great job showing up.",
-                link: "/goals",
             },
             YEAR_END_REVIEW: {
                 title: "Year-End Review",
