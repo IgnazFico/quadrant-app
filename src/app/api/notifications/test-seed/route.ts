@@ -11,10 +11,9 @@ const seedSchema = z.object({
     "SUNDAY_RESET",
     "SEVEN_DAY_MILESTONE",
     "MONTHLY_CHECKIN",
-    "ROLE_MILESTONE",
     "YEAR_END_REVIEW",
     "BACKUP_KEY",
-  ]) as z.ZodType<NotificationType>,
+  ]) as z.ZodType<Exclude<NotificationType, "ROLE_MILESTONE">>,
   message: z.string().optional(),
 });
 

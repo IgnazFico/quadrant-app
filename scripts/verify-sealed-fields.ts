@@ -15,7 +15,6 @@
 //     never throws
 //  D. database: the three columns are bytea, hold no readable text
 //  E. carry-forward is idempotent (same week completed twice, and two at once)
-//  F. role milestone notice names no role and is sent once per tier
 import "./lib/use-staging.mjs";
 
 let failures = 0;
@@ -31,7 +30,6 @@ async function main() {
   const fields = await import("../lib/sealedFields");
   const { carryGoalsForward } = await import("../lib/carryForward");
   const { startOfWeek, addDays } = await import("../lib/week");
-  const { evaluateNotificationsForUser } = await import("../lib/notifications");
 
   const key = await crypto.generateMasterKey();
   const otherKey = await crypto.generateMasterKey();
@@ -170,23 +168,6 @@ async function main() {
     await prisma.goal.delete({ where: { id: goal2.id } });
     const keptCopies = await prisma.goal.count({ where: { roleId: role.id, weekStart: target } });
     check("carry-forward: deleting a source goal keeps the carried copy (link cleared)", keptCopies === 2, `copies=${keptCopies}`);
-
-    // F. role milestone notice: no role name, once per tier
-    const year = new Date().getFullYear();
-    await prisma.growthRing.create({ data: { roleId: role.id, year, votesLogged: 25 } });
-    await evaluateNotificationsForUser(user.id);
-    await evaluateNotificationsForUser(user.id);
-    let notes = await prisma.notification.findMany({ where: { userId: user.id, type: "ROLE_MILESTONE" } });
-    check("milestone: one notice at 25, even after two evaluations", notes.length === 1, `n=${notes.length}`);
-    check(
-      "milestone: the message names no role and carries no user text",
-      notes.every((n) => !n.message.includes(marker) && !n.message.toLowerCase().includes("role r") && /Showed up 25 times in one of your roles/.test(n.message)),
-      notes[0]?.message,
-    );
-    await prisma.growthRing.update({ where: { roleId_year: { roleId: role.id, year } }, data: { votesLogged: 50 } });
-    await Promise.all([evaluateNotificationsForUser(user.id), evaluateNotificationsForUser(user.id)]);
-    notes = await prisma.notification.findMany({ where: { userId: user.id, type: "ROLE_MILESTONE" } });
-    check("milestone: next tier (50) is sent exactly once, even with two requests at once", notes.length === 2, `n=${notes.length}`);
   } finally {
     await prisma.notification.deleteMany({ where: { userId: user.id } });
     await prisma.user.delete({ where: { id: user.id } }); // cascades roles, goals, blocks, rings

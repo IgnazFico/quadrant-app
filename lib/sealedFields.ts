@@ -20,7 +20,7 @@ export const UNREADABLE_TITLE = "Can't open this entry";
 
 /** Same wording the reflection form uses; shown when a write needs the key and the tab has none. */
 export const LOCKED_MESSAGE =
-  "Your session key isn't available in this tab, so this can't be saved. Sign in again to unlock your entries.";
+  "Your session key is unavailable. Sign in again to unlock your entries.";
 export const LOCKED_CODE = "KEY_MISSING";
 
 export function isUnreadable(text: string): boolean {

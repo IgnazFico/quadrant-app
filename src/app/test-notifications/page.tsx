@@ -45,13 +45,6 @@ const NOTIFICATION_CATALOG = [
     target: "/patterns",
   },
   {
-    type: "ROLE_MILESTONE",
-    title: "Role Milestone",
-    sample: "Showed up 25 times in one of your roles this year. That counts.",
-    desc: "Marks every 25 goals finished in a role this year.",
-    target: "/goals",
-  },
-  {
     type: "YEAR_END_REVIEW",
     title: "Year-End Review",
     sample: "Your Year in Review is ready. See everything you built this year.",

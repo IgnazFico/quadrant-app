@@ -79,6 +79,11 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
     await retractVote(owned.roleId);
   }
 
-  await prisma.goal.delete({ where: { id } });
+  // The block's goalId is ON DELETE SET NULL, so without this the block outlives its goal
+  // and comes back on the next load (V-012 V5).
+  await prisma.$transaction([
+    prisma.scheduleBlock.deleteMany({ where: { goalId: id } }),
+    prisma.goal.delete({ where: { id } }),
+  ]);
   return NextResponse.json({ ok: true });
 }

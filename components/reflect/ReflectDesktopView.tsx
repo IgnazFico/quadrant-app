@@ -174,7 +174,7 @@ function ReviewPanel({ review }: { review: ReviewData }) {
     >
       {!masterKey && (
         <p className="mb-3.5 rounded-lg bg-[#FDECEC] px-3 py-2 text-xs text-[#C0392B]">
-          Your session key isn&apos;t available — log in again to reflect on missed goals.
+          Your session key is unavailable. Sign in again to unlock your entries.
         </p>
       )}
       {error && (

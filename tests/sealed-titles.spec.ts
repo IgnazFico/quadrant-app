@@ -276,6 +276,32 @@ test("9 carry-forward completed twice carries the goal once", async ({ page }) =
   expect(copies.length, "exactly one carried copy, same ciphertext bytes").toBe(1);
 });
 
+test("9b a deleted goal and its schedule entry stay gone after reload and re-login (V-012 V5)", async ({ page }) => {
+  watch(page);
+  await signIn(page, EMAIL, NEW_PASSWORD);
+  const goalOnWeek = () => page.getByText(GOAL_RENAMED).locator("visible=true");
+  const goalInput = () => page.locator(`input[value="${GOAL_RENAMED}"]`).locator("visible=true");
+  await expect(goalInput().first()).toBeVisible();
+  const del = page.waitForResponse((r) => r.request().method() === "DELETE" && /\/api\/goals\//.test(r.url()));
+  await page.getByRole("button", { name: "Remove goal" }).locator("visible=true").first().click();
+  expect((await del).status()).toBe(200);
+
+  const gone = async () => {
+    await expect(goalInput()).toHaveCount(0);
+    await expect(goalOnWeek()).toHaveCount(0);
+  };
+  await gone();
+  await page.reload();
+  await waitWeek(page);
+  await gone();
+  await page.getByRole("button", { name: "Sign out" }).click();
+  await page.waitForURL("**/login", { timeout: 20000 });
+  await signIn(page, EMAIL, NEW_PASSWORD);
+  await gone();
+  // the free-text entry the owner did not delete is still there
+  await expect(page.getByText(BLOCK_RENAMED).locator("visible=true").first()).toBeVisible();
+});
+
 test("10 nothing readable crossed the wire in either direction", async () => {
   const all = [...sentBodies, ...receivedBodies].join("\n");
   expect(all.length).toBeGreaterThan(1000);

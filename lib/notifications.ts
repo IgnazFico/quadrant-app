@@ -110,47 +110,6 @@ export async function evaluateNotificationsForUser(userId: string, timeZone?: st
     }
   }
 
-  // 4. Role Milestone: When a role hits 25, 50, 100, etc. finished goals this year.
-  // (growthRing.votesLogged is the running count; the UI no longer calls it rings.)
-  const currentYear = new Date().getFullYear();
-  //
-  // WO-029: role names are ciphertext the server cannot read, so the message
-  // never names the role and the duplicate check no longer searches message
-  // text. Instead growth_rings.milestoneNotified remembers the highest tier
-  // already announced for that role-year (ids and numbers only). The
-  // migration backfills it for rings that had already crossed a tier.
-  const rings = await prisma.growthRing.findMany({
-    where: {
-      role: { userId },
-      year: currentYear,
-      votesLogged: { gte: 25 },
-    },
-    select: { id: true, votesLogged: true, milestoneNotified: true },
-  });
-
-  for (const ring of rings) {
-    const milestoneTier = Math.floor(ring.votesLogged / 25) * 25;
-    if (milestoneTier <= ring.milestoneNotified) continue;
-
-    // Claim the tier first. updateMany with the old value in the filter is
-    // atomic, so two simultaneous requests cannot both announce it.
-    const claimed = await prisma.growthRing.updateMany({
-      where: { id: ring.id, milestoneNotified: ring.milestoneNotified },
-      data: { milestoneNotified: milestoneTier },
-    });
-    if (claimed.count === 0) continue;
-
-    await prisma.notification.create({
-      data: {
-        userId,
-        type: NotificationType.ROLE_MILESTONE,
-        title: "Role Milestone",
-        message: `Showed up ${milestoneTier} times in one of your roles this year. That counts.`,
-        link: "/goals",
-      },
-    });
-  }
-
   // 5. Monthly Check-in: At month transitions if user has active roles
   const now = new Date();
   const isMonthBoundary = now.getDate() >= 25 || now.getDate() <= 3;
@@ -181,7 +140,7 @@ export async function evaluateNotificationsForUser(userId: string, timeZone?: st
 
   // 6. Year-End Review
   if (isRecapWindowOpen()) {
-    const thisYearStart = new Date(currentYear, 0, 1);
+    const thisYearStart = new Date(new Date().getFullYear(), 0, 1);
     const existingYearEnd = await prisma.notification.findFirst({
       where: {
         userId,
@@ -281,10 +240,10 @@ export async function deleteNotification(userId: string, notificationId: string)
  */
 export async function seedManualNotification(
   userId: string,
-  type: NotificationType,
+  type: Exclude<NotificationType, "ROLE_MILESTONE">,
   customMessage?: string
 ) {
-  const templates: Record<NotificationType, { title: string; message: string; link: string }> = {
+  const templates: Record<Exclude<NotificationType, "ROLE_MILESTONE">, { title: string; message: string; link: string }> = {
     MORNING_FOCUS: {
       title: "Morning Focus",
       message: customMessage || "You have 2 priorities scheduled for today.",
@@ -310,11 +269,6 @@ export async function seedManualNotification(
         customMessage ||
         "Your monthly summary is ready. See where your focus went this month.",
       link: "/patterns",
-    },
-    ROLE_MILESTONE: {
-      title: "Role Milestone",
-      message: customMessage || "Showed up 25 times in one of your roles this year. That counts.",
-      link: "/goals",
     },
     YEAR_END_REVIEW: {
       title: "Year-End Review",

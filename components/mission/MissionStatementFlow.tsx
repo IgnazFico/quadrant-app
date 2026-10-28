@@ -56,7 +56,7 @@ export function MissionStatementFlow() {
   async function commit() {
     if (!masterKey) {
       setError(
-        "Your session key isn't available — please log in again to continue.",
+        "Your session key is unavailable. Sign in again to unlock your entries.",
       );
       return;
     }

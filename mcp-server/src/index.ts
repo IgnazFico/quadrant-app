@@ -270,7 +270,6 @@ server.tool(
       "SUNDAY_RESET",
       "SEVEN_DAY_MILESTONE",
       "MONTHLY_CHECKIN",
-      "ROLE_MILESTONE",
       "YEAR_END_REVIEW",
       "BACKUP_KEY",
     ]),
@@ -307,11 +306,6 @@ server.tool(
           title: "Monthly Check-in",
           defaultMsg: "Your monthly summary is ready. See where your focus went this month.",
           link: "/patterns",
-        },
-        ROLE_MILESTONE: {
-          title: "Role Milestone",
-          defaultMsg: "25 votes recorded for Craft. Great job showing up.",
-          link: "/goals",
         },
         YEAR_END_REVIEW: {
           title: "Year-End Review",

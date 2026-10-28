@@ -112,7 +112,7 @@ jobs:
       - name: Sealed fields (WO-029, D-066)
         # Goal titles, schedule titles and role labels are ciphertext to the
         # server: size/base64 schemas, serializers, byte-for-byte idempotent
-        # carry-forward, milestone notice without a role name, bytea columns
+        # carry-forward, bytea columns
         # with no readable text. Throwaway user on the job database.
         run: npx tsx scripts/verify-sealed-fields.ts
 
