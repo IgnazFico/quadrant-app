@@ -6,6 +6,7 @@ import { domainColor } from "../../lib/domainColors";
 import { NotificationBell } from "../notifications/NotificationBell";
 import type { WeekData } from "../../hooks/useWeek";
 import { WeekToggle, weekRangeLabel } from "../week/WeekToggle";
+import { LockedNote } from "../week/LockedNote";
 
 function formatHour(h: number) {
   const period = h >= 12 ? "PM" : "AM";
@@ -22,6 +23,7 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
     todayBlocks,
     loading,
     error,
+    locked,
     toggleGoal,
     editGoalTitleLocal,
     commitGoalTitle,
@@ -123,6 +125,7 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
             : "Your roles, their goals, and where today fits in."}
         </p>
 
+        {locked && <LockedNote className="mb-4" />}
         {error && (
           <p className="mb-4 rounded-lg bg-[#FDECEC] px-3 py-2 text-xs text-[#C0392B]">
             {error}

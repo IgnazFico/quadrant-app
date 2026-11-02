@@ -81,7 +81,7 @@ async function simulateSeal2026() {
     orderBy: [
       { role: { user: { email: "asc" } } },
       { role: { domain: "asc" } },
-      { role: { label: "asc" } },
+      { role: { createdAt: "asc" } },
     ],
   });
 
@@ -90,7 +90,7 @@ async function simulateSeal2026() {
     sealedRings.map((ring: any) => ({
       User: ring.role.user.email,
       Domain: ring.role.domain,
-      Role: ring.role.label,
+      Role: Buffer.from(ring.role.label).toString(),
       Year: ring.year,
       Votes: ring.votesLogged,
       Sealed: ring.sealed,

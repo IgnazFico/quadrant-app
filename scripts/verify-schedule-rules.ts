@@ -50,10 +50,10 @@ async function main() {
   });
   try {
     const role = await prisma.role.create({
-      data: { userId: user.id, label: "Tester", domain: "career" },
+      data: { userId: user.id, label: Buffer.from("Tester"), domain: "career" },
     });
     const goal = await prisma.goal.create({
-      data: { roleId: role.id, title: "goal A", weekStart: monday },
+      data: { roleId: role.id, title: Buffer.from("goal A"), weekStart: monday },
     });
 
     // 1. First block for the goal is fine.
@@ -90,8 +90,8 @@ async function main() {
     // 4. Standalone blocks (no goal) are unaffected: many are allowed.
     await prisma.scheduleBlock.createMany({
       data: [
-        { roleId: role.id, goalId: null, day: monday, hour: 10, title: "standalone 1" },
-        { roleId: role.id, goalId: null, day: monday, hour: 11, title: "standalone 2" },
+        { roleId: role.id, goalId: null, day: monday, hour: 10, title: Buffer.from("standalone 1") },
+        { roleId: role.id, goalId: null, day: monday, hour: 11, title: Buffer.from("standalone 2") },
       ],
     });
     const standalone = await prisma.scheduleBlock.count({ where: { roleId: role.id, goalId: null } });
@@ -118,7 +118,7 @@ async function main() {
     };
     const anytime = (day: Date, title: string) =>
       prisma.scheduleBlock.create({
-        data: { roleId: role.id, day, hour: null, isPriority: true, title },
+        data: { roleId: role.id, day, hour: null, isPriority: true, title: Buffer.from(title) },
       });
 
     check("ANYTIME_PER_DAY is 2 (matches the DB trigger)", ANYTIME_PER_DAY === 2);
@@ -129,7 +129,7 @@ async function main() {
     await refuses("DB refuses a 3rd Anytime block on a day", () => anytime(tue, "anytime 3"));
 
     const timed = await prisma.scheduleBlock.create({
-      data: { roleId: role.id, day: tue, hour: 15, title: "timed" },
+      data: { roleId: role.id, day: tue, hour: 15, title: Buffer.from("timed") },
     });
     await refuses("DB refuses turning a timed block into a 3rd Anytime", () =>
       prisma.scheduleBlock.update({ where: { id: timed.id }, data: { hour: null, isPriority: true } }),
@@ -140,8 +140,8 @@ async function main() {
       prisma.scheduleBlock.update({ where: { id: w1.id }, data: { day: tue } }),
     );
 
-    const renamed = await prisma.scheduleBlock.update({ where: { id: a1.id }, data: { title: "renamed" } });
-    check("editing an Anytime block in place on a full day is allowed", renamed.title === "renamed");
+    const renamed = await prisma.scheduleBlock.update({ where: { id: a1.id }, data: { title: Buffer.from("renamed") } });
+    check("editing an Anytime block in place on a full day is allowed", Buffer.from(renamed.title).toString() === "renamed");
     const movedOut = await prisma.scheduleBlock.update({ where: { id: a1.id }, data: { day: wed } });
     check("moving an Anytime block off a full day to a free day is allowed", key(movedOut.day) === key(wed));
     const timedAgain = await prisma.scheduleBlock.update({
@@ -155,9 +155,9 @@ async function main() {
       data: { email: `one-per-goal.other.${Date.now()}@quadrant.test`, passwordHash: "x" },
     });
     try {
-      const otherRole = await prisma.role.create({ data: { userId: other.id, label: "Other", domain: "career" } });
+      const otherRole = await prisma.role.create({ data: { userId: other.id, label: Buffer.from("Other"), domain: "career" } });
       const o = await prisma.scheduleBlock.create({
-        data: { roleId: otherRole.id, day: tue, hour: null, isPriority: true, title: "other user" },
+        data: { roleId: otherRole.id, day: tue, hour: null, isPriority: true, title: Buffer.from("other user") },
       });
       check("the limit is per user (another user's day is independent)", !!o.id);
     } finally {

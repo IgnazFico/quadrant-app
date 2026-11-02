@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuthStore } from "../store/authStore";
 import { decryptField, fromBase64 } from "../lib/crypto";
+import { openYearReview } from "../lib/sealedFields";
 
 /**
  * One role's year. GROWTH-RING-REDESIGN: data shape used by the ceremony's
@@ -66,7 +67,8 @@ export function useYearReview(year: number) {
         setLoading(false);
         return;
       }
-      const body: YearReview = await res.json();
+      // WO-029: role names and the first finished goal arrive sealed.
+      const body: YearReview = await openYearReview<YearReview>(await res.json(), masterKey);
 
       let snippet: string | null = null;
       if (body.missionStatement && masterKey) {

@@ -332,7 +332,6 @@ export function NotificationBell() {
                   { type: "MORNING_FOCUS", label: "Morning Focus" },
                   { type: "SUNDAY_RESET", label: "Sunday Reset" },
                   { type: "SEVEN_DAY_MILESTONE", label: "7-Day Milestone" },
-                  { type: "ROLE_MILESTONE", label: "Role Milestone" },
                   { type: "MONTHLY_CHECKIN", label: "Monthly Check-in" },
                   { type: "YEAR_END_REVIEW", label: "Year-End Review" },
                   { type: "BACKUP_KEY", label: "Backup Key" },

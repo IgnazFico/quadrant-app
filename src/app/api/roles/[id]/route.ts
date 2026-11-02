@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "../../../../../lib/auth";
 import { prisma } from "../../../../../lib/prisma";
+import { roleLabelSchema, serializeRole } from "../../../../../lib/sealed";
 
 const patchSchema = z.object({
   isFeatured: z.boolean().optional(),
-  label: z.string().min(1).max(60).optional(),
+  label: roleLabelSchema.optional(), // base64 ciphertext (WO-029)
 });
 
 export async function PATCH(
@@ -37,5 +38,5 @@ export async function PATCH(
     where: { id },
     data: parsed.data,
   });
-  return NextResponse.json({ role: updated });
+  return NextResponse.json({ role: serializeRole(updated) });
 }

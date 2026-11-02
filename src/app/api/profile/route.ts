@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "../../../../lib/auth";
 import { prisma } from "../../../../lib/prisma";
 import { getRoleConstellations } from "../../../../lib/constellation";
+import { toWire } from "../../../../lib/sealed";
 
 export async function GET() {
   const session = await auth();
@@ -35,7 +36,7 @@ export async function GET() {
 
   const rolesOut = roles.map((r: any) => ({
     id: r.id,
-    label: r.label,
+    label: toWire(r.label),
     domain: r.domain,
     isFeatured: r.isFeatured,
     // Tenure is identity/time-based (how long you've held this role),

@@ -5,6 +5,7 @@ import { domainColor } from "../../lib/domainColors";
 import { domainLabel } from "../../lib/domains";
 import { dayKey } from "../../lib/week";
 import type { WeekData, Role, Goal, ScheduleBlock } from "../../hooks/useWeek";
+import { LockedNote } from "./LockedNote";
 import {
   ANYTIME_LIMIT_MESSAGE,
   ANYTIME_LIMIT_REACHED,
@@ -78,6 +79,7 @@ export function WeekDesktopView({ week }: { week: WeekData }) {
     loading,
     loadedOnce,
     error,
+    locked,
     blocksForDay,
     blockForGoal,
     canAddAnytime,
@@ -318,6 +320,7 @@ export function WeekDesktopView({ week }: { week: WeekData }) {
           </div>
         </header>
 
+        {locked && <LockedNote className="mb-5" />}
         {(error || boardError) && (
           <p className="mb-5 rounded-lg bg-[#FDECEC] px-3 py-2 text-xs text-[#C0392B]">
             {error ?? boardError}
