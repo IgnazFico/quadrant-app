@@ -103,7 +103,6 @@ export function NotificationBell() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [seedingType, setSeedingType] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const fetchNotifications = async () => {
@@ -170,24 +169,6 @@ export function NotificationBell() {
       setUnreadCount(0);
     } catch (err) {
       console.error("Failed to mark all as read:", err);
-    }
-  };
-
-  const handleManualSeed = async (type: string) => {
-    try {
-      setSeedingType(type);
-      const res = await fetch("/api/notifications/test-seed", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type }),
-      });
-      if (res.ok) {
-        await fetchNotifications();
-      }
-    } catch (err) {
-      console.error("Failed to seed notification:", err);
-    } finally {
-      setSeedingType(null);
     }
   };
 
@@ -319,37 +300,6 @@ export function NotificationBell() {
                 );
               })
             )}
-          </div>
-
-          {/* Developer / Manual Verification Bar */}
-          <div className="mt-2 border-t border-[#ECE8DF]/80 pt-2 px-1">
-            <details className="group">
-              <summary className="cursor-pointer text-[10px] font-mono font-medium text-[#8A857B] hover:text-[#1F2937]">
-                ⚡ Manual Test Generator
-              </summary>
-              <div className="mt-2 flex flex-wrap gap-1.5 pb-1">
-                {[
-                  { type: "MORNING_FOCUS", label: "Morning Focus" },
-                  { type: "SUNDAY_RESET", label: "Sunday Reset" },
-                  { type: "SEVEN_DAY_MILESTONE", label: "7-Day Milestone" },
-                  { type: "ROLE_MILESTONE", label: "Role Milestone" },
-                  { type: "MONTHLY_CHECKIN", label: "Monthly Check-in" },
-                  { type: "YEAR_END_REVIEW", label: "Year-End Review" },
-                  { type: "BACKUP_KEY", label: "Backup Key" },
-                ].map((btn) => (
-                  <button
-                    key={btn.type}
-                    type="button"
-                    data-testid={`test-trigger-${btn.type}`}
-                    disabled={seedingType === btn.type}
-                    onClick={() => handleManualSeed(btn.type)}
-                    className="rounded-md border border-[#ECE8DF] bg-[#FAF7F2] px-2 py-1 text-[10px] font-medium text-[#4B5563] hover:border-[#F97316]/50 hover:bg-[#FFF5EB] hover:text-[#C2410C] transition-all disabled:opacity-50"
-                  >
-                    +{btn.label}
-                  </button>
-                ))}
-              </div>
-            </details>
           </div>
         </div>
       )}
