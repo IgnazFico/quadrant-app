@@ -62,6 +62,16 @@ export const goalTitleSchema = sealedField(GOAL_TITLE_MAX);
 export const scheduleTitleSchema = sealedField(SCHEDULE_TITLE_MAX);
 export const roleLabelSchema = sealedField(ROLE_LABEL_MAX);
 
+/** Most roles one request may create (WO-050, SEC-003: bound the array). */
+export const MAX_ROLES_PER_REQUEST = 20;
+
+export const createRolesSchema = z.object({
+  roles: z
+    .array(z.object({ domain: z.string().min(1).max(30), label: roleLabelSchema }))
+    .min(1)
+    .max(MAX_ROLES_PER_REQUEST),
+});
+
 /** Bytes (Prisma Bytes, Buffer or Uint8Array) -> base64 for JSON. */
 export function toWire(bytes: Uint8Array): string {
   return Buffer.from(bytes).toString("base64");
