@@ -1,0 +1,62 @@
+name: Security Scan
+
+# Static analysis read by the QA agent's security gate (gh run view <id>).
+# Report-only: findings go to the artifact and the job summary, the job does
+# not fail the PR. Making it blocking is an owner decision.
+# No secrets are used; it needs only read access to the code.
+
+on:
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  semgrep:
+    name: Semgrep
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: semgrep/semgrep:latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Semgrep scan
+        # Rule packs are fetched from the Semgrep registry; no account or
+        # token needed. Metrics are off so nothing is reported home.
+        run: |
+          semgrep scan \
+            --config p/typescript \
+            --config p/nextjs \
+            --config p/react \
+            --config p/owasp-top-ten \
+            --config p/secrets \
+            --metrics=off \
+            --exclude node_modules --exclude .next --exclude playwright-report \
+            --json --output semgrep.json \
+            --sarif-output semgrep.sarif || true
+
+      - name: Summary
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json, collections
+          d = json.load(open("semgrep.json"))
+          r = d.get("results", [])
+          c = collections.Counter(x["extra"]["severity"] for x in r)
+          print("## Semgrep")
+          print(f"Findings: {len(r)} (ERROR {c['ERROR']}, WARNING {c['WARNING']}, INFO {c['INFO']})")
+          print(f"Scan errors: {len(d.get('errors', []))}")
+          for x in r[:50]:
+              print(f"- {x['extra']['severity']} `{x['check_id']}` {x['path']}:{x['start']['line']}")
+          PY
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: semgrep-results
+          path: |
+            semgrep.json
+            semgrep.sarif
+          retention-days: 30
