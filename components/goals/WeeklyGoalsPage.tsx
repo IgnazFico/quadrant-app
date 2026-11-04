@@ -338,13 +338,14 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    className={`shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
+                    className={`shrink-0 transition-transform duration-[220ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${open ? "rotate-180" : ""}`}
                   >
                     <polyline points="6 9 12 15 18 9" />
                   </svg>
                 </button>
 
-                {open && (
+                <div className="role-body" data-open={open} inert={!open}>
+                  <div className="min-h-0 overflow-hidden">
                   <div className="px-3.5 pb-3.5">
                     {planning && role.goals.length === 0 && (
                       <p className="px-0.5 pb-1 text-[12.5px] text-[#8A8579]">Nothing planned yet.</p>
@@ -453,7 +454,8 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
                       }}
                     />
                   </div>
-                )}
+                  </div>
+                </div>
               </div>
             );
           })}

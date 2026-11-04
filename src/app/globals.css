@@ -128,6 +128,10 @@ body {
 @keyframes toast-out { to { opacity: 0; transform: translateY(6px); } }
 .toast-out { animation: toast-out var(--m-sheet-out) var(--ease-in) forwards; }
 
+/* Role card: the list stays mounted (inert when closed) and unfolds via grid rows. */
+.role-body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows var(--m-base) var(--ease-out); }
+.role-body[data-open="true"] { grid-template-rows: 1fr; }
+
 /* Still version: every animation and transition jumps to its end state. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
