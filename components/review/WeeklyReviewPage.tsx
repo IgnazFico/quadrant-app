@@ -196,7 +196,7 @@ export function GoalRow({
         </span>
         <button
           onClick={onToggleCarry}
-          className={`shrink-0 whitespace-nowrap rounded-full border px-2.5 py-1.5 text-[11px] font-semibold ${
+          className={`review-pill shrink-0 whitespace-nowrap rounded-full border px-2.5 py-1.5 text-[11px] font-semibold ${
             goal.carryForward
               ? "border-[#F97316] bg-[#F97316] text-white"
               : "border-[#E5E1D8] bg-white text-[#6B7280]"
@@ -282,7 +282,7 @@ export function GoalRow({
         <div className="text-[13.5px] font-medium text-[#1F2937]">
           {goal.title}
         </div>
-        <div className="mt-0.5 text-[11.5px] italic text-[#9CA3AF]">
+        <div key={goal.reviewEntry.choice} className="review-status mt-0.5 text-[11.5px] italic text-[#9CA3AF]">
           &ldquo;{goal.reviewEntry.reason ?? "..."}&rdquo; &mdash;{" "}
           {carried ? "carried to next week" : "cancelled"}{" "}
           <button
