@@ -42,6 +42,7 @@ export function RoleBadgeTile({
         peak={c.peak}
         tint={constellationTint(role.domain)}
         size={56}
+        settle
         sealed={c.sealed}
         currentMonth={currentMonth}
         label={role.label}
