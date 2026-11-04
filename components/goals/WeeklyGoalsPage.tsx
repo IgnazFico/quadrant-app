@@ -226,7 +226,7 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
           {!formOpen ? (
             <button
               onClick={() => openScheduleForm(roles[0]?.id ?? "")}
-              className="mt-2.5 w-full rounded-lg border border-dashed border-[#D8D3C8] py-2.5 text-xs font-medium text-[#8A8579] hover:bg-[#EFEBE1]"
+              className="press mt-2.5 w-full rounded-lg border border-dashed border-[#D8D3C8] py-2.5 text-xs font-medium text-[#8A8579] hover:bg-[#EFEBE1]"
             >
               + Schedule something today
             </button>
@@ -286,7 +286,7 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
               )}
               <button
                 onClick={submitScheduleForm}
-                className="self-end rounded-md bg-[#F97316] px-4 py-2 text-xs font-semibold text-white hover:bg-[#EA6A0C]"
+                className="press self-end rounded-md bg-[#F97316] px-4 py-2 text-xs font-semibold text-white hover:bg-[#EA6A0C]"
               >
                 Add to today
               </button>
@@ -317,7 +317,7 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
               >
                 <button
                   onClick={() => setOpenRoleId(open ? null : role.id)}
-                  className="flex w-full items-center justify-between px-3.5 py-3"
+                  className="press flex w-full items-center justify-between px-3.5 py-3"
                 >
                   <div className="flex items-center gap-2.5">
                     <span className="text-[14.5px] font-semibold text-[#1F2937]">
@@ -358,7 +358,7 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
                         <button
                           onClick={() => toggleGoal(g, role.id)}
                           data-done={g.status === "DONE"}
-                          className={`goal-tick flex h-[17px] w-[17px] shrink-0 items-center justify-center rounded-[5px] border-[1.5px] ${
+                          className={`goal-tick press flex h-[17px] w-[17px] shrink-0 items-center justify-center rounded-[5px] border-[1.5px] ${
                             g.status === "DONE"
                               ? "border-[#22C55E] bg-[#22C55E]"
                               : "border-[#D6D2C8] bg-white"
@@ -483,7 +483,7 @@ function AddGoalRow({ onAdd }: { onAdd: (title: string) => void }) {
       />
       <button
         onClick={submit}
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#F97316] text-white hover:bg-[#EA6A0C]"
+        className="press flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#F97316] text-white hover:bg-[#EA6A0C]"
       >
         <svg
           viewBox="0 0 24 24"

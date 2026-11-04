@@ -351,14 +351,14 @@ export function ReflectSheet({
           <button
             disabled={!filled || disabled}
             onClick={() => onSubmit(reason.trim(), "CANCEL")}
-            className="flex-1 rounded-lg bg-[#F3F4F6] py-2.5 text-sm font-semibold text-[#6B7280] disabled:opacity-40"
+            className="press flex-1 rounded-lg bg-[#F3F4F6] py-2.5 text-sm font-semibold text-[#6B7280] disabled:opacity-40"
           >
             Cancel goal
           </button>
           <button
             disabled={!filled || disabled}
             onClick={() => onSubmit(reason.trim(), "CARRY")}
-            className="flex-1 rounded-lg bg-[#F97316] py-2.5 text-sm font-semibold text-white disabled:opacity-40"
+            className="press flex-1 rounded-lg bg-[#F97316] py-2.5 text-sm font-semibold text-white disabled:opacity-40"
           >
             Carry to next week
           </button>

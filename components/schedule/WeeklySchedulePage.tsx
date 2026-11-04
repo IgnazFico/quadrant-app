@@ -300,7 +300,7 @@ export function WeeklySchedulePage({ week }: { week: WeekData }) {
             {canAddAnytime(selIndex) && (
               <button
                 type="button"
-                className="priority-add"
+                className="priority-add press"
                 onClick={() => openPriority(selIndex)}
               >
                 + priority
@@ -333,7 +333,7 @@ export function WeeklySchedulePage({ week }: { week: WeekData }) {
                 <button
                   key={h}
                   type="button"
-                  className="hour-row"
+                  className="hour-row press"
                   onClick={() => openBlockCell(selIndex, h)}
                   aria-label={
                     block
@@ -374,7 +374,7 @@ export function WeeklySchedulePage({ week }: { week: WeekData }) {
           onClick={addOnSelectedDay}
           disabled={dayFull}
           data-testid="add-on-day"
-          className="add-pill"
+          className="add-pill press"
         >
           <span>Add on {fmtMonthDay(selDay)}</span>
           <span className="font-mono text-lg leading-none" aria-hidden="true">
@@ -537,20 +537,20 @@ function ScheduleSheet({
           {onDelete && (
             <button
               onClick={onDelete}
-              className="shrink-0 rounded-lg bg-[#FDECEC] px-3.5 py-2.5 text-sm font-semibold text-[#C0392B] hover:bg-[#FADADA]"
+              className="press shrink-0 rounded-lg bg-[#FDECEC] px-3.5 py-2.5 text-sm font-semibold text-[#C0392B] hover:bg-[#FADADA]"
             >
               Remove
             </button>
           )}
           <button
             onClick={requestClose}
-            className="flex-1 rounded-lg bg-[#F3F4F6] py-2.5 text-sm font-semibold text-[#1F2937] hover:bg-[#EAE7DF]"
+            className="press flex-1 rounded-lg bg-[#F3F4F6] py-2.5 text-sm font-semibold text-[#1F2937] hover:bg-[#EAE7DF]"
           >
             Cancel
           </button>
           <button
             onClick={submit}
-            className="flex-1 rounded-lg bg-[#F97316] py-2.5 text-sm font-semibold text-white hover:bg-[#EA6A0C]"
+            className="press flex-1 rounded-lg bg-[#F97316] py-2.5 text-sm font-semibold text-white hover:bg-[#EA6A0C]"
           >
             Save
           </button>
