@@ -143,3 +143,9 @@ body {
 .sheet-panel { animation: sheet-rise var(--m-sheet-in) var(--ease-out) both; }
 .sheet-scrim[data-closing="true"] { animation: sheet-scrim var(--m-sheet-out) var(--ease-in) reverse both; }
 .sheet-panel[data-closing="true"] { animation: sheet-rise var(--m-sheet-out) var(--ease-in) reverse both; }
+
+/* Big Rock tick (WO-055): box and title fade 160 ms, tick draws 220 ms; untick reverses. */
+.goal-tick { transition: background-color var(--m-fast) var(--ease-out), border-color var(--m-fast) var(--ease-out); }
+.goal-tick polyline { stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset var(--m-base) var(--ease-out); }
+.goal-tick[data-done="true"] polyline { stroke-dashoffset: 0; }
+.goal-title { transition: color var(--m-fast) var(--ease-out), text-decoration-color var(--m-fast) var(--ease-out); }

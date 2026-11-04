@@ -357,26 +357,25 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
                         {!planning && (
                         <button
                           onClick={() => toggleGoal(g, role.id)}
-                          className={`flex h-[17px] w-[17px] shrink-0 items-center justify-center rounded-[5px] border-[1.5px] ${
+                          data-done={g.status === "DONE"}
+                          className={`goal-tick flex h-[17px] w-[17px] shrink-0 items-center justify-center rounded-[5px] border-[1.5px] ${
                             g.status === "DONE"
                               ? "border-[#22C55E] bg-[#22C55E]"
                               : "border-[#D6D2C8] bg-white"
                           }`}
                         >
-                          {g.status === "DONE" && (
-                            <svg
-                              viewBox="0 0 24 24"
-                              width="11"
-                              height="11"
-                              fill="none"
-                              stroke="#fff"
-                              strokeWidth="3"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <polyline points="20 6 9 17 4 12" />
-                            </svg>
-                          )}
+                          <svg
+                            viewBox="0 0 24 24"
+                            width="11"
+                            height="11"
+                            fill="none"
+                            stroke="#fff"
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <polyline points="20 6 9 17 4 12" pathLength="1" />
+                          </svg>
                         </button>
                         )}
                         <input
@@ -385,7 +384,7 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
                             editGoalTitleLocal(g.id, role.id, e.target.value)
                           }
                           onBlur={(e) => commitGoalTitle(g.id, e.target.value)}
-                          className={`flex-1 bg-transparent p-0.5 text-[13.5px] ${
+                          className={`goal-title flex-1 bg-transparent p-0.5 text-[13.5px] ${
                             g.status === "DONE"
                               ? "text-[#B3AFA6] line-through"
                               : "text-[#1F2937]"
