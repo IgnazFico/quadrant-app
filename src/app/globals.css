@@ -3,6 +3,15 @@
 :root {
   --background: #FAF7F2;
   --foreground: #1F2937;
+  /* Motion tokens (WO-053). */
+  --m-press: 90ms;
+  --m-fast: 160ms;
+  --m-base: 220ms;
+  --m-sheet-in: 260ms;
+  --m-sheet-out: 200ms;
+  --m-page: 140ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
   /* Phone bottom bar (WO-022 / NB-4). THE one shared height: BottomNav,
      schedule.css, PatternsPage, Toaster, RecapPrompt and the page paddings
      all read --bar-clear. Change the bar here only. */
@@ -113,4 +122,16 @@ body {
 /* Toast entrance (components/toast/Toaster.tsx) */
 .toast-in {
   animation: fade-slide-up 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Still version: every animation and transition jumps to its end state. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
 }
