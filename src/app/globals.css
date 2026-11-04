@@ -124,6 +124,10 @@ body {
   animation: fade-slide-up 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Toast exit (WO-057): fades and sinks 6 px; the store unmounts it after 200 ms. */
+@keyframes toast-out { to { opacity: 0; transform: translateY(6px); } }
+.toast-out { animation: toast-out var(--m-sheet-out) var(--ease-in) forwards; }
+
 /* Still version: every animation and transition jumps to its end state. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

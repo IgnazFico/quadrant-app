@@ -18,6 +18,7 @@ export function WeeklyReviewPage({ review }: { review: ReviewData }) {
     loading,
     error,
     toast,
+    toastLeaving,
     masterKey,
     activeReflect,
     doneCount,
@@ -154,8 +155,10 @@ export function WeeklyReviewPage({ review }: { review: ReviewData }) {
       )}
 
       {toast && (
-        <div className="fixed bottom-[calc(var(--bar-clear)+16px)] left-1/2 -translate-x-1/2 rounded-lg bg-[#1F2937] px-4 py-2.5 text-sm text-white">
-          {toast}
+        <div className="pointer-events-none fixed inset-x-0 bottom-[calc(var(--bar-clear)+16px)] flex justify-center">
+          <div className={`toast-in${toastLeaving ? " toast-out" : ""} rounded-lg bg-[#1F2937] px-4 py-2.5 text-sm text-white`}>
+            {toast}
+          </div>
         </div>
       )}
     </div>
