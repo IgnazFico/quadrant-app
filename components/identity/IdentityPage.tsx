@@ -26,13 +26,13 @@ export function IdentityPage() {
   const profile = useProfile();
 
   return (
-    <>
+    <div className="page-enter">
       <div className="md:hidden">
         <ProfilePage profile={profile} />
       </div>
       <div className="hidden md:block">
         <IdentityDesktopView profile={profile} />
       </div>
-    </>
+    </div>
   );
 }

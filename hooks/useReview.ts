@@ -69,6 +69,7 @@ export function useReview() {
     goal: ReviewGoal;
   } | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [toastLeaving, setToastLeaving] = useState(false);
   const masterKey = useAuthStore((s) => s.masterKey);
   const masterKeyRef = useRef(masterKey);
   masterKeyRef.current = masterKey;
@@ -274,6 +275,7 @@ export function useReview() {
         ? `Week closed — ${carriedCount} goal${carriedCount === 1 ? "" : "s"} carried into next week. Now plan it.`
         : `Review complete — ${carriedCount} goal${carriedCount === 1 ? "" : "s"} carried into this week`,
     );
+    setTimeout(() => setToastLeaving(true), 1300); // 200 ms exit inside the 1500 ms wait
     setTimeout(() => {
       setToast(null);
       if (nextUnreviewedWeekStart) {
@@ -301,6 +303,7 @@ export function useReview() {
     loading,
     error,
     toast,
+    toastLeaving,
     masterKey,
     activeReflect,
     allGoals,

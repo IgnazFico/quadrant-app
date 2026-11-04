@@ -52,6 +52,7 @@ function Chip({
 
 export function RoleOnboarding() {
   const [step, setStep] = useState<Step>(1);
+  const [dir, setDir] = useState<"fwd" | "back">("fwd");
   const [domains, setDomains] = useState<Set<string>>(new Set());
   const [roles, setRoles] = useState<Set<string>>(new Set()); // keys: "domainId::roleName"
   const [labels, setLabels] = useState<Record<string, string>>({});
@@ -149,7 +150,7 @@ export function RoleOnboarding() {
                   className="h-1 flex-1 overflow-hidden rounded-full bg-[#F3F4F6]"
                 >
                   <div
-                    className="h-full bg-[#F97316] transition-all duration-300"
+                    className="h-full bg-[#F97316] [transition:width_var(--m-base)_var(--ease-out)]"
                     style={{
                       width: step > i ? "100%" : step === i ? "50%" : "0%",
                     }}
@@ -176,7 +177,7 @@ export function RoleOnboarding() {
         )}
 
         {step === 1 && (
-          <div>
+          <div className={`step-in-${dir}`}>
             <p className="mb-1 font-mono text-[11px] uppercase tracking-wide text-[#F97316]">
               Step 1 of 3
             </p>
@@ -201,7 +202,7 @@ export function RoleOnboarding() {
         )}
 
         {step === 2 && (
-          <div>
+          <div className={`step-in-${dir}`}>
             <p className="mb-1 font-mono text-[11px] uppercase tracking-wide text-[#F97316]">
               Step 2 of 3
             </p>
@@ -236,7 +237,7 @@ export function RoleOnboarding() {
         )}
 
         {step === 3 && (
-          <div>
+          <div className={`step-in-${dir}`}>
             <p className="mb-1 font-mono text-[11px] uppercase tracking-wide text-[#F97316]">
               Step 3 of 3
             </p>
@@ -304,7 +305,10 @@ export function RoleOnboarding() {
             {step > 1 && (
               <button
                 className="rounded-[10px] border border-[#E2E4E8] px-5 py-3 text-sm font-semibold text-[#1F2937] hover:bg-[#F3F4F6]"
-                onClick={() => setStep((s) => (s - 1) as Step)}
+                onClick={() => {
+                  setDir("back");
+                  setStep((s) => (s - 1) as Step);
+                }}
               >
                 Back
               </button>
@@ -317,6 +321,7 @@ export function RoleOnboarding() {
               }
               onClick={() => {
                 if (step === 3) return finish();
+                setDir("fwd");
                 setStep((s) => (s + 1) as Step);
               }}
               className="rounded-[10px] bg-[#F97316] px-5 py-3 text-sm font-semibold text-white hover:bg-[#EA6A0C] disabled:bg-[#F0D9C6]"

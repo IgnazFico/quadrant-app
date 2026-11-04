@@ -3,6 +3,15 @@
 :root {
   --background: #FAF7F2;
   --foreground: #1F2937;
+  /* Motion tokens (WO-053). */
+  --m-press: 90ms;
+  --m-fast: 160ms;
+  --m-base: 220ms;
+  --m-sheet-in: 260ms;
+  --m-sheet-out: 200ms;
+  --m-page: 140ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
   /* Phone bottom bar (WO-022 / NB-4). THE one shared height: BottomNav,
      schedule.css, PatternsPage, Toaster, RecapPrompt and the page paddings
      all read --bar-clear. Change the bar here only. */
@@ -114,3 +123,57 @@ body {
 .toast-in {
   animation: fade-slide-up 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
+
+/* Toast exit (WO-057): fades and sinks 6 px; the store unmounts it after 200 ms. */
+@keyframes toast-out { to { opacity: 0; transform: translateY(6px); } }
+.toast-out { animation: toast-out var(--m-sheet-out) var(--ease-in) forwards; }
+
+/* Role card: the list stays mounted (inert when closed) and unfolds via grid rows. */
+.role-body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows var(--m-base) var(--ease-out); }
+.role-body[data-open="true"] { grid-template-rows: 1fr; }
+
+/* Still version: every animation and transition jumps to its end state. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Bottom sheets (WO-054): scrim fades, panel rises; exit is shorter. */
+@keyframes sheet-scrim { from { opacity: 0 } to { opacity: 1 } }
+@keyframes sheet-rise { from { transform: translateY(100%) } to { transform: none } }
+.sheet-scrim { animation: sheet-scrim var(--m-base) var(--ease-out) both; }
+.sheet-panel { animation: sheet-rise var(--m-sheet-in) var(--ease-out) both; }
+.sheet-scrim[data-closing="true"] { animation: sheet-scrim var(--m-sheet-out) var(--ease-in) reverse both; }
+.sheet-panel[data-closing="true"] { animation: sheet-rise var(--m-sheet-out) var(--ease-in) reverse both; }
+
+/* Press feedback (WO-056): `scale` composes with an element's own transform (add-pill). */
+.press { -webkit-tap-highlight-color: transparent; touch-action: manipulation; transition: scale var(--m-press) var(--ease-out); }
+.press:active:not(:disabled) { scale: 0.97; }
+@media (prefers-reduced-motion: reduce) { .press:active:not(:disabled) { scale: none; } }
+
+/* Big Rock tick (WO-055): box and title fade 160 ms, tick draws 220 ms; untick reverses. */
+.goal-tick { transition: background-color var(--m-fast) var(--ease-out), border-color var(--m-fast) var(--ease-out), scale var(--m-press) var(--ease-out); }
+.goal-tick polyline { stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset var(--m-base) var(--ease-out); }
+.goal-tick[data-done="true"] polyline { stroke-dashoffset: 0; }
+.goal-title { transition: color var(--m-fast) var(--ease-out), text-decoration-color var(--m-fast) var(--ease-out); }
+
+/* Mission and onboarding steps (WO-058): slide 8 px from the side you are going to. */
+@keyframes step-in-fwd { from { opacity: 0; transform: translateX(8px) } to { opacity: 1; transform: none } }
+@keyframes step-in-back { from { opacity: 0; transform: translateX(-8px) } to { opacity: 1; transform: none } }
+.step-in-fwd { animation: step-in-fwd var(--m-base) var(--ease-out) both; }
+.step-in-back { animation: step-in-back var(--m-base) var(--ease-out) both; }
+
+/* Weekly review choices (WO-059): status line fades in, pill colour fills; Carry and Cancel identical. */
+@keyframes fade-in-soft { from { opacity: 0 } to { opacity: 1 } }
+.review-status { animation: fade-in-soft var(--m-fast) var(--ease-out) both; }
+.review-pill { transition: background-color var(--m-fast) var(--ease-out), border-color var(--m-fast) var(--ease-out), color var(--m-fast) var(--ease-out); }
+
+/* Page enter (WO-061): content fades in once mounted; never waits, no slide. */
+@keyframes page-enter { from { opacity: 0 } to { opacity: 1 } }
+.page-enter { animation: page-enter var(--m-page) var(--ease-out) both; }

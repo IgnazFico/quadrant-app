@@ -226,7 +226,7 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
           {!formOpen ? (
             <button
               onClick={() => openScheduleForm(roles[0]?.id ?? "")}
-              className="mt-2.5 w-full rounded-lg border border-dashed border-[#D8D3C8] py-2.5 text-xs font-medium text-[#8A8579] hover:bg-[#EFEBE1]"
+              className="press mt-2.5 w-full rounded-lg border border-dashed border-[#D8D3C8] py-2.5 text-xs font-medium text-[#8A8579] hover:bg-[#EFEBE1]"
             >
               + Schedule something today
             </button>
@@ -286,7 +286,7 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
               )}
               <button
                 onClick={submitScheduleForm}
-                className="self-end rounded-md bg-[#F97316] px-4 py-2 text-xs font-semibold text-white hover:bg-[#EA6A0C]"
+                className="press self-end rounded-md bg-[#F97316] px-4 py-2 text-xs font-semibold text-white hover:bg-[#EA6A0C]"
               >
                 Add to today
               </button>
@@ -317,7 +317,7 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
               >
                 <button
                   onClick={() => setOpenRoleId(open ? null : role.id)}
-                  className="flex w-full items-center justify-between px-3.5 py-3"
+                  className="press flex w-full items-center justify-between px-3.5 py-3"
                 >
                   <div className="flex items-center gap-2.5">
                     <span className="text-[14.5px] font-semibold text-[#1F2937]">
@@ -338,13 +338,14 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    className={`shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
+                    className={`shrink-0 transition-transform duration-[220ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${open ? "rotate-180" : ""}`}
                   >
                     <polyline points="6 9 12 15 18 9" />
                   </svg>
                 </button>
 
-                {open && (
+                <div className="role-body" data-open={open} inert={!open}>
+                  <div className="min-h-0 overflow-hidden">
                   <div className="px-3.5 pb-3.5">
                     {planning && role.goals.length === 0 && (
                       <p className="px-0.5 pb-1 text-[12.5px] text-[#8A8579]">Nothing planned yet.</p>
@@ -357,26 +358,25 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
                         {!planning && (
                         <button
                           onClick={() => toggleGoal(g, role.id)}
-                          className={`flex h-[17px] w-[17px] shrink-0 items-center justify-center rounded-[5px] border-[1.5px] ${
+                          data-done={g.status === "DONE"}
+                          className={`goal-tick press flex h-[17px] w-[17px] shrink-0 items-center justify-center rounded-[5px] border-[1.5px] ${
                             g.status === "DONE"
                               ? "border-[#22C55E] bg-[#22C55E]"
                               : "border-[#D6D2C8] bg-white"
                           }`}
                         >
-                          {g.status === "DONE" && (
-                            <svg
-                              viewBox="0 0 24 24"
-                              width="11"
-                              height="11"
-                              fill="none"
-                              stroke="#fff"
-                              strokeWidth="3"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <polyline points="20 6 9 17 4 12" />
-                            </svg>
-                          )}
+                          <svg
+                            viewBox="0 0 24 24"
+                            width="11"
+                            height="11"
+                            fill="none"
+                            stroke="#fff"
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <polyline points="20 6 9 17 4 12" pathLength="1" />
+                          </svg>
                         </button>
                         )}
                         <input
@@ -385,7 +385,7 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
                             editGoalTitleLocal(g.id, role.id, e.target.value)
                           }
                           onBlur={(e) => commitGoalTitle(g.id, e.target.value)}
-                          className={`flex-1 bg-transparent p-0.5 text-[13.5px] ${
+                          className={`goal-title flex-1 bg-transparent p-0.5 text-[13.5px] ${
                             g.status === "DONE"
                               ? "text-[#B3AFA6] line-through"
                               : "text-[#1F2937]"
@@ -454,7 +454,8 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
                       }}
                     />
                   </div>
-                )}
+                  </div>
+                </div>
               </div>
             );
           })}
@@ -484,7 +485,7 @@ function AddGoalRow({ onAdd }: { onAdd: (title: string) => void }) {
       />
       <button
         onClick={submit}
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#F97316] text-white hover:bg-[#EA6A0C]"
+        className="press flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#F97316] text-white hover:bg-[#EA6A0C]"
       >
         <svg
           viewBox="0 0 24 24"

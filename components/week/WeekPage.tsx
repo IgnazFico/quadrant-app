@@ -35,7 +35,7 @@ function WeekPageInner({ variant }: { variant: "goals" | "schedule" }) {
   const week = useWeek();
 
   return (
-    <>
+    <div className="page-enter">
       <div className="md:hidden">
         {variant === "goals" ? (
           <WeeklyGoalsPage week={week} />
@@ -46,7 +46,7 @@ function WeekPageInner({ variant }: { variant: "goals" | "schedule" }) {
       <div className="hidden md:block">
         <WeekDesktopView week={week} />
       </div>
-    </>
+    </div>
   );
 }
 

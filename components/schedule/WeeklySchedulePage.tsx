@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useExitDelay } from "../../hooks/useExitDelay";
 import { domainColor } from "../../lib/domainColors";
 import { dayKey } from "../../lib/week";
 import { NotificationBell } from "../notifications/NotificationBell";
@@ -299,7 +300,7 @@ export function WeeklySchedulePage({ week }: { week: WeekData }) {
             {canAddAnytime(selIndex) && (
               <button
                 type="button"
-                className="priority-add"
+                className="priority-add press"
                 onClick={() => openPriority(selIndex)}
               >
                 + priority
@@ -332,7 +333,7 @@ export function WeeklySchedulePage({ week }: { week: WeekData }) {
                 <button
                   key={h}
                   type="button"
-                  className="hour-row"
+                  className="hour-row press"
                   onClick={() => openBlockCell(selIndex, h)}
                   aria-label={
                     block
@@ -373,7 +374,7 @@ export function WeeklySchedulePage({ week }: { week: WeekData }) {
           onClick={addOnSelectedDay}
           disabled={dayFull}
           data-testid="add-on-day"
-          className="add-pill"
+          className="add-pill press"
         >
           <span>Add on {fmtMonthDay(selDay)}</span>
           <span className="font-mono text-lg leading-none" aria-hidden="true">
@@ -425,6 +426,7 @@ function ScheduleSheet({
   blockForGoal: (goalId: string) => ScheduleBlock | null;
   error: string | null;
 }) {
+  const { closing, requestClose, reopen } = useExitDelay(onClose);
   const existing = sheet.existing;
   const [roleId, setRoleId] = useState(existing?.roleId ?? roles[0]?.id ?? "");
   const [goalId, setGoalId] = useState<string>(existing?.goalId ?? "");
@@ -444,12 +446,17 @@ function ScheduleSheet({
 
   return (
     <div
-      className="fixed inset-0 z-30 flex items-end justify-center bg-[rgba(31,41,55,0.35)]"
-      onClick={onClose}
+      className="sheet-scrim fixed inset-0 z-30 flex items-end justify-center bg-[rgba(31,41,55,0.35)]"
+      data-closing={closing}
+      onClick={closing ? reopen : requestClose}
     >
       <div
-        className="w-full max-w-[460px] rounded-t-[20px] bg-white px-5 pb-7 pt-2.5"
-        onClick={(e) => e.stopPropagation()}
+        className="sheet-panel w-full max-w-[460px] rounded-t-[20px] bg-white px-5 pb-7 pt-2.5"
+        data-closing={closing}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (closing) reopen();
+        }}
       >
         <div className="mx-auto mb-3.5 h-1 w-9 rounded-full bg-[#E5E1D8]" />
         <p className="mb-0.5 font-serif text-[17px] font-semibold text-[#1F2937]">
@@ -530,20 +537,20 @@ function ScheduleSheet({
           {onDelete && (
             <button
               onClick={onDelete}
-              className="shrink-0 rounded-lg bg-[#FDECEC] px-3.5 py-2.5 text-sm font-semibold text-[#C0392B] hover:bg-[#FADADA]"
+              className="press shrink-0 rounded-lg bg-[#FDECEC] px-3.5 py-2.5 text-sm font-semibold text-[#C0392B] hover:bg-[#FADADA]"
             >
               Remove
             </button>
           )}
           <button
-            onClick={onClose}
-            className="flex-1 rounded-lg bg-[#F3F4F6] py-2.5 text-sm font-semibold text-[#1F2937] hover:bg-[#EAE7DF]"
+            onClick={requestClose}
+            className="press flex-1 rounded-lg bg-[#F3F4F6] py-2.5 text-sm font-semibold text-[#1F2937] hover:bg-[#EAE7DF]"
           >
             Cancel
           </button>
           <button
             onClick={submit}
-            className="flex-1 rounded-lg bg-[#F97316] py-2.5 text-sm font-semibold text-white hover:bg-[#EA6A0C]"
+            className="press flex-1 rounded-lg bg-[#F97316] py-2.5 text-sm font-semibold text-white hover:bg-[#EA6A0C]"
           >
             Save
           </button>

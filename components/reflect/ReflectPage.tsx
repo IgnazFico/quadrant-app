@@ -30,7 +30,7 @@ export function ReflectPage({ variant }: { variant: "review" | "patterns" }) {
   const thisWeek = useWeekSnapshot();
 
   return (
-    <>
+    <div className="page-enter">
       <div className="md:hidden">
         {variant === "review" ? (
           <WeeklyReviewPage review={review} />
@@ -41,6 +41,6 @@ export function ReflectPage({ variant }: { variant: "review" | "patterns" }) {
       <div className="hidden md:block">
         <ReflectDesktopView review={review} patterns={patterns} thisWeek={thisWeek} />
       </div>
-    </>
+    </div>
   );
 }

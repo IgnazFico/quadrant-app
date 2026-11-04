@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { useExitDelay } from "../../hooks/useExitDelay";
 import { domainColor } from "../../lib/domainColors";
 import { addDays } from "../../lib/week";
 import type { Choice, ReviewData, ReviewGoal } from "../../hooks/useReview";
@@ -17,6 +18,7 @@ export function WeeklyReviewPage({ review }: { review: ReviewData }) {
     loading,
     error,
     toast,
+    toastLeaving,
     masterKey,
     activeReflect,
     doneCount,
@@ -153,8 +155,10 @@ export function WeeklyReviewPage({ review }: { review: ReviewData }) {
       )}
 
       {toast && (
-        <div className="fixed bottom-[calc(var(--bar-clear)+16px)] left-1/2 -translate-x-1/2 rounded-lg bg-[#1F2937] px-4 py-2.5 text-sm text-white">
-          {toast}
+        <div className="pointer-events-none fixed inset-x-0 bottom-[calc(var(--bar-clear)+16px)] flex justify-center">
+          <div className={`toast-in${toastLeaving ? " toast-out" : ""} rounded-lg bg-[#1F2937] px-4 py-2.5 text-sm text-white`}>
+            {toast}
+          </div>
         </div>
       )}
     </div>
@@ -192,7 +196,7 @@ export function GoalRow({
         </span>
         <button
           onClick={onToggleCarry}
-          className={`shrink-0 whitespace-nowrap rounded-full border px-2.5 py-1.5 text-[11px] font-semibold ${
+          className={`review-pill shrink-0 whitespace-nowrap rounded-full border px-2.5 py-1.5 text-[11px] font-semibold ${
             goal.carryForward
               ? "border-[#F97316] bg-[#F97316] text-white"
               : "border-[#E5E1D8] bg-white text-[#6B7280]"
@@ -278,7 +282,7 @@ export function GoalRow({
         <div className="text-[13.5px] font-medium text-[#1F2937]">
           {goal.title}
         </div>
-        <div className="mt-0.5 text-[11.5px] italic text-[#9CA3AF]">
+        <div key={goal.reviewEntry.choice} className="review-status mt-0.5 text-[11.5px] italic text-[#9CA3AF]">
           &ldquo;{goal.reviewEntry.reason ?? "..."}&rdquo; &mdash;{" "}
           {carried ? "carried to next week" : "cancelled"}{" "}
           <button
@@ -304,17 +308,28 @@ export function ReflectSheet({
   onClose: () => void;
   onSubmit: (reason: string, choice: Choice) => void;
 }) {
+  const { closing, requestClose, reopen } = useExitDelay(onClose);
+  const textarea = useRef<HTMLTextAreaElement>(null);
   const [reason, setReason] = useState(goal.reviewEntry?.reason ?? "");
   const filled = reason.trim().length > 0;
 
   return (
     <div
-      className="fixed inset-0 z-30 flex items-end justify-center bg-[rgba(31,41,55,0.35)]"
-      onClick={onClose}
+      className="sheet-scrim fixed inset-0 z-30 flex items-end justify-center bg-[rgba(31,41,55,0.35)]"
+      data-closing={closing}
+      onClick={closing ? reopen : requestClose}
     >
       <div
-        className="w-full max-w-[440px] rounded-t-[20px] bg-white px-5 pb-7 pt-2.5"
-        onClick={(e) => e.stopPropagation()}
+        className="sheet-panel w-full max-w-[440px] rounded-t-[20px] bg-white px-5 pb-7 pt-2.5"
+        data-closing={closing}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (closing) reopen();
+        }}
+        // Focus after the panel lands, so the keyboard does not open mid-slide.
+        onAnimationEnd={(e) => {
+          if (e.target === e.currentTarget && !closing) textarea.current?.focus();
+        }}
       >
         <div className="mx-auto mb-3.5 h-1 w-9 rounded-full bg-[#E5E1D8]" />
         <p className="mb-0.5 font-serif text-[17px] font-semibold text-[#1F2937]">
@@ -323,7 +338,7 @@ export function ReflectSheet({
         <p className="mb-4 text-[12.5px] text-[#9CA3AF]">{goal.title}</p>
 
         <textarea
-          autoFocus
+          ref={textarea}
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           disabled={disabled}
@@ -339,14 +354,14 @@ export function ReflectSheet({
           <button
             disabled={!filled || disabled}
             onClick={() => onSubmit(reason.trim(), "CANCEL")}
-            className="flex-1 rounded-lg bg-[#F3F4F6] py-2.5 text-sm font-semibold text-[#6B7280] disabled:opacity-40"
+            className="press flex-1 rounded-lg bg-[#F3F4F6] py-2.5 text-sm font-semibold text-[#6B7280] disabled:opacity-40"
           >
             Cancel goal
           </button>
           <button
             disabled={!filled || disabled}
             onClick={() => onSubmit(reason.trim(), "CARRY")}
-            className="flex-1 rounded-lg bg-[#F97316] py-2.5 text-sm font-semibold text-white disabled:opacity-40"
+            className="press flex-1 rounded-lg bg-[#F97316] py-2.5 text-sm font-semibold text-white disabled:opacity-40"
           >
             Carry to next week
           </button>
