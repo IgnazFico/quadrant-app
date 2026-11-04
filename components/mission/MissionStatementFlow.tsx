@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type AnimationEvent } from "react";
 import { useAuthStore } from "../../store/authStore";
 import { encryptField, toBase64 } from "../../lib/crypto";
 import Link from "next/link";
@@ -32,6 +32,7 @@ export function MissionStatementFlow() {
   const [signedName, setSignedName] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dir, setDir] = useState<"fwd" | "back">("fwd");
   const masterKey = useAuthStore((s) => s.masterKey);
 
   const qIndex = QUESTION_SCREENS.indexOf(screen);
@@ -98,7 +99,7 @@ export function MissionStatementFlow() {
             {QUESTION_SCREENS.map((_, i) => (
               <span
                 key={i}
-                className={`h-1.5 rounded-full transition-all ${
+                className={`h-1.5 rounded-full [transition:width_var(--m-base)_var(--ease-out),background-color_var(--m-base)_var(--ease-out)] ${
                   i <= qIndex ? "w-4 bg-[#F97316]" : "w-1.5 bg-[#F3F4F6]"
                 }`}
               />
@@ -166,43 +167,47 @@ export function MissionStatementFlow() {
         {/* QUESTIONS */}
         {screen === "q1" && (
           <Question
+            dir={dir}
             index={1}
             prompt="Who do you want to be, at your best?"
             value={answers.a1}
             onChange={(v) => setAnswers((a) => ({ ...a, a1: v }))}
-            onBack={() => setScreen("intro")}
-            onNext={() => setScreen("q2")}
+            onBack={() => { setDir("back"); setScreen("intro"); }}
+            onNext={() => { setDir("fwd"); setScreen("q2"); }}
           />
         )}
         {screen === "q2" && (
           <Question
+            dir={dir}
             index={2}
             prompt="What do you want to have contributed to the people and things you care about?"
             value={answers.a2}
             onChange={(v) => setAnswers((a) => ({ ...a, a2: v }))}
-            onBack={() => setScreen("q1")}
-            onNext={() => setScreen("q3")}
+            onBack={() => { setDir("back"); setScreen("q1"); }}
+            onNext={() => { setDir("fwd"); setScreen("q3"); }}
           />
         )}
         {screen === "q3" && (
           <Question
+            dir={dir}
             index={3}
             prompt="What's something you're not willing to compromise on?"
             value={answers.a3}
             onChange={(v) => setAnswers((a) => ({ ...a, a3: v }))}
-            onBack={() => setScreen("q2")}
-            onNext={() => setScreen("q4")}
+            onBack={() => { setDir("back"); setScreen("q2"); }}
+            onNext={() => { setDir("fwd"); setScreen("q4"); }}
           />
         )}
         {screen === "q4" && (
           <Question
+            dir={dir}
             index={4}
             prompt="One phrase that captures how you want to live."
             value={answers.a4}
             optional
             onChange={(v) => setAnswers((a) => ({ ...a, a4: v }))}
-            onBack={() => setScreen("q3")}
-            onNext={assemble}
+            onBack={() => { setDir("back"); setScreen("q3"); }}
+            onNext={() => { setDir("fwd"); assemble(); }}
             nextLabel="Review draft"
           />
         )}
@@ -315,6 +320,7 @@ function Question({
   onNext,
   optional,
   nextLabel,
+  dir,
 }: {
   index: number;
   prompt: string;
@@ -324,9 +330,16 @@ function Question({
   onNext: () => void;
   optional?: boolean;
   nextLabel?: string;
+  dir: "fwd" | "back";
 }) {
   return (
-    <div className="mt-8">
+    <div
+      className={`mt-8 step-in-${dir}`}
+      // Focus waits for the slide so the keyboard does not open mid-motion (WO-042 7.3).
+      onAnimationEnd={(e: AnimationEvent<HTMLDivElement>) =>
+        e.currentTarget.querySelector("textarea")?.focus({ preventScroll: true })
+      }
+    >
       <p className="mb-3.5 font-mono text-[10.5px] uppercase tracking-wide text-[#B7B2A7]">
         Question {index} of 4
       </p>
@@ -334,7 +347,6 @@ function Question({
         {prompt}
       </h2>
       <textarea
-        autoFocus
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={optional ? "Optional..." : "Write a few honest words..."}
