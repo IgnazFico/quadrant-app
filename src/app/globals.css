@@ -135,3 +135,11 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* Bottom sheets (WO-054): scrim fades, panel rises; exit is shorter. */
+@keyframes sheet-scrim { from { opacity: 0 } to { opacity: 1 } }
+@keyframes sheet-rise { from { transform: translateY(100%) } to { transform: none } }
+.sheet-scrim { animation: sheet-scrim var(--m-base) var(--ease-out) both; }
+.sheet-panel { animation: sheet-rise var(--m-sheet-in) var(--ease-out) both; }
+.sheet-scrim[data-closing="true"] { animation: sheet-scrim var(--m-sheet-out) var(--ease-in) reverse both; }
+.sheet-panel[data-closing="true"] { animation: sheet-rise var(--m-sheet-out) var(--ease-in) reverse both; }
