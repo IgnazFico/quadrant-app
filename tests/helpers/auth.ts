@@ -6,7 +6,7 @@ import { Page, expect } from "@playwright/test";
  * spec that needs an authenticated session against real data.
  * Credentials match prisma/seed.ts (TEST_EMAIL / TEST_PASSWORD).
  */
-const TEST_PASSWORD = 'Quadrant_079';
+export const TEST_PASSWORD = 'Quadrant_079';
 
 export async function loginAsSeededUser(page: Page) {
   await page.goto("/login");
