@@ -91,7 +91,7 @@ export function FeedbackModal({
             </div>
             <h4 className="font-sans text-sm font-bold text-[#1F2937]">Thank you for your voice</h4>
             <p className="mt-1 font-sans text-xs text-[#6B7280]">
-              Your reflection has been sent to the core team.
+              Your feedback has been emailed to the team.
             </p>
           </div>
         ) : (
