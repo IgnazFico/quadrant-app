@@ -324,7 +324,8 @@ test("9c signed name is sealed: saved, shown on profile, never on the wire (WO-0
   // WO-035 A2: feedback is accepted, but its text and the email never reach the server log
   // (checked by grepping the server log for ZQfeedbackWO035 and the email after the run).
   const fb = await page.evaluate(async (e) => (await fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ category: "idea", message: `ZQfeedbackWO035 ${e}`, metadata: { pathname: "/profile", secret: "ZQmetaWO035" } }) })).status, EMAIL);
-  expect(fb).toBe(200);
+  // WO-052: the route now sends mail, so 200 (mail sent) or 502 (mail not configured here) are both valid; the log check is what matters.
+  expect([200, 502]).toContain(fb);
 });
 
 test("10 nothing readable crossed the wire in either direction", async () => {

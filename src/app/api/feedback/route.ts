@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "../../../../lib/auth";
+import { sendMail } from "../../../../lib/mail";
 
 const feedbackSchema = z.object({
   category: z.enum(["idea", "friction", "bug"]),
@@ -32,24 +33,31 @@ export async function POST(req: Request) {
 
     const { category, message, metadata } = parsed.data;
 
-    // WO-035 (D-085): the message text and the email are NOT logged (zero-knowledge:
-    // no user words in any log). Only the shape of the report is kept.
-    // Whitelist metadata: it is client-controlled and could carry anything.
+    // WO-052 (D-111 C): feedback goes to the team by email. Text and sender email are never logged (D-085).
+    // Metadata is client-controlled: keep only a short pathname.
     const path = typeof metadata?.pathname === "string" ? metadata.pathname.slice(0, 200) : "";
-    console.log("[BETA_FEEDBACK]", {
-      timestamp: new Date().toISOString(),
-      userId: session.user.id,
-      category,
-      messageLength: message.length,
-      pathname: path,
-    });
+    const to = process.env.FEEDBACK_TO_EMAIL;
+    const sent = to
+      ? await sendMail({
+          to,
+          subject: `[Quadrant feedback] ${category}`,
+          text: `Category: ${category}\nPage: ${path || "-"}\nUser ID: ${session.user.id}\n\n${message}`,
+        })
+      : { ok: false as const };
+    if (!sent.ok) {
+      return NextResponse.json(
+        { error: "We couldn't send your feedback. Your text is still here, please try again." },
+        { status: 502 },
+      );
+    }
 
     return NextResponse.json({
       ok: true,
       message: "Thank you for helping shape Quadrant.",
     });
   } catch (err: any) {
-    console.error("Error processing feedback:", err);
+    // Name only: an error object could carry the request text.
+    console.error("Error processing feedback:", err?.name);
     return NextResponse.json(
       { error: "Failed to submit feedback. Please try again." },
       { status: 500 },
