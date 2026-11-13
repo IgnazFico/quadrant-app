@@ -87,7 +87,8 @@ test.describe("top-bar Feedback button", () => {
     await page.goto("/goals");
     await expect(btn(page)).toBeHidden();
     await page.setViewportSize({ width: 1280, height: 800 });
-    for (const route of ["/mission-statement", "/onboarding", "/year-review"]) {
+    // /mission-statement is left out: a user who finished the mission is redirected to /goals, so it depends on DB state.
+    for (const route of ["/onboarding", "/year-review"]) {
       await page.goto(route);
       await expect(btn(page)).toHaveCount(0);
     }
