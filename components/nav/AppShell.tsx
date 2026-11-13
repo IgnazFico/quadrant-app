@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuthStore } from "../../store/authStore";
@@ -9,6 +10,7 @@ import { BottomNav } from "./BottomNav";
 import { Toaster } from "../toast/Toaster";
 import { QuadrantMark } from "../brand/QuadrantMark";
 import { SegmentedToggle } from "../ui/SegmentedToggle";
+import { FeedbackModal } from "../feedback/FeedbackModal";
 
 /**
  * App chrome for every (app) route.
@@ -103,9 +105,23 @@ function TopBar({ pathname, email }: { pathname: string; email: string }) {
   const clearMasterKey = useAuthStore((s) => s.clearMasterKey);
   const initials = (email.split("@")[0] || "Q").slice(0, 2).toUpperCase();
   const onProfile = matches(pathname, "/profile");
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const feedbackBtn = useRef<HTMLButtonElement>(null);
+  const closeFeedback = () => {
+    setFeedbackOpen(false);
+    feedbackBtn.current?.focus(); // X, Escape and auto-close all land here
+  };
+
+  useEffect(() => {
+    if (!feedbackOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && closeFeedback();
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [feedbackOpen]);
 
   return (
-    <header className="sticky top-0 z-20 hidden grid-cols-[1fr_auto_1fr] items-center gap-4 border-b border-[#ECE8DF] bg-[rgba(250,247,242,0.9)] px-6 py-3 backdrop-blur-sm md:grid lg:px-10">
+    <>
+    <header className="sticky top-0 z-20 hidden grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 border-b border-[#ECE8DF] bg-[rgba(250,247,242,0.9)] px-6 py-3 backdrop-blur-sm md:grid lg:px-10">
       {/* Left: brand */}
       <Link
         href="/goals"
@@ -127,13 +143,29 @@ function TopBar({ pathname, email }: { pathname: string; email: string }) {
       />
 
       {/* Right: date, bell, account (→ Identity), sign out */}
-      <div className="flex min-w-0 items-center gap-3 justify-self-end">
+      <div className="flex min-w-0 items-center gap-3 justify-self-stretch justify-end">
         <span
-          className="hidden font-mono text-[11px] font-medium text-[#9CA3AF] xl:inline"
+          className="hidden font-mono text-[11px] font-medium text-[#9CA3AF] 2xl:inline"
           suppressHydrationWarning
         >
           {new Date().toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })}
         </span>
+        <button
+          ref={feedbackBtn}
+          type="button"
+          data-testid="feedback-topbar-btn"
+          aria-label="Feedback"
+          title="Feedback"
+          aria-haspopup="dialog"
+          aria-expanded={feedbackOpen}
+          onClick={() => setFeedbackOpen(true)}
+          className="inline-flex h-9 min-w-9 flex-none items-center justify-center gap-[7px] rounded-[10px] border border-[#ECE8DF] bg-white/60 px-[9px] font-sans text-[12.5px] font-semibold text-[#4B5563] outline-none transition-[background-color,border-color,color,scale] duration-[160ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-[#FED7AA] hover:bg-[#FFF7ED] hover:text-[#C2410C] focus-visible:shadow-[0_0_0_2px_#FAF7F2,0_0_0_4px_rgba(249,115,22,0.6)] active:scale-[0.97] active:duration-[90ms] motion-reduce:transition-none motion-reduce:active:scale-100 xl:pl-2.5 xl:pr-3"
+        >
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+          <span className="hidden xl:inline" aria-hidden="true">Feedback</span>
+        </button>
         <NotificationBell />
         <span aria-hidden="true" className="h-6 w-px flex-none bg-[#ECE8DF]" />
         <Link
@@ -178,5 +210,8 @@ function TopBar({ pathname, email }: { pathname: string; email: string }) {
         </form>
       </div>
     </header>
+    {/* Outside the header: its backdrop-blur would trap the fixed overlay. */}
+    <FeedbackModal isOpen={feedbackOpen} onClose={closeFeedback} />
+    </>
   );
 }
