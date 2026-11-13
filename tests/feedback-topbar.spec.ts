@@ -70,12 +70,12 @@ test.describe("top-bar Feedback button", () => {
   test("label from 1280 px, icon only at 1024; date from 1536 px only", async ({ page }) => {
     await loginAsSeededUser(page);
     const label = btn(page).locator("span");
-    const date = page.locator("header span.font-mono").first();
+    const date = page.locator("header").filter({ has: btn(page) }).locator("span.font-mono").first();
     for (const [w, labelShown, dateShown] of [[1536, true, true], [1280, true, false], [1024, false, false]] as const) {
       await page.setViewportSize({ width: w, height: 800 });
       expect(await label.isVisible()).toBe(labelShown);
       expect(await date.isVisible()).toBe(dateShown);
-      const h = await page.locator("header").boundingBox();
+      const h = await page.locator("header").filter({ has: btn(page) }).boundingBox();
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
       expect(h!.width).toBeLessThanOrEqual(w);
     }
