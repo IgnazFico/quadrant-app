@@ -29,9 +29,10 @@ const GOAL = `ZQgoalA${STAMP}`;
 const GOAL_RENAMED = `ZQgoalB${STAMP}`;
 const BLOCK = `ZQblockA${STAMP}`;
 const BLOCK_RENAMED = `ZQblockB${STAMP}`;
-const MARKERS = [ROLE, GOAL, GOAL_RENAMED, BLOCK, BLOCK_RENAMED]; // each ends in the run timestamp, so a chance hit inside base64 is not possible
+const SIGNER = `ZQsigner${STAMP}`; // WO-035
+const MARKERS = [ROLE, GOAL, GOAL_RENAMED, BLOCK, BLOCK_RENAMED, SIGNER]; // each ends in the run timestamp, so a chance hit inside base64 is not possible
 
-const SEALED_PATHS = /\/api\/(goals|roles|schedule|review|profile|patterns|year-review|notifications)/;
+const SEALED_PATHS = /\/api\/(goals|roles|schedule|review|profile|patterns|year-review|notifications|mission-statement)/;
 
 const sentBodies: string[] = [];
 const receivedBodies: string[] = [];
@@ -300,6 +301,30 @@ test("9b a deleted goal and its schedule entry stay gone after reload and re-log
   await gone();
   // the free-text entry the owner did not delete is still there
   await expect(page.getByText(BLOCK_RENAMED).locator("visible=true").first()).toBeVisible();
+});
+
+test("9c signed name is sealed: saved, shown on profile, never on the wire (WO-035)", async ({ page }) => {
+  watch(page);
+  await signIn(page, EMAIL, NEW_PASSWORD);
+  await page.goto("/mission-statement");
+  await page.getByRole("button", { name: "Begin" }).click();
+  for (let i = 0; i < 3; i++) {
+    await page.locator("textarea").first().fill(`answer ${i}`);
+    await page.getByRole("button", { name: "Continue" }).click();
+  }
+  await page.getByRole("button", { name: "Review draft" }).click();
+  await page.getByRole("button", { name: "Sign and commit" }).click();
+  await page.getByLabel("Your signature").fill(SIGNER);
+  const saved = page.waitForResponse((r) => r.url().includes("/api/mission-statement") && r.request().method() === "POST");
+  await page.getByRole("button", { name: "Commit" }).click();
+  expect((await saved).status()).toBe(200);
+  await expect(page.getByText("Committed")).toBeVisible();
+  await page.goto("/profile");
+  await expect(page.getByText(`Signed by ${SIGNER}`).locator("visible=true").first()).toBeVisible({ timeout: 20000 });
+  // WO-035 A2: feedback is accepted, but its text and the email never reach the server log
+  // (checked by grepping the server log for ZQfeedbackWO035 and the email after the run).
+  const fb = await page.evaluate(async (e) => (await fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ category: "idea", message: `ZQfeedbackWO035 ${e}`, metadata: { pathname: "/profile", secret: "ZQmetaWO035" } }) })).status, EMAIL);
+  expect(fb).toBe(200);
 });
 
 test("10 nothing readable crossed the wire in either direction", async () => {

@@ -63,7 +63,7 @@ export async function GET() {
     roles: rolesOut,
     missionStatement: latestStatement
       ? {
-          signedName: latestStatement.signedName,
+          signedName: toWire(latestStatement.signedName),
           signedAt: latestStatement.signedAt,
           contentEncrypted: Buffer.from(
             latestStatement.contentEncrypted,

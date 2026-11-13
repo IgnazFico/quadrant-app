@@ -61,6 +61,8 @@ export function sealedField(maxChars: number) {
 export const goalTitleSchema = sealedField(GOAL_TITLE_MAX);
 export const scheduleTitleSchema = sealedField(SCHEDULE_TITLE_MAX);
 export const roleLabelSchema = sealedField(ROLE_LABEL_MAX);
+export const SIGNED_NAME_MAX = 120;
+export const signedNameSchema = sealedField(SIGNED_NAME_MAX);
 
 /** Most roles one request may create (WO-050, SEC-003: bound the array). */
 export const MAX_ROLES_PER_REQUEST = 20;
