@@ -1,21 +1,7 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { auth } from "../../../../lib/auth";
 import { prisma } from "../../../../lib/prisma";
-import { roleLabelSchema, serializeRole } from "../../../../lib/sealed";
-
-const createRolesSchema = z.object({
-  roles: z
-    .array(
-      z.object({
-        domain: z.string().min(1).max(30),
-        // Base64 ciphertext sealed in the browser (WO-029); 60-character
-        // limit is enforced there, the server bounds the size.
-        label: roleLabelSchema,
-      }),
-    )
-    .min(1),
-});
+import { createRolesSchema, serializeRole } from "../../../../lib/sealed";
 
 export async function GET() {
   const session = await auth();
