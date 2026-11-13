@@ -87,10 +87,13 @@ test.describe("top-bar Feedback button", () => {
     await page.goto("/goals");
     await expect(btn(page)).toBeHidden();
     await page.setViewportSize({ width: 1280, height: 800 });
-    // /mission-statement is left out: a user who finished the mission is redirected to /goals, so it depends on DB state.
-    for (const route of ["/onboarding", "/year-review"]) {
+    for (const route of ["/onboarding/roles", "/year-review"]) {
       await page.goto(route);
+      await expect(page).toHaveURL(new RegExp(route + "$")); // a redirect would make the check vacuous
       await expect(btn(page)).toHaveCount(0);
     }
   });
+
+  // shortcut: the seeded user has finished the mission step, so /mission-statement redirects; covering it needs a fresh account.
+  test.skip("AC7 /mission-statement: no Feedback button (needs a fresh account)", async () => {});
 });
