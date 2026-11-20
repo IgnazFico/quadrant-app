@@ -132,6 +132,7 @@ export function FeedbackModal({
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="What felt confusing, satisfying, or missing while planning your week?"
+                autoFocus
                 rows={4}
                 required
                 className="w-full resize-none rounded-xl border border-[#D1D5DB] p-3 text-xs text-[#1F2937] placeholder-[#9CA3AF] focus:border-[#F97316] focus:outline-none focus:ring-1 focus:ring-[#F97316]"
