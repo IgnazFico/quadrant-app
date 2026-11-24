@@ -48,10 +48,10 @@ export function PresenceGather({ year, month, count, labels, from = count, curre
         )}
       </svg>
       <p className="pg-line">
-        {count === 0 ? "Your first day this month will appear here when you open Quadrant."
+        {count === 0 ? (current ? "Your first day this month will appear here when you open Quadrant." : `You did not open Quadrant on any day in ${name}.`)
           : <><b>{count}</b> separate {count === 1 ? "day" : "days"} you opened Quadrant {current ? "this month" : `in ${name}`}.</>}
       </p>
-      {count === 0 && <p className="pg-cap">A new month starts with an open sky. Nothing from last month was lost.</p>}
+      {count === 0 && current && <p className="pg-cap">A new month starts with an open sky. Nothing from last month was lost.</p>}
     </div>
   );
 }
