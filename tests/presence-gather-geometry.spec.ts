@@ -23,3 +23,12 @@ test("31 days stay inside the fixed scale", () => {
   const far = Math.max(...gatherStars(31, seed).map((p) => Math.hypot(p.x - S / 2, p.y - S / 2)));
   expect(far).toBeLessThan(0.455 * S + 3);
 });
+
+// WO-098: the ring must share the circle's centre (stars come in opposite pairs).
+test("even star counts are centred on the circle", () => {
+  for (let seed = 24000; seed < 24100; seed++) for (const n of [8, 12, 20, 30]) {
+    const st = gatherStars(n, seed);
+    const cx = st.reduce((a, p) => a + p.x, 0) / n, cy = st.reduce((a, p) => a + p.y, 0) / n;
+    expect(Math.hypot(cx - S / 2, cy - S / 2)).toBeLessThan(0.01 * S);
+  }
+});

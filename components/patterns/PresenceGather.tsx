@@ -42,8 +42,8 @@ export function PresenceGather({ year, month, count, labels, from = count, curre
                 </g>
               );
             })}
-            <text key={count} className="pg-num" x={S / 2} y={S / 2 + 2} textAnchor="middle" fontFamily="var(--font-serif)" fontWeight="700" fontSize="54" fill="#8A331F">{count}</text>
-            <text x={S / 2} y={S / 2 + 22} textAnchor="middle" fontFamily="var(--font-mono)" fontSize="10" letterSpacing="1.2" fill="#A6482E">{count === 1 ? "DAY" : "DAYS"}</text>
+            <text key={count} className="pg-num" x={S / 2} y={S / 2 - 8} textAnchor="middle" dominantBaseline="central" fontFamily="var(--font-serif)" fontWeight="700" fontSize="54" fill="#8A331F">{count}</text>
+            <text x={S / 2} y={S / 2 + 24} textAnchor="middle" dominantBaseline="central" fontFamily="var(--font-mono)" fontSize="10" letterSpacing="1.2" fill="#A6482E">{count === 1 ? "DAY" : "DAYS"}</text>
           </>
         )}
       </svg>

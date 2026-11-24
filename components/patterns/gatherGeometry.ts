@@ -15,7 +15,7 @@ export function gatherStars(count: number, seed: number, S = GATHER_SIZE): Gathe
   const rot = jitter(seed, 0) * TAU;
   return Array.from({ length: Math.max(0, count) }, (_, k) => {
     const r = R0 * S + c * Math.sqrt(k) + jitter(seed, 2 * k + 1) * 2.2;
-    const a = rot + k * GOLDEN;
+    const a = rot + (k >> 1) * GOLDEN + (k & 1) * Math.PI; // antipodal pairs keep the ring centred on the circle
     const s = 6 + jitter(seed, 2 * k + 2) * 1.2; // newest star is enlarged at draw time, so earlier stars never change
     return { x: S / 2 + r * Math.cos(a), y: S / 2 + r * Math.sin(a), s };
   });
