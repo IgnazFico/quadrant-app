@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "../../../../lib/auth";
 import { prisma } from "../../../../lib/prisma";
+import { signedNameSchema } from "../../../../lib/sealed";
 
 const bodySchema = z.object({
   contentEncrypted: z.string().min(1), // base64 ciphertext, encrypted client-side
-  signedName: z.string().min(1).max(120),
+  signedName: signedNameSchema, // base64 ciphertext, parses to a Buffer
 });
 
 export async function POST(req: Request) {

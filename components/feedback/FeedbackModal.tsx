@@ -91,7 +91,7 @@ export function FeedbackModal({
             </div>
             <h4 className="font-sans text-sm font-bold text-[#1F2937]">Thank you for your voice</h4>
             <p className="mt-1 font-sans text-xs text-[#6B7280]">
-              Your reflection has been sent to the core team.
+              Your feedback has been emailed to the team.
             </p>
           </div>
         ) : (
@@ -132,6 +132,7 @@ export function FeedbackModal({
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="What felt confusing, satisfying, or missing while planning your week?"
+                autoFocus
                 rows={4}
                 required
                 className="w-full resize-none rounded-xl border border-[#D1D5DB] p-3 text-xs text-[#1F2937] placeholder-[#9CA3AF] focus:border-[#F97316] focus:outline-none focus:ring-1 focus:ring-[#F97316]"

@@ -339,7 +339,7 @@ async function runWeeklySimulation() {
       data: {
         userId: user.id,
         contentEncrypted: Buffer.from(encrypted),
-        signedName: "Simulated User",
+        signedName: Buffer.from(await encryptField("Simulated User", masterKey)),
         version: 1,
       },
     });

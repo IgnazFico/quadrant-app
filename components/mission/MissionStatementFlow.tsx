@@ -3,6 +3,7 @@
 import { useState, type AnimationEvent } from "react";
 import { useAuthStore } from "../../store/authStore";
 import { encryptField, toBase64 } from "../../lib/crypto";
+import { sealText } from "../../lib/sealedFields";
 import Link from "next/link";
 import { QuadrantMark } from "../brand/QuadrantMark";
 import { signatureFont } from "../../lib/signatureFont";
@@ -70,7 +71,10 @@ export function MissionStatementFlow() {
       const res = await fetch("/api/mission-statement", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contentEncrypted, signedName }),
+        body: JSON.stringify({
+          contentEncrypted,
+          signedName: await sealText(signedName.trim(), masterKey),
+        }),
       });
 
       if (!res.ok) {

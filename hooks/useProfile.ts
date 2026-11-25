@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuthStore } from "../store/authStore";
 import { decryptField, fromBase64 } from "../lib/crypto";
-import { openLabel } from "../lib/sealedFields";
+import { openLabel, openText } from "../lib/sealedFields";
 
 // GROWTH-RING-REDESIGN: was `Ring = { year, votesLogged, sealed }`. The badge now
 // draws this year's constellation: goals finished per month, sized against the
@@ -62,7 +62,8 @@ export function useProfile() {
 
     if (body.missionStatement) {
       setStatementMeta({
-        signedName: body.missionStatement.signedName,
+        // Sealed; "" when it cannot be opened (legacy readable row, no key).
+        signedName: (await openText(body.missionStatement.signedName, masterKey)) ?? "",
         signedAt: body.missionStatement.signedAt,
       });
       if (masterKey) {
