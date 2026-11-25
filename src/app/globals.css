@@ -129,8 +129,9 @@ body {
 .toast-out { animation: toast-out var(--m-sheet-out) var(--ease-in) forwards; }
 
 /* Role card: the list stays mounted (inert when closed) and unfolds via grid rows. */
-.role-body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows var(--m-base) var(--ease-out); }
-.role-body[data-open="true"] { grid-template-rows: 1fr; }
+/* Closed: visibility:hidden (after the fold-up) drops hidden inputs from layout measuring and focus. */
+.role-body { display: grid; grid-template-rows: 0fr; visibility: hidden; transition: grid-template-rows var(--m-base) var(--ease-out), visibility 0s linear var(--m-base); }
+.role-body[data-open="true"] { grid-template-rows: 1fr; visibility: visible; transition-delay: 0s; }
 
 /* Still version: every animation and transition jumps to its end state. */
 @media (prefers-reduced-motion: reduce) {
