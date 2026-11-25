@@ -206,3 +206,4 @@ body {
 .chip-enter { animation: chip-enter calc(var(--m-base) * var(--m-scale)) var(--ease-out) both; }
 .chip-leave { animation: row-fade-in calc(var(--m-fast) * var(--m-scale)) var(--ease-in) reverse both; }
 .chip-hint { animation: row-fade-in calc(var(--m-fast) * var(--m-scale)) var(--ease-out) both; }
+.btn-fade { animation: page-enter calc(var(--m-page) * var(--m-scale)) var(--ease-out) both; }

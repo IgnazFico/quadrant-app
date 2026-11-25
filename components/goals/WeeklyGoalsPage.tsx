@@ -59,6 +59,10 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
   // Ids that play their arrival (set only by a tap result, never on load) or exit.
   const [entering, setEntering] = useState<string | null>(null);
   const [leavingId, setLeavingId] = useState<string | null>(null);
+  // WO-110 item 7: Today blocks folding away, the goal whose clock fades back, the empty line arriving.
+  const [leavingBlocks, setLeavingBlocks] = useState<string[]>([]);
+  const [unlinkedGoal, setUnlinkedGoal] = useState<string | null>(null);
+  const [emptyEntering, setEmptyEntering] = useState(false);
   // 600 ms = --m-sheet-out (200 ms) x --m-scale (3); keep in step with globals.css.
   const { closing, requestClose, reopen } = useExitDelay(() => {
     setFormOpen(false);
@@ -77,6 +81,19 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
       void deleteGoal(goalId, roleId);
       setLeavingId(null);
     }, 600);
+  }
+
+  function removeBlock(blockId: string, goalId: string | null) {
+    if (leavingBlocks.includes(blockId)) return;
+    const finish = () => {
+      if (goalId) setUnlinkedGoal(goalId);
+      if (todayBlocks.length === 1) setEmptyEntering(true);
+      void deleteBlock(blockId);
+      setLeavingBlocks((l) => l.filter((x) => x !== blockId));
+    };
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return finish();
+    setLeavingBlocks((l) => [...l, blockId]);
+    setTimeout(finish, 600); // = --m-sheet-out (200 ms) x --m-scale (3)
   }
 
   function openScheduleForm(roleId: string, goalId?: string) {
@@ -203,12 +220,14 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
 
           <div className="rounded-[14px] bg-[#F3F4F6] px-3.5 pb-1.5 pt-3.5">
             {todayBlocks.length === 0 ? (
-              <p className="px-1 pb-3.5 text-[13px] text-[#9CA3AF]">
-                Nothing scheduled yet — pull a goal into today below.
-              </p>
+              <div className="row-wrap" data-entering={emptyEntering} onAnimationEnd={(e) => e.animationName === "row-unfold" && setEmptyEntering(false)}>
+                <p className="px-1 pb-3.5 text-[13px] text-[#9CA3AF]">
+                  Nothing scheduled yet — pull a goal into today below.
+                </p>
+              </div>
             ) : (
               todayBlocks.map((b) => (
-                <div key={b.id} className="row-wrap" data-entering={entering === b.id} onAnimationEnd={endEntering}>
+                <div key={b.id} className="row-wrap" data-entering={entering === b.id} data-leaving={leavingBlocks.includes(b.id)} inert={leavingBlocks.includes(b.id)} onAnimationEnd={endEntering}>
                 <div className="mb-3 flex gap-2.5">
                   <span className="w-11 shrink-0 pt-0.5 font-mono text-[11px] text-[#6B7280]">
                     {b.hour != null ? formatHour(b.hour) : ""}
@@ -226,7 +245,7 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
                       </div>
                     </div>
                     <button
-                      onClick={() => deleteBlock(b.id)}
+                      onClick={() => removeBlock(b.id, b.goalId)}
                       className="text-[#C9CBCF] hover:text-[#9CA3AF]"
                     >
                       <svg
@@ -252,7 +271,7 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
           {!formOpen ? (
             <button
               onClick={() => openScheduleForm(roles[0]?.id ?? "")}
-              className="press page-enter mt-2.5 w-full rounded-lg border border-dashed border-[#D8D3C8] py-2.5 text-xs font-medium text-[#8A8579] hover:bg-[#EFEBE1]"
+              className="press btn-fade mt-2.5 w-full rounded-lg border border-dashed border-[#D8D3C8] py-2.5 text-xs font-medium text-[#8A8579] hover:bg-[#EFEBE1]"
             >
               + Schedule something today
             </button>
@@ -449,7 +468,8 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
                         ) : (
                         <button
                           onClick={() => openScheduleForm(role.id, g.id)}
-                          className="shrink-0 p-0.5 text-[#C9CBCF] hover:text-[#F97316]"
+                          onAnimationEnd={() => setUnlinkedGoal(null)}
+                          className={`${unlinkedGoal === g.id ? "chip-fade " : ""}shrink-0 p-0.5 text-[#C9CBCF] hover:text-[#F97316]`}
                           aria-label="Add to today"
                         >
                           <svg
