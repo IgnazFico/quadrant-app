@@ -178,3 +178,31 @@ body {
 /* Page enter (WO-061): content fades in once mounted; never waits, no slide. */
 @keyframes page-enter { from { opacity: 0 } to { opacity: 1 } }
 .page-enter { animation: page-enter var(--m-page) var(--ease-out) both; }
+
+/* WO-108 (design WO-109): rows unfold in/out, schedule form opens/closes, strike draws, badge chips.
+   Owner: these motions run 3x slower than the base tokens. --m-scale is used only here. */
+:root { --m-scale: 3; }
+@keyframes row-unfold { from { grid-template-rows: 0fr } to { grid-template-rows: 1fr } }
+@keyframes row-fade-in { from { opacity: 0 } to { opacity: 1 } }
+.row-wrap { display: grid; grid-template-rows: 1fr; }
+.row-wrap > * { min-height: 0; }
+.row-wrap[data-entering="true"] { animation: row-unfold calc(var(--m-base) * var(--m-scale)) var(--ease-out) both; }
+.row-wrap[data-entering="true"] > * { overflow: hidden; animation: row-fade-in calc(var(--m-base) * var(--m-scale)) var(--ease-out) both; }
+.row-wrap[data-leaving="true"] { animation: row-unfold calc(var(--m-sheet-out) * var(--m-scale)) var(--ease-in) reverse both; }
+.row-wrap[data-leaving="true"] > * { overflow: hidden; animation: row-fade-in calc(var(--m-fast) * var(--m-scale)) var(--ease-in) reverse both; }
+.sched-form { display: grid; animation: row-unfold calc(var(--m-base) * var(--m-scale)) var(--ease-out) both; }
+.sched-form > .sched-inner { min-height: 0; overflow: hidden; animation: row-fade-in calc(var(--m-fast) * var(--m-scale)) var(--ease-out) both; }
+.sched-form[data-closing="true"] { animation: row-unfold calc(var(--m-sheet-out) * var(--m-scale)) var(--ease-in) reverse both; }
+.sched-form[data-closing="true"] > .sched-inner { animation: row-fade-in calc(var(--m-fast) * var(--m-scale)) var(--ease-in) reverse both; }
+.chip-fade { animation: row-fade-in calc(var(--m-fast) * var(--m-scale)) var(--ease-out) both; }
+.title-wrap { position: relative; flex: 1; min-width: 0; display: flex; }
+.goal-strike { position: absolute; left: 2px; top: 2px; bottom: 2px; max-width: calc(100% - 4px); overflow: hidden; white-space: pre; color: transparent; pointer-events: none; font-size: 13.5px; display: flex; align-items: center; }
+.goal-strike::after { content: ""; position: absolute; left: 0; right: 0; top: 52%; height: 1px; background: #B3AFA6; transform: scaleX(0); transform-origin: left center; transition: transform calc(var(--m-base) * var(--m-scale)) var(--ease-out); }
+[data-done="true"] .goal-strike::after { transform: scaleX(1); }
+.title-wrap:focus-within .goal-strike { visibility: hidden; }
+[data-done="true"] .goal-title:focus { text-decoration: line-through; }
+.badge-tile.press { transition: border-color calc(var(--m-fast) * var(--m-scale)) var(--ease-out), background-color calc(var(--m-fast) * var(--m-scale)) var(--ease-out), scale var(--m-press) var(--ease-out); }
+@keyframes chip-enter { from { opacity: 0; transform: translateY(4px) } to { opacity: 1; transform: none } }
+.chip-enter { animation: chip-enter calc(var(--m-base) * var(--m-scale)) var(--ease-out) both; }
+.chip-leave { animation: row-fade-in calc(var(--m-fast) * var(--m-scale)) var(--ease-in) reverse both; }
+.chip-hint { animation: row-fade-in calc(var(--m-fast) * var(--m-scale)) var(--ease-out) both; }
