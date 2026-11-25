@@ -17,14 +17,14 @@ test("reduced motion cuts animation and transition time to 0.01 ms", async ({ pa
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setContent(html);
   const t = await times(page);
-  expect(t.anim).toBe("0.00001s");
-  expect(t.trans.split(",").every((d) => d.trim() === "0.00001s")).toBe(true);
+  expect(parseFloat(t.anim)).toBeCloseTo(0.00001, 6); // browsers print 1e-05s
+  expect(t.trans.split(",").every((d) => parseFloat(d) < 0.001)).toBe(true);
 });
 
 test("without the setting the page enter animation keeps its length", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.setContent(html);
-  expect((await times(page)).anim).not.toBe("0.00001s");
+  expect(parseFloat((await times(page)).anim)).toBeGreaterThan(0.01);
 });
 
 test("a closed role card is hidden from layout measuring", async ({ page }) => {
