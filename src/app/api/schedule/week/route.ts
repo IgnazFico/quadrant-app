@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "../../../../../lib/auth";
 import { prisma } from "../../../../../lib/prisma";
 import { startOfWeek, addDays } from "../../../../../lib/week";
+import { serializeBlock } from "../../../../../lib/sealed";
 
 /** GET /api/schedule/week?weekStart=YYYY-MM-DD (defaults to the current week) */
 export async function GET(req: Request) {
@@ -25,5 +26,5 @@ export async function GET(req: Request) {
     orderBy: [{ day: "asc" }, { hour: "asc" }],
   });
 
-  return NextResponse.json({ weekStart, blocks });
+  return NextResponse.json({ weekStart, blocks: blocks.map(serializeBlock) });
 }

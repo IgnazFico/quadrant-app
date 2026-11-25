@@ -1,4 +1,5 @@
 import { prisma } from "./prisma";
+import { toWire } from "./sealed";
 import { weekdayInTimeZone } from "./week";
 
 function monthRange(year: number, month: number) {
@@ -77,7 +78,7 @@ export async function getPatterns(userId: string, year: number, month: number, t
   const balance = roles
     .map((r) => {
       const done = r.goals.filter((g) => g.status === "DONE").length;
-      return { roleId: r.id, label: r.label, domain: r.domain, completed: done };
+      return { roleId: r.id, label: toWire(r.label), domain: r.domain, completed: done };
     })
     .filter((r) => r.completed > 0)
     .map((r) => ({ ...r, share: totalCompleted ? Math.round((r.completed / totalCompleted) * 100) : 0 }))

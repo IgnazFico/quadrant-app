@@ -133,7 +133,7 @@ function ReflectDialog({ goal, role, disabled, onClose, onSubmit }: ReflectModal
 
         {disabled && (
           <p className="rounded-lg bg-[#FDECEC] px-3 py-2 text-xs text-[#C0392B]">
-            Your session key isn&apos;t available. Log in again to write a reflection.
+            Your session key is unavailable. Sign in again to unlock your entries.
           </p>
         )}
 

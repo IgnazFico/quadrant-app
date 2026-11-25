@@ -10,6 +10,7 @@ import {
   fromBase64,
   toBase64,
 } from "../lib/crypto";
+import { openRolesWithGoals } from "../lib/sealedFields";
 
 export type Choice = "CARRY" | "CANCEL";
 export type ReviewEntry = {
@@ -101,8 +102,13 @@ export function useReview() {
         setDue(Boolean(body.due));
         setOpen(Boolean(body.open));
         setEarly(Boolean(body.early));
+        // WO-029: role labels and goal titles arrive sealed; open them first.
+        const openRoles = await openRolesWithGoals<ReviewGoal, ReviewRole>(
+          body.roles,
+          masterKeyRef.current,
+        );
         const withReasons: ReviewRole[] = await Promise.all(
-          body.roles.map(async (r: ReviewRole) => {
+          openRoles.map(async (r: ReviewRole) => {
             const goalsWithReasons = await Promise.all(
               r.goals.map(async (g) => {
                 if (!g.reviewEntry || !masterKeyRef.current) return g;

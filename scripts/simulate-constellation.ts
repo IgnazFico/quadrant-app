@@ -71,15 +71,15 @@ async function main() {
       data: {
         userId: user.id,
         domain: "health",
-        label: "Runner",
+        label: Buffer.from("Runner"),
         createdAt: new Date(Date.UTC(older, 4, 1)),
       },
     });
     const newer = await prisma.role.create({
-      data: { userId: user.id, domain: "family", label: "Parent" },
+      data: { userId: user.id, domain: "family", label: Buffer.from("Parent") },
     });
     const stranger = await prisma.role.create({
-      data: { userId: other.id, domain: "career", label: "Stranger" },
+      data: { userId: other.id, domain: "career", label: Buffer.from("Stranger") },
     });
 
     await goals(runner.id, [

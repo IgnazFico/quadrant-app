@@ -1,18 +1,7 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { auth } from "../../../../lib/auth";
 import { prisma } from "../../../../lib/prisma";
-
-const createRolesSchema = z.object({
-  roles: z
-    .array(
-      z.object({
-        domain: z.string().min(1).max(30),
-        label: z.string().min(1).max(60),
-      }),
-    )
-    .min(1),
-});
+import { createRolesSchema, serializeRole } from "../../../../lib/sealed";
 
 export async function GET() {
   const session = await auth();
@@ -26,7 +15,7 @@ export async function GET() {
     orderBy: [{ isFeatured: "desc" }, { createdAt: "asc" }],
   });
 
-  return NextResponse.json({ roles });
+  return NextResponse.json({ roles: roles.map(serializeRole) });
 }
 
 export async function POST(req: Request) {
@@ -57,5 +46,5 @@ export async function POST(req: Request) {
     ),
   );
 
-  return NextResponse.json({ roles: created });
+  return NextResponse.json({ roles: created.map(serializeRole) });
 }

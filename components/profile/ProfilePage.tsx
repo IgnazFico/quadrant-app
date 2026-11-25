@@ -8,6 +8,8 @@ import { NotificationBell } from "../notifications/NotificationBell";
 import { FeedbackModal } from "../feedback/FeedbackModal";
 import { YearBadge } from "../constellation/YearBadge";
 import { RoleBadgeTile } from "../constellation/RoleBadgeTile";
+import { useAuthStore } from "../../store/authStore";
+import { signOutAction } from "../../lib/authActions";
 import type { ProfileData, RoleBadge } from "../../hooks/useProfile";
 
 export function ProfilePage({ profile }: { profile: ProfileData }) {
@@ -15,6 +17,7 @@ export function ProfilePage({ profile }: { profile: ProfileData }) {
   const [flipped, setFlipped] = useState(false);
   const [barcode, setBarcode] = useState<number[]>([]);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const clearMasterKey = useAuthStore((s) => s.clearMasterKey);
 
   useEffect(() => {
     setBarcode(Array.from({ length: 14 }, () => 8 + Math.random() * 14));
@@ -322,6 +325,15 @@ export function ProfilePage({ profile }: { profile: ProfileData }) {
           isOpen={showFeedbackModal}
           onClose={() => setShowFeedbackModal(false)}
         />
+
+        <form action={signOutAction} onSubmit={() => clearMasterKey()} className="mt-3">
+          <button
+            type="submit"
+            className="flex w-full items-center justify-center rounded-xl border border-[#ECE8DF] bg-white px-4 py-3.5 text-sm font-semibold text-[#C0392B] transition hover:bg-[#FDECEC]"
+          >
+            Log out
+          </button>
+        </form>
 
         <div className="mt-4 flex gap-2 rounded-lg bg-[#F3F4F6] px-3 py-2.5 text-[11px] leading-relaxed text-[#9CA3AF]">
           <svg

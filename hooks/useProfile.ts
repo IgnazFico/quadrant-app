@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuthStore } from "../store/authStore";
 import { decryptField, fromBase64 } from "../lib/crypto";
+import { openLabel, openText } from "../lib/sealedFields";
 
 // GROWTH-RING-REDESIGN: was `Ring = { year, votesLogged, sealed }`. The badge now
 // draws this year's constellation: goals finished per month, sized against the
@@ -52,11 +53,17 @@ export function useProfile() {
     }
     const body = await res.json();
     setUser(body.user);
-    setRoles(body.roles);
+    // WO-029: role labels arrive sealed.
+    setRoles(
+      await Promise.all(
+        (body.roles as RoleBadge[]).map((r) => openLabel(r, masterKey)),
+      ),
+    );
 
     if (body.missionStatement) {
       setStatementMeta({
-        signedName: body.missionStatement.signedName,
+        // Sealed; "" when it cannot be opened (legacy readable row, no key).
+        signedName: (await openText(body.missionStatement.signedName, masterKey)) ?? "",
         signedAt: body.missionStatement.signedAt,
       });
       if (masterKey) {

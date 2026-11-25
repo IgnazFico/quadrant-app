@@ -48,7 +48,10 @@ export default defineConfig({
         '**/reflect-desktop.spec.ts',
         '**/identity-desktop.spec.ts',
         '**/year-review-ceremony.spec.ts',
+        // WO-033: needs a server on a known clock and the seeded user, like the ceremony spec.
+        '**/year-review-guard.spec.ts',
         '**/week-next-planning.spec.ts',
+        '**/sealed-titles.spec.ts', // WO-029: needs a real backend and creates an account
       ],
       use: { ...devices['Desktop Chrome'] },
       fullyParallel: true,

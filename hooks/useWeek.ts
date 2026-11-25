@@ -10,6 +10,17 @@ import {
   toDateKey,
 } from "../lib/week";
 import { ANYTIME_PER_DAY } from "../lib/scheduleRules";
+import { useAuthStore } from "../store/authStore";
+import { showToast } from "../store/toastStore";
+import {
+  LOCKED_CODE,
+  LOCKED_MESSAGE,
+  isUnreadable,
+  openBlock,
+  openRolesWithGoals,
+  sealText,
+} from "../lib/sealedFields";
+import { GOAL_TITLE_MAX, SCHEDULE_TITLE_MAX } from "../lib/sealed";
 
 export type GoalStatus = "IN_PROGRESS" | "DONE" | "MISSED";
 
@@ -100,6 +111,17 @@ export function useWeek() {
   }, [thisWeekKey, view]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [blocks, setBlocks] = useState<ScheduleBlock[]>([]);
+  // WO-029: goal titles, schedule titles and role labels are sealed with the
+  // master key. No key in this tab means they cannot be opened or saved.
+  const masterKey = useAuthStore((s) => s.masterKey);
+  const keyRef = useRef(masterKey);
+  const blocksRef = useRef<ScheduleBlock[]>([]);
+  // Refs are written in an effect, not during render. Declared before the load
+  // effect below, so on a key change the ref is current before load() reads it.
+  useEffect(() => {
+    keyRef.current = masterKey;
+    blocksRef.current = blocks;
+  }, [masterKey, blocks]);
   const [loading, setLoading] = useState(true);
   /** False until the first week has loaded; lets views keep their header
    *  (and the week toggle) on screen while switching weeks. */
@@ -128,8 +150,14 @@ export function useWeek() {
       const goalsBody = await goalsRes.json();
       const weekBody = await weekRes.json();
       if (id !== latestLoad.current) return;
-      setRoles(goalsBody.roles);
-      setBlocks(weekBody.blocks);
+      const key = keyRef.current;
+      const [openRoles, openBlocks] = await Promise.all([
+        openRolesWithGoals<Goal, Role>(goalsBody.roles, key),
+        Promise.all((weekBody.blocks as ScheduleBlock[]).map((b) => openBlock(b, key))),
+      ]);
+      if (id !== latestLoad.current) return;
+      setRoles(openRoles);
+      setBlocks(openBlocks);
     } catch {
       if (id !== latestLoad.current) return;
       setError("Couldn't load your week — try refreshing.");
@@ -141,9 +169,11 @@ export function useWeek() {
     }
   }, []);
 
+  // Reload when the key appears or changes too (sign-in in this tab), so
+  // placeholders turn into text without a manual refresh.
   useEffect(() => {
     load(weekStart);
-  }, [weekStart, load]);
+  }, [weekStart, load, masterKey]);
 
   // ---------- Derived lookups (by day index within `days`) ----------
   const blocksForDay = useCallback(
@@ -241,13 +271,33 @@ export function useWeek() {
     [],
   );
 
-  const commitGoalTitle = useCallback(async (goalId: string, title: string) => {
-    await fetch(`/api/goals/${goalId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title }),
-    });
-  }, []);
+  const commitGoalTitle = useCallback(
+    async (goalId: string, title: string) => {
+      const text = title.trim();
+      // Never write the placeholder (or an empty box) back over a real title.
+      if (!text || isUnreadable(text)) {
+        void load(weekStart);
+        return;
+      }
+      const key = keyRef.current;
+      if (!key) {
+        showToast(LOCKED_MESSAGE);
+        void load(weekStart);
+        return;
+      }
+      if (text.length > GOAL_TITLE_MAX) {
+        showToast(`Goal titles can be up to ${GOAL_TITLE_MAX} characters.`);
+        void load(weekStart);
+        return;
+      }
+      await fetch(`/api/goals/${goalId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: await sealText(text, key) }),
+      });
+    },
+    [load, weekStart],
+  );
 
   const deleteGoal = useCallback(async (goalId: string, roleId: string) => {
     setRoles((prev) =>
@@ -263,13 +313,30 @@ export function useWeek() {
 
   const addGoal = useCallback(
     async (roleId: string, title: string): Promise<Goal | null> => {
+      const text = title.trim();
+      const key = keyRef.current;
+      if (!key) {
+        showToast(LOCKED_MESSAGE);
+        return null;
+      }
+      if (!text || isUnreadable(text)) return null;
+      if (text.length > GOAL_TITLE_MAX) {
+        showToast(`Goal titles can be up to ${GOAL_TITLE_MAX} characters.`);
+        return null;
+      }
       const res = await fetch("/api/goals", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ roleId, title, weekStart: dayKey(weekStart) }),
+        body: JSON.stringify({
+          roleId,
+          title: await sealText(text, key),
+          weekStart: dayKey(weekStart),
+        }),
       });
       if (!res.ok) return null;
-      const { goal } = await res.json();
+      const body = await res.json();
+      // The server returns the ciphertext it stored; the text is what we sent.
+      const goal: Goal = { ...body.goal, title: text };
       setRoles((prev) =>
         prev.map((r) =>
           r.id === roleId ? { ...r, goals: [...r.goals, goal] } : r,
@@ -283,13 +350,25 @@ export function useWeek() {
   // ---------- Schedule block mutations ----------
   const createBlock = useCallback(
     async (input: CreateBlockInput): Promise<MutationResult> => {
+      const key = keyRef.current;
+      if (!key) return { ok: false, error: LOCKED_MESSAGE, code: LOCKED_CODE };
+      const text = input.title.trim();
+      if (!text || isUnreadable(text)) {
+        return { ok: false, error: "Give this block a short description." };
+      }
+      if (text.length > SCHEDULE_TITLE_MAX) {
+        return {
+          ok: false,
+          error: `Schedule titles can be up to ${SCHEDULE_TITLE_MAX} characters.`,
+        };
+      }
       const res = await fetch("/api/schedule", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           roleId: input.roleId,
           goalId: input.goalId,
-          title: input.title,
+          title: await sealText(text, key),
           day: dayKey(input.day),
           hour: input.isPriority ? null : input.hour,
           isPriority: input.isPriority,
@@ -304,7 +383,8 @@ export function useWeek() {
           existingBlockId: body.blockId ?? null,
         };
       }
-      const { block } = await res.json();
+      const body = await res.json();
+      const block = await openBlock<ScheduleBlock>(body.block, key);
       setBlocks((prev) => [...prev, block]);
       return { ok: true, block };
     },
@@ -313,12 +393,30 @@ export function useWeek() {
 
   const updateBlock = useCallback(
     async (id: string, data: UpdateBlockInput): Promise<MutationResult> => {
-      const { day, ...rest } = data;
+      const { day, title, ...rest } = data;
+      const key = keyRef.current;
+      let sealedTitle: string | undefined;
+      if (title !== undefined) {
+        // Only a title change needs the key; moving a block does not.
+        if (!key) return { ok: false, error: LOCKED_MESSAGE, code: LOCKED_CODE };
+        const text = title.trim();
+        if (!text || isUnreadable(text)) {
+          return { ok: false, error: "Give this block a short description." };
+        }
+        if (text.length > SCHEDULE_TITLE_MAX) {
+          return {
+            ok: false,
+            error: `Schedule titles can be up to ${SCHEDULE_TITLE_MAX} characters.`,
+          };
+        }
+        sealedTitle = await sealText(text, key);
+      }
       const res = await fetch(`/api/schedule/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...rest,
+          ...(sealedTitle !== undefined ? { title: sealedTitle } : {}),
           ...(day !== undefined ? { day: dayKey(day) } : {}),
         }),
       });
@@ -331,7 +429,21 @@ export function useWeek() {
           existingBlockId: body.blockId ?? null,
         };
       }
-      const { block } = await res.json();
+      const body = await res.json();
+      const opened = await openBlock<ScheduleBlock>(body.block, key);
+      // Keep text we already hold when the request did not change it, so a
+      // move in a tab without the key does not blank titles.
+      const before = blocksRef.current.find((b) => b.id === opened.id);
+      const block: ScheduleBlock = before
+        ? {
+            ...opened,
+            title: title !== undefined ? title.trim() : before.title,
+            role:
+              data.roleId && data.roleId !== before.roleId
+                ? opened.role
+                : before.role,
+          }
+        : opened;
       setBlocks((prev) => prev.map((b) => (b.id === block.id ? block : b)));
       return { ok: true, block };
     },
@@ -385,6 +497,8 @@ export function useWeek() {
     loading,
     loadedOnce,
     error,
+    /** True when this tab has no master key: titles show placeholders and cannot be saved. */
+    locked: !masterKey,
     blocksForDay,
     blockForGoal,
     timedBlockFor,

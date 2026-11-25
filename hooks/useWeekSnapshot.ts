@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import type { Role } from "./useWeek";
+import { useAuthStore } from "../store/authStore";
+import { openRolesWithGoals } from "../lib/sealedFields";
 
 export type WeekSnapshot = {
   /** Monday of the current week (UTC midnight), as the server resolved it. */
@@ -24,6 +26,8 @@ export function useWeekSnapshot(): WeekSnapshot {
     loading: true,
   });
 
+  const masterKey = useAuthStore((s) => s.masterKey);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -31,10 +35,15 @@ export function useWeekSnapshot(): WeekSnapshot {
         const res = await fetch("/api/goals");
         if (!res.ok) throw new Error();
         const body = await res.json();
+        // WO-029: role labels and goal titles arrive sealed.
+        const roles = await openRolesWithGoals<Role["goals"][number], Role>(
+          body.roles ?? [],
+          masterKey,
+        );
         if (!cancelled) {
           setState({
             weekStart: new Date(body.weekStart),
-            roles: body.roles ?? [],
+            roles,
             loading: false,
           });
         }
@@ -45,7 +54,7 @@ export function useWeekSnapshot(): WeekSnapshot {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [masterKey]);
 
   return state;
 }
