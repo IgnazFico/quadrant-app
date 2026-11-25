@@ -1,3 +1,4 @@
+import { PresenceGather } from "./PresenceGather";
 export type PatternsData = {
   year: number;
   month: number;
@@ -97,13 +98,8 @@ export function renderPatternCard(
           <path d="M12 21s-7-4.35-9.5-9A5.5 5.5 0 0 1 12 5a5.5 5.5 0 0 1 9.5 7c-2.5 4.65-9.5 9-9.5 9z" />
         </Icon>
         <Eyebrow color="#B4432A" tag={tag}>Presence</Eyebrow>
-        <div className="mb-1.5 font-serif text-[46px] font-bold leading-none" style={{ color: "#8A331F" }}>{data.presence.activeDaysCount}</div>
-        <p className="mb-4.5 text-[13px] font-medium" style={{ color: "#A6482E" }}>separate days you opened Quadrant {when}.</p>
-
-        <div className={`mb-4 grid grid-cols-7 gap-1.5 ${fill ? "max-w-[280px]" : ""}`}>
-          {data.presence.heatmap.map((d) => (
-            <div key={d.date} className="aspect-square rounded-[7px]" style={{ background: d.active ? "rgba(180,67,42,.75)" : "rgba(180,67,42,.12)" }} />
-          ))}
+        <div className="mb-4">
+          <PresenceGather year={data.year} month={data.month} count={data.presence.activeDaysCount} labels={data.presence.heatmap.filter((d) => d.active).map((d) => d.date)} current={isCurrentMonth(data)} />
         </div>
         <Caption color="#A6482E">A quiet record of when you showed up — nothing more.</Caption>
       </>
