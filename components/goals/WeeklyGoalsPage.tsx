@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useExitDelay } from "../../hooks/useExitDelay";
 import Link from "next/link";
 import { domainColor } from "../../lib/domainColors";
 import { NotificationBell } from "../notifications/NotificationBell";
@@ -55,7 +56,48 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
   const [formTime, setFormTime] = useState("09:00");
   const [scheduleError, setScheduleError] = useState<string | null>(null);
 
+  // Ids that play their arrival (set only by a tap result, never on load) or exit.
+  const [entering, setEntering] = useState<string | null>(null);
+  const [leavingId, setLeavingId] = useState<string | null>(null);
+  // WO-110 item 7: Today blocks folding away, the goal whose clock fades back, the empty line arriving.
+  const [leavingBlocks, setLeavingBlocks] = useState<string[]>([]);
+  const [unlinkedGoal, setUnlinkedGoal] = useState<string | null>(null);
+  const [emptyEntering, setEmptyEntering] = useState(false);
+  // 600 ms = --m-sheet-out (200 ms) x --m-scale (3); keep in step with globals.css.
+  const { closing, requestClose, reopen } = useExitDelay(() => {
+    setFormOpen(false);
+    setFormCustomTitle("");
+    setScheduleError(null);
+  }, 600);
+  const endEntering = (e: React.AnimationEvent) => {
+    if (e.animationName === "row-unfold") setEntering(null);
+  };
+
+  function removeGoal(goalId: string, roleId: string) {
+    if (leavingId) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return void deleteGoal(goalId, roleId);
+    setLeavingId(goalId);
+    setTimeout(() => {
+      void deleteGoal(goalId, roleId);
+      setLeavingId(null);
+    }, 600);
+  }
+
+  function removeBlock(blockId: string, goalId: string | null) {
+    if (leavingBlocks.includes(blockId)) return;
+    const finish = () => {
+      if (goalId) setUnlinkedGoal(goalId);
+      if (todayBlocks.length === 1) setEmptyEntering(true);
+      void deleteBlock(blockId);
+      setLeavingBlocks((l) => l.filter((x) => x !== blockId));
+    };
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return finish();
+    setLeavingBlocks((l) => [...l, blockId]);
+    setTimeout(finish, 600); // = --m-sheet-out (200 ms) x --m-scale (3)
+  }
+
   function openScheduleForm(roleId: string, goalId?: string) {
+    reopen();
     setFormRoleId(roleId);
     setFormGoalId(goalId ?? "");
     setFormOpen(true);
@@ -80,9 +122,8 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
       setScheduleError(result.error);
       return;
     }
-    setFormOpen(false);
-    setFormCustomTitle("");
-    setScheduleError(null);
+    setEntering(result.block.id);
+    requestClose();
   }
 
   const totalGoals = roles.reduce((a, r) => a + r.goals.length, 0);
@@ -179,12 +220,15 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
 
           <div className="rounded-[14px] bg-[#F3F4F6] px-3.5 pb-1.5 pt-3.5">
             {todayBlocks.length === 0 ? (
-              <p className="px-1 pb-3.5 text-[13px] text-[#9CA3AF]">
-                Nothing scheduled yet — pull a goal into today below.
-              </p>
+              <div className="row-wrap" data-entering={emptyEntering} onAnimationEnd={(e) => e.animationName === "row-unfold" && setEmptyEntering(false)}>
+                <p className="px-1 pb-3.5 text-[13px] text-[#9CA3AF]">
+                  Nothing scheduled yet — pull a goal into today below.
+                </p>
+              </div>
             ) : (
               todayBlocks.map((b) => (
-                <div key={b.id} className="mb-3 flex gap-2.5">
+                <div key={b.id} className="row-wrap" data-entering={entering === b.id} data-leaving={leavingBlocks.includes(b.id)} inert={leavingBlocks.includes(b.id)} onAnimationEnd={endEntering}>
+                <div className="mb-3 flex gap-2.5">
                   <span className="w-11 shrink-0 pt-0.5 font-mono text-[11px] text-[#6B7280]">
                     {b.hour != null ? formatHour(b.hour) : ""}
                   </span>
@@ -201,7 +245,7 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
                       </div>
                     </div>
                     <button
-                      onClick={() => deleteBlock(b.id)}
+                      onClick={() => removeBlock(b.id, b.goalId)}
                       className="text-[#C9CBCF] hover:text-[#9CA3AF]"
                     >
                       <svg
@@ -219,6 +263,7 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
                     </button>
                   </div>
                 </div>
+                </div>
               ))
             )}
           </div>
@@ -226,11 +271,13 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
           {!formOpen ? (
             <button
               onClick={() => openScheduleForm(roles[0]?.id ?? "")}
-              className="mt-2.5 w-full rounded-lg border border-dashed border-[#D8D3C8] py-2.5 text-xs font-medium text-[#8A8579] hover:bg-[#EFEBE1]"
+              className="press btn-fade mt-2.5 w-full rounded-lg border border-dashed border-[#D8D3C8] py-2.5 text-xs font-medium text-[#8A8579] hover:bg-[#EFEBE1]"
             >
               + Schedule something today
             </button>
           ) : (
+            <div className="sched-form" data-closing={closing}>
+            <div className="sched-inner">
             <div className="mt-2.5 flex flex-col gap-2 rounded-lg bg-white p-3">
               {scheduleError && (
                 <p className="rounded-lg bg-[#FDECEC] px-3 py-2 text-xs text-[#C0392B]">
@@ -286,10 +333,12 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
               )}
               <button
                 onClick={submitScheduleForm}
-                className="self-end rounded-md bg-[#F97316] px-4 py-2 text-xs font-semibold text-white hover:bg-[#EA6A0C]"
+                className="press self-end rounded-md bg-[#F97316] px-4 py-2 text-xs font-semibold text-white hover:bg-[#EA6A0C]"
               >
                 Add to today
               </button>
+            </div>
+            </div>
             </div>
           )}
         </section>
@@ -317,7 +366,7 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
               >
                 <button
                   onClick={() => setOpenRoleId(open ? null : role.id)}
-                  className="flex w-full items-center justify-between px-3.5 py-3"
+                  className="press flex w-full items-center justify-between px-3.5 py-3"
                 >
                   <div className="flex items-center gap-2.5">
                     <span className="text-[14.5px] font-semibold text-[#1F2937]">
@@ -338,13 +387,14 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    className={`shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
+                    className={`shrink-0 transition-transform duration-[220ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${open ? "rotate-180" : ""}`}
                   >
                     <polyline points="6 9 12 15 18 9" />
                   </svg>
                 </button>
 
-                {open && (
+                <div className="role-body" data-open={open} inert={!open}>
+                  <div className="min-h-0 overflow-hidden">
                   <div className="px-3.5 pb-3.5">
                     {planning && role.goals.length === 0 && (
                       <p className="px-0.5 pb-1 text-[12.5px] text-[#8A8579]">Nothing planned yet.</p>
@@ -352,49 +402,57 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
                     {role.goals.map((g) => (
                       <div
                         key={g.id}
+                        className="row-wrap"
+                        data-entering={entering === g.id}
+                        data-leaving={leavingId === g.id}
+                        inert={leavingId === g.id}
+                        onAnimationEnd={endEntering}
+                      >
+                      <div
+                        data-done={g.status === "DONE"}
                         className="mb-1.5 flex items-center gap-2 rounded-lg bg-white py-2 pl-2.5 pr-2"
                       >
                         {!planning && (
                         <button
                           onClick={() => toggleGoal(g, role.id)}
-                          className={`flex h-[17px] w-[17px] shrink-0 items-center justify-center rounded-[5px] border-[1.5px] ${
+                          data-done={g.status === "DONE"}
+                          className={`goal-tick press flex h-[17px] w-[17px] shrink-0 items-center justify-center rounded-[5px] border-[1.5px] ${
                             g.status === "DONE"
                               ? "border-[#22C55E] bg-[#22C55E]"
                               : "border-[#D6D2C8] bg-white"
                           }`}
                         >
-                          {g.status === "DONE" && (
-                            <svg
-                              viewBox="0 0 24 24"
-                              width="11"
-                              height="11"
-                              fill="none"
-                              stroke="#fff"
-                              strokeWidth="3"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <polyline points="20 6 9 17 4 12" />
-                            </svg>
-                          )}
+                          <svg
+                            viewBox="0 0 24 24"
+                            width="11"
+                            height="11"
+                            fill="none"
+                            stroke="#fff"
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <polyline points="20 6 9 17 4 12" pathLength="1" />
+                          </svg>
                         </button>
                         )}
-                        <input
-                          value={g.title}
-                          onChange={(e) =>
-                            editGoalTitleLocal(g.id, role.id, e.target.value)
-                          }
-                          onBlur={(e) => commitGoalTitle(g.id, e.target.value)}
-                          className={`flex-1 bg-transparent p-0.5 text-[13.5px] ${
-                            g.status === "DONE"
-                              ? "text-[#B3AFA6] line-through"
-                              : "text-[#1F2937]"
-                          }`}
-                        />
+                        <div className="title-wrap">
+                          <input
+                            value={g.title}
+                            onChange={(e) =>
+                              editGoalTitleLocal(g.id, role.id, e.target.value)
+                            }
+                            onBlur={(e) => commitGoalTitle(g.id, e.target.value)}
+                            className={`goal-title min-w-0 flex-1 bg-transparent p-0.5 text-[13.5px] ${
+                              g.status === "DONE" ? "text-[#B3AFA6]" : "text-[#1F2937]"
+                            }`}
+                          />
+                          <span className="goal-strike" aria-hidden="true">{g.title}</span>
+                        </div>
                         {blockForGoal(g.id) ? (
                           <Link
                             href={scheduleHref}
-                            className="shrink-0 rounded-md bg-[#FFF7ED] px-1.5 py-0.5 font-mono text-[10px] font-medium text-[#C2410C]"
+                            className={`${blockForGoal(g.id)?.id === entering ? "chip-fade " : ""}shrink-0 rounded-md bg-[#FFF7ED] px-1.5 py-0.5 font-mono text-[10px] font-medium text-[#C2410C]`}
                             aria-label="Scheduled — view in schedule"
                           >
                             Scheduled
@@ -410,7 +468,8 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
                         ) : (
                         <button
                           onClick={() => openScheduleForm(role.id, g.id)}
-                          className="shrink-0 p-0.5 text-[#C9CBCF] hover:text-[#F97316]"
+                          onAnimationEnd={() => setUnlinkedGoal(null)}
+                          className={`${unlinkedGoal === g.id ? "chip-fade " : ""}shrink-0 p-0.5 text-[#C9CBCF] hover:text-[#F97316]`}
                           aria-label="Add to today"
                         >
                           <svg
@@ -429,7 +488,7 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
                         </button>
                         )}
                         <button
-                          onClick={() => deleteGoal(g.id, role.id)}
+                          onClick={() => removeGoal(g.id, role.id)}
                           className="shrink-0 p-0.5 text-[#C9CBCF] hover:text-[#E15656]"
                           aria-label="Delete goal"
                         >
@@ -447,14 +506,16 @@ export function WeeklyGoalsPage({ week }: { week: WeekData }) {
                           </svg>
                         </button>
                       </div>
+                      </div>
                     ))}
                     <AddGoalRow
                       onAdd={(title) => {
-                        void addGoal(role.id, title);
+                        void addGoal(role.id, title).then((g) => g && setEntering(g.id));
                       }}
                     />
                   </div>
-                )}
+                  </div>
+                </div>
               </div>
             );
           })}
@@ -484,7 +545,7 @@ function AddGoalRow({ onAdd }: { onAdd: (title: string) => void }) {
       />
       <button
         onClick={submit}
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#F97316] text-white hover:bg-[#EA6A0C]"
+        className="press flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#F97316] text-white hover:bg-[#EA6A0C]"
       >
         <svg
           viewBox="0 0 24 24"

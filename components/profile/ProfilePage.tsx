@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { constellationTint } from "../../lib/domainColors";
 import { isRecapWindowOpen } from "../../lib/yearRecapWindow";
@@ -10,10 +10,13 @@ import { YearBadge } from "../constellation/YearBadge";
 import { RoleBadgeTile } from "../constellation/RoleBadgeTile";
 import { useAuthStore } from "../../store/authStore";
 import { signOutAction } from "../../lib/authActions";
+import { useChipTransition } from "../../hooks/useChipTransition";
 import type { ProfileData, RoleBadge } from "../../hooks/useProfile";
 
 export function ProfilePage({ profile }: { profile: ProfileData }) {
   const { loading, user, roles, statementSnippet, statementMeta, toggleFeatured } = profile;
+  const featuredNow = useMemo(() => roles.filter((r) => r.isFeatured).slice(0, 2), [roles]);
+  const chips = useChipTransition(featuredNow, !loading);
   const [flipped, setFlipped] = useState(false);
   const [barcode, setBarcode] = useState<number[]>([]);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
@@ -135,15 +138,17 @@ export function ProfilePage({ profile }: { profile: ProfileData }) {
               </div>
 
               <div className="mt-auto flex gap-2.5">
-                {featured.length === 0 ? (
-                  <p className="text-[11px] text-[#C9CBCF]">
+                {chips.length === 0 ? (
+                  <p className="chip-hint text-[11px] text-[#C9CBCF]">
                     Feature up to 2 roles below
                   </p>
                 ) : (
-                  featured.map((r) => (
+                  chips.map(({ item: r, state }) => (
                     <div
                       key={r.id}
-                      className="flex flex-1 items-center gap-1.5 rounded-lg bg-[#F3F4F6] px-2.5 py-1.5"
+                      className={`flex flex-1 items-center gap-1.5 rounded-lg bg-[#F3F4F6] px-2.5 py-1.5${
+                        state === "new" ? " chip-enter" : state === "leaving" ? " chip-leave" : ""
+                      }`}
                     >
                       {/* GROWTH-RING-REDESIGN: featured-role constellation on the ID card (was ringSvg) */}
                       <div className="shrink-0">
@@ -152,6 +157,7 @@ export function ProfilePage({ profile }: { profile: ProfileData }) {
                           peak={r.constellation.peak}
                           tint={constellationTint(r.domain)}
                           size={34}
+                          settle
                           sealed={r.constellation.sealed}
                           currentMonth={currentMonth}
                           label={r.label}

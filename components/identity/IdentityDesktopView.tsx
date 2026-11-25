@@ -133,6 +133,7 @@ function ProfileColumn({ profile }: { profile: ProfileData }) {
                         peak={r.constellation.peak}
                         tint={constellationTint(r.domain)}
                         size={34}
+                        settle
                         sealed={r.constellation.sealed}
                         currentMonth={currentMonth}
                         label={r.label}

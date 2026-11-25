@@ -1,4 +1,6 @@
 // GROWTH-RING-REDESIGN: the role badge. One orbit, this year only, replacing ringSvg.
+"use client";
+import { useEffect, useRef, useState } from "react";
 import {
   BASE,
   ORBIT,
@@ -12,6 +14,10 @@ import {
   star4,
 } from "./geometry";
 import "./constellation.css";
+
+// T10 (WO-062): the badges that scroll into view first in a session settle in once.
+// shortcut: "session" = this page load (module state), not sessionStorage; upgrade if reloads should not replay it.
+let firstSeen = 0;
 
 type Props = {
   /** Goals finished in each month of this year. */
@@ -27,6 +33,8 @@ type Props = {
   currentMonth: number;
   /** Accessible name prefix, e.g. the role label. */
   label?: string;
+  /** Fade and scale in once per session (Profile and identity tiles only). */
+  settle?: boolean;
 };
 
 export function YearBadge({
@@ -37,7 +45,23 @@ export function YearBadge({
   sealed = false,
   currentMonth,
   label,
+  settle = false,
 }: Props) {
+  const ref = useRef<SVGSVGElement>(null);
+  const [phase, setPhase] = useState<"" | "pre" | "go">(settle && !firstSeen ? "pre" : "");
+  useEffect(() => {
+    if (phase !== "pre" || !ref.current) return;
+    const io = new IntersectionObserver(([e]) => {
+      if (!e.isIntersecting) return;
+      const t = performance.now();
+      if (!firstSeen) firstSeen = t;
+      // badges that appear together settle together; later ones are simply there
+      setPhase(t - firstSeen < 150 ? "go" : "");
+      io.disconnect();
+    });
+    io.observe(ref.current);
+    return () => io.disconnect();
+  }, [phase]);
   const small = size < 48;
   const u = 200 / size; // one screen pixel in viewBox units
   const base = small ? 40 : 34;
@@ -104,7 +128,8 @@ export function YearBadge({
       height={size}
       role="img"
       aria-label={`${label ? label + ": " : ""}${describeYear(months)}`}
-      className="shrink-0"
+      ref={ref}
+      className={`shrink-0${phase ? " cn-settle-" + phase : ""}`}
     >
       {!small && (
         <circle

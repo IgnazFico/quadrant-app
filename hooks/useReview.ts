@@ -69,9 +69,12 @@ export function useReview() {
     goal: ReviewGoal;
   } | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [toastLeaving, setToastLeaving] = useState(false);
   const masterKey = useAuthStore((s) => s.masterKey);
   const masterKeyRef = useRef(masterKey);
   masterKeyRef.current = masterKey;
+  const toastTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  useEffect(() => () => toastTimers.current.forEach(clearTimeout), []);
 
   function setWeekStart(d: Date) {
     setWeekStartState(d);
@@ -274,8 +277,12 @@ export function useReview() {
         ? `Week closed — ${carriedCount} goal${carriedCount === 1 ? "" : "s"} carried into next week. Now plan it.`
         : `Review complete — ${carriedCount} goal${carriedCount === 1 ? "" : "s"} carried into this week`,
     );
-    setTimeout(() => {
+    toastTimers.current.forEach(clearTimeout);
+    setToastLeaving(false);
+    const leave = setTimeout(() => setToastLeaving(true), 1300); // 200 ms exit inside the 1500 ms wait
+    const advance = setTimeout(() => {
       setToast(null);
+      setToastLeaving(false);
       if (nextUnreviewedWeekStart) {
         // Another past week still needs review — the layout's gate would
         // otherwise redirect straight back here the moment we navigate
@@ -290,6 +297,7 @@ export function useReview() {
         router.refresh();
       }
     }, 1500);
+    toastTimers.current = [leave, advance];
   }
 
   return {
@@ -301,6 +309,7 @@ export function useReview() {
     loading,
     error,
     toast,
+    toastLeaving,
     masterKey,
     activeReflect,
     allGoals,

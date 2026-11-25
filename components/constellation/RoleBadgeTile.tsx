@@ -30,7 +30,7 @@ export function RoleBadgeTile({
       data-testid="role-badge"
       aria-pressed={role.isFeatured}
       onClick={() => onToggle(role)}
-      className={`flex items-center gap-2 rounded-xl border p-2.5 text-left transition-colors ${
+      className={`flex items-center gap-2 rounded-xl border p-2.5 text-left badge-tile press ${
         role.isFeatured
           ? "border-[#F97316] bg-[#FFF7EA]"
           : "border-[#ECE8DF] bg-white hover:border-[#DDD5C4]"
@@ -42,6 +42,7 @@ export function RoleBadgeTile({
         peak={c.peak}
         tint={constellationTint(role.domain)}
         size={56}
+        settle
         sealed={c.sealed}
         currentMonth={currentMonth}
         label={role.label}
