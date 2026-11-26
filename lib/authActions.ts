@@ -1,5 +1,6 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { signOut } from "./auth";
 
 /**
@@ -11,5 +12,8 @@ import { signOut } from "./auth";
  * decrypted key would survive sign-out for the rest of the tab session.
  */
 export async function signOutAction() {
-  await signOut({ redirectTo: "/login" });
+  // WO-115: signOut's redirectTo is made absolute from NEXTAUTH_URL, which on Vercel names the
+  // preview host. A relative redirect() keeps the host the user is on.
+  await signOut({ redirect: false });
+  redirect("/login");
 }
