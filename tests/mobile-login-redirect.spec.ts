@@ -53,3 +53,19 @@ test.describe("desktop", () => {
     await expect(page.getByRole("button", { name: "Log out" })).toBeHidden();
   });
 });
+
+// WO-115: Log out must stay on the origin the user is on, even when NEXTAUTH_URL names another host.
+// To reproduce the production fault, start the server with NEXTAUTH_URL=https://wrong.invalid.
+for (const [name, viewport, path] of [
+  ["phone", { width: 390, height: 844 }, "/profile"],
+  ["desktop", { width: 1440, height: 900 }, "/goals"],
+] as const) {
+  test(`WO-115 ${name}: Log out stays on the current origin`, async ({ page, baseURL }) => {
+    await page.setViewportSize(viewport);
+    await loginAsSeededUser(page);
+    await page.goto(path);
+    await page.getByRole("button", { name: /log out|sign out/i }).first().click();
+    await expect(page).toHaveURL(/\/login/, { timeout: 20000 });
+    expect(new URL(page.url()).origin).toBe(new URL(baseURL!).origin);
+  });
+}
