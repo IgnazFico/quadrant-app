@@ -96,7 +96,7 @@ test.describe("avatar card, phone", () => {
     }
     expect(changed, "a shuffle changes the preview").toBe(true);
 
-    await dlg.getByRole("tab", { name: "Hair" }).click();
+    await dlg.getByRole("tab", { name: "Hair", exact: true }).click();
     const hair2 = dlg.getByRole("radio", { name: "Hair 2" });
     await hair2.click();
     await expect(hair2).toHaveAttribute("aria-checked", "true");
@@ -205,10 +205,10 @@ test.describe("avatar card, phone", () => {
     await expect(dlg).toBeVisible();
 
     const requests: string[] = [];
-    page.on("request", (r) => requests.push(`${r.method()} ${r.url()}`));
+    page.on("request", (r) => { if (!r.url().includes("_rsc=")) requests.push(`${r.method()} ${r.url()}`); }); // ignore Next.js prefetch
     await dlg.getByRole("button", { name: "Shuffle" }).click();
     for (const tab of ["Face", "Hair", "Cover", "Extra"]) {
-      await dlg.getByRole("tab", { name: tab }).click();
+      await dlg.getByRole("tab", { name: tab, exact: true }).click();
     }
     await page.waitForTimeout(300);
     expect(requests).toEqual([]);

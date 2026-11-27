@@ -48,7 +48,7 @@ const FORBIDDEN: [string, RegExp][] = [
 ];
 // Exactly one line: `export default "<markup>";` — no double quotes or
 // backslashes inside the markup, nothing before or after.
-const FILE_FORMAT = /^export default "([^"\\]*)";\n?$/;
+const FILE_FORMAT = /^export default "([^"\\]*)";\r?\n?$/;
 
 /** Violations in one art file's text: format, then every forbidden pattern. */
 export function checkArtText(text: string): string[] {
