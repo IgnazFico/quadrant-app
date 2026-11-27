@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuthStore } from "../store/authStore";
 import { decryptField, fromBase64 } from "../lib/crypto";
+import { decodeCard, encodeCard } from "../lib/avatar/codec";
+import type { CardData, DecodeResult } from "../lib/avatar/types";
 import { openLabel, openText } from "../lib/sealedFields";
 
 // GROWTH-RING-REDESIGN: was `Ring = { year, votesLogged, sealed }`. The badge now
@@ -42,6 +44,8 @@ export function useProfile() {
   const [statementSnippet, setStatementSnippet] = useState<string | null>(null);
   const [statementFull, setStatementFull] = useState<string | null>(null);
   const [statementMeta, setStatementMeta] = useState<StatementMeta | null>(null);
+  // WO-140: the avatar card, null until the first load finishes.
+  const [card, setCard] = useState<DecodeResult | null>(null);
   const masterKey = useAuthStore((s) => s.masterKey);
 
   const load = useCallback(async () => {
@@ -53,6 +57,7 @@ export function useProfile() {
     }
     const body = await res.json();
     setUser(body.user);
+    setCard(await decodeCard(body.user.cardSealed ?? null, masterKey));
     // WO-029: role labels arrive sealed.
     setRoles(
       await Promise.all(
@@ -108,6 +113,18 @@ export function useProfile() {
     });
   }
 
+  async function saveCard(next: CardData): Promise<void> {
+    if (!masterKey) throw new Error("no key");
+    const cardSealed = await encodeCard(next, masterKey);
+    const res = await fetch("/api/profile/card", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cardSealed }),
+    });
+    if (!res.ok) throw new Error("save failed");
+    setCard({ ok: true, card: next });
+  }
+
   return {
     loading,
     user,
@@ -116,6 +133,8 @@ export function useProfile() {
     statementFull,
     statementMeta,
     masterKey,
+    card,
+    saveCard,
     toggleFeatured,
     refetch: load,
   };
