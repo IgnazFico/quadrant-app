@@ -63,6 +63,9 @@ export const scheduleTitleSchema = sealedField(SCHEDULE_TITLE_MAX);
 export const roleLabelSchema = sealedField(ROLE_LABEL_MAX);
 export const SIGNED_NAME_MAX = 120;
 export const signedNameSchema = sealedField(SIGNED_NAME_MAX);
+/** WO-140: the whole avatar card ({v,name?,av}) is one sealed JSON blob. */
+export const CARD_MAX = 320;
+export const cardSchema = sealedField(CARD_MAX);
 
 /** Most roles one request may create (WO-050, SEC-003: bound the array). */
 export const MAX_ROLES_PER_REQUEST = 20;
