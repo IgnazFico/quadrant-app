@@ -116,6 +116,16 @@ jobs:
         # with no readable text. Throwaway user on the job database.
         run: npx tsx scripts/verify-sealed-fields.ts
 
+      - name: Avatar card codec (WO-140)
+        # Card round trip through real sealing; decode returns a reason for
+        # every bad blob; shuffle and every code stay inside CODE_RANGES.
+        run: npx tsx scripts/verify-avatar-codec.ts
+
+      - name: Avatar manifest (WO-140)
+        # 54 pieces, one static art file each, ranges equal CODE_RANGES;
+        # SR-6: the bundled SVG text holds no injectable markup.
+        run: npx tsx scripts/verify-avatar-manifest.ts
+
       - name: Build the app (production build)
         # tests/production.spec.ts asserts that the test-only routes return
         # 404, which the app does only when NODE_ENV=production. The

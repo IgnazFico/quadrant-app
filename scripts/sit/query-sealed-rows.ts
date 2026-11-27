@@ -1,5 +1,6 @@
 // WO-029 criterion 1 evidence: what the DATABASE holds for an account made through the app.
 //   npx tsx scripts/sit/query-sealed-rows.ts [email-prefix]
+// WO-140 adds users."cardSealed": the sealed avatar card, printed the same way (bytes, hex, printable).
 // STAGING only. Read-only: SELECT statements. Prints lengths and hex prefixes, never decoded text.
 import "../lib/use-staging.mjs";
 
@@ -28,7 +29,11 @@ async function main() {
   console.table(
     await prisma.$queryRaw`SELECT left(b.id,8) AS id, octet_length(b.title) AS bytes, encode(substring(b.title from 1 for 16),'hex') AS first16_hex, (SELECT count(*) FROM generate_series(0, octet_length(b.title)-1) i WHERE get_byte(b.title,i) BETWEEN 32 AND 126)::int AS printable_ascii_bytes, b.day::text AS day, b.hour FROM schedule_blocks b JOIN roles r ON r.id=b."roleId" WHERE r."userId" = ${u.id} ORDER BY b.day, b.hour`,
   );
-  const col = await prisma.$queryRaw<{ c: string; t: string }[]>`SELECT table_name||'.'||column_name AS c, data_type AS t FROM information_schema.columns WHERE (table_name='roles' AND column_name IN ('label','domain')) OR (table_name='goals' AND column_name IN ('title','status')) OR (table_name='schedule_blocks' AND column_name IN ('title','hour')) ORDER BY 1`;
+  console.log('-- WO-140: SELECT octet_length("cardSealed") AS bytes, encode(substring("cardSealed" from 1 for 16),\'hex\') AS first16_hex, printable_ascii_bytes FROM users WHERE id = $1;');
+  console.table(
+    await prisma.$queryRaw`SELECT octet_length("cardSealed") AS bytes, encode(substring("cardSealed" from 1 for 16),'hex') AS first16_hex, (SELECT count(*) FROM generate_series(0, octet_length("cardSealed")-1) i WHERE get_byte("cardSealed",i) BETWEEN 32 AND 126)::int AS printable_ascii_bytes FROM users WHERE id = ${u.id}`,
+  );
+  const col = await prisma.$queryRaw<{ c: string; t: string }[]>`SELECT table_name||'.'||column_name AS c, data_type AS t FROM information_schema.columns WHERE (table_name='roles' AND column_name IN ('label','domain')) OR (table_name='goals' AND column_name IN ('title','status')) OR (table_name='schedule_blocks' AND column_name IN ('title','hour')) OR (table_name='users' AND column_name='cardSealed') ORDER BY 1`;
   console.log("column types:", col.map((r) => `${r.c}=${r.t}`).join("  "));
   await prisma.$disconnect();
 }
