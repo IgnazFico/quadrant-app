@@ -2,12 +2,11 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { constellationTint } from "../../lib/domainColors";
 import { isRecapWindowOpen } from "../../lib/yearRecapWindow";
-import { YearBadge } from "../constellation/YearBadge";
 import { RoleBadgeTile } from "../constellation/RoleBadgeTile";
 import type { ProfileData } from "../../hooks/useProfile";
 import { MetaField } from "../profile/ProfilePage";
+import { FeaturedChips } from "../profile/FeaturedChips";
 
 /**
  * Desktop merged "Identity" view — Profile (ID card + role badges) next to
@@ -120,33 +119,7 @@ function ProfileColumn({ profile }: { profile: ProfileData }) {
               <MetaField label="Longest role" value={longestYears > 0 ? `${longestYears} yrs` : "\u2014"} />
             </div>
 
-            <div className="mt-auto flex gap-2.5">
-              {featured.length === 0 ? (
-                <p className="text-[11px] text-[#C9CBCF]">Feature up to 2 roles below</p>
-              ) : (
-                featured.map((r) => (
-                  <div key={r.id} className="flex flex-1 items-center gap-1.5 rounded-lg bg-[#F3F4F6] px-2.5 py-1.5">
-                    {/* GROWTH-RING-REDESIGN: featured-role constellation on the ID card (was ringSvg) */}
-                    <div className="shrink-0">
-                      <YearBadge
-                        months={r.constellation.months}
-                        peak={r.constellation.peak}
-                        tint={constellationTint(r.domain)}
-                        size={34}
-                        settle
-                        sealed={r.constellation.sealed}
-                        currentMonth={currentMonth}
-                        label={r.label}
-                      />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="truncate text-[10.5px] font-semibold leading-tight">{r.label}</div>
-                      <div className="font-mono text-[8.5px] text-[#9CA3AF]">Year {r.tenureYears}</div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
+            <FeaturedChips featured={featured} ready={!loading} currentMonth={currentMonth} />
 
             <div className="absolute bottom-2.5 right-3 flex items-center gap-1 font-mono text-[8.5px] text-[#C9CBCF]">
               <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

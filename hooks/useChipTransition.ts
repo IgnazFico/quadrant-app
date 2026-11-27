@@ -27,11 +27,8 @@ export function useChipTransition<T extends { id: string }>(items: T[], ready: b
     setFresh(items.filter((i) => !prev.some((p) => p.id === i.id)).map((i) => i.id));
     setGone((g) => [...g.filter((x) => !ids.has(x.id)), ...removed]);
     if (!removed.length) return;
-    const t = setTimeout(
-      () => setGone((g) => g.filter((x) => !removed.some((r) => r.id === x.id))),
-      ms,
-    );
-    return () => clearTimeout(t);
+    // No cleanup: a second removal re-runs this effect, and clearing the first timer left the first leaver stuck in `gone`, so the hint never came back.
+    setTimeout(() => setGone((g) => g.filter((x) => !removed.some((r) => r.id === x.id))), ms);
   }, [items, ready, ms]);
 
   return [
