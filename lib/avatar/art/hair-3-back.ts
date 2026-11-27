@@ -1,0 +1,1 @@
+export default "<path d='M27.5 46 C24 24 37.5 15.5 50 15.5 C62.5 15.5 76 24 72.5 46 C75 56 70.5 62 74 70 C77.5 78 73 86 76 96 C68 99 61 96 58 90 L42 90 C39 96 32 99 24 96 C27 86 22.5 78 26 70 C29.5 62 25 56 27.5 46Z' fill='var(--hair)' stroke='#2B2620' stroke-width='2.4' stroke-linejoin='round' stroke-linecap='round'/>";

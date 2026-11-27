@@ -1,0 +1,1 @@
+export default "<circle cx='28.4' cy='56' r='2.4' fill='#D9A93C' stroke='#2B2620' stroke-width='2.4' stroke-linejoin='round' stroke-linecap='round'/><circle cx='71.6' cy='56' r='2.4' fill='#D9A93C' stroke='#2B2620' stroke-width='2.4' stroke-linejoin='round' stroke-linecap='round'/>";

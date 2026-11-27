@@ -1,0 +1,1 @@
+export default "<path d='M37 40.6 C40 37.4 44.2 36.9 47 38.4' fill='none' stroke='#2B2620' stroke-width='2.4' stroke-linejoin='round' stroke-linecap='round'/><path d='M63 40.6 C60 37.4 55.8 36.9 53 38.4' fill='none' stroke='#2B2620' stroke-width='2.4' stroke-linejoin='round' stroke-linecap='round'/>";
