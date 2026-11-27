@@ -205,7 +205,11 @@ test.describe("avatar card, phone", () => {
     await expect(dlg).toBeVisible();
 
     const requests: string[] = [];
-    page.on("request", (r) => { if (!r.url().includes("_rsc=")) requests.push(`${r.method()} ${r.url()}`); }); // ignore Next.js prefetch
+    page.on("request", (r) => {
+      // Next.js prefetches (?_rsc=, HEAD /profile) are ignored only when they carry no body.
+      const prefetch = !r.postData() && (r.url().includes("_rsc=") || (r.method() === "HEAD" && new URL(r.url()).pathname === "/profile"));
+      if (!prefetch) requests.push(`${r.method()} ${r.url()}`);
+    });
     await dlg.getByRole("button", { name: "Shuffle" }).click();
     for (const tab of ["Face", "Hair", "Cover", "Extra"]) {
       await dlg.getByRole("tab", { name: tab, exact: true }).click();
@@ -261,5 +265,38 @@ test.describe("avatar card, desktop", () => {
     const card = flipCard(desktopView(page));
     await card.getByText("Quadrant ID").click();
     await expect(card).not.toHaveCSS("transform", "none");
+  });
+});
+
+// WO-145 D-3: the card's wire check on the seeded user, so it runs on a Preview
+// (sign-up needs an email code there, so sealed-titles.spec.ts cannot).
+test.describe("avatar card, wire", () => {
+  test.use({ viewport: { width: 1440, height: 900 } });
+
+  test("9d name and avatar are saved sealed and never readable on the wire", async ({ page }) => {
+    const NAME = `ZQavname${Date.now()}`;
+    const wire: string[] = [];
+    page.on("request", (r) => {
+      if (r.url().includes("/api/")) wire.push(`${r.method()} ${r.url()} ${r.postData() ?? ""}`);
+    });
+    page.on("response", async (r) => {
+      if (!r.url().includes("/api/")) return;
+      try { wire.push(`${r.url()} ${await r.text()}`); } catch { /* no body (redirect) */ }
+    });
+    await openProfile(page);
+    const view = desktopView(page);
+    await editAvatar(view).click();
+    const dlg = dialog(page);
+    await dlg.getByLabel("Name").fill(NAME);
+    await dlg.getByRole("button", { name: "Shuffle" }).click();
+    await saveCard(page, dlg);
+    await page.reload();
+    await expect(page.getByText(NAME).locator("visible=true").first()).toBeVisible({ timeout: 20000 });
+    const all = wire.join("\n");
+    expect(all.length).toBeGreaterThan(1000);
+    expect(all).toContain("/api/profile/card"); // the PUT really went through the watcher
+    expect(all.includes(NAME), "the name must not appear in any request or response").toBe(false);
+    expect(all.includes('"type":"Buffer"')).toBe(false);
+    await clearCard(page, view);
   });
 });

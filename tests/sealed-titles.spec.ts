@@ -16,7 +16,8 @@ import { test, expect, type Page, type Request, type Response } from "@playwrigh
  * goals, roles, schedule, review, profile, patterns and year-review is
  * captured, and none may contain the readable marker text.
  *
- * WO-140: the avatar card's name is sealed in the browser too (test 9d).
+ * WO-145: the avatar card's wire check moved to avatar-builder.spec.ts (test 9d),
+ * because sign-up needs an email code on a Preview and this file cannot run there.
  */
 
 test.describe.configure({ mode: "serial" });
@@ -32,8 +33,7 @@ const GOAL_RENAMED = `ZQgoalB${STAMP}`;
 const BLOCK = `ZQblockA${STAMP}`;
 const BLOCK_RENAMED = `ZQblockB${STAMP}`;
 const SIGNER = `ZQsigner${STAMP}`; // WO-035
-const AVNAME = `ZQavname${STAMP}`; // WO-140
-const MARKERS = [ROLE, GOAL, GOAL_RENAMED, BLOCK, BLOCK_RENAMED, SIGNER, AVNAME]; // each ends in the run timestamp, so a chance hit inside base64 is not possible
+const MARKERS = [ROLE, GOAL, GOAL_RENAMED, BLOCK, BLOCK_RENAMED, SIGNER]; // each ends in the run timestamp, so a chance hit inside base64 is not possible
 
 const SEALED_PATHS = /\/api\/(goals|roles|schedule|review|profile|patterns|year-review|notifications|mission-statement)/;
 
@@ -329,21 +329,6 @@ test("9c signed name is sealed: saved, shown on profile, never on the wire (WO-0
   const fb = await page.evaluate(async (e) => (await fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ category: "idea", message: `ZQfeedbackWO035 ${e}`, metadata: { pathname: "/profile", secret: "ZQmetaWO035" } }) })).status, EMAIL);
   // WO-052: the route now sends mail, so 200 (mail sent) or 502 (mail not configured here) are both valid; the log check is what matters.
   expect([200, 502]).toContain(fb);
-});
-
-test("9d card name and avatar are sealed: saved, shown on profile, never on the wire (WO-140)", async ({ page }) => {
-  watch(page);
-  await signIn(page, EMAIL, NEW_PASSWORD);
-  await page.goto("/profile");
-  await page.getByRole("button", { name: "Edit avatar" }).locator("visible=true").first().click();
-  const dlg = page.getByRole("dialog", { name: "Your card" });
-  await dlg.getByLabel("Name").fill(AVNAME);
-  await dlg.getByRole("button", { name: "Shuffle" }).click();
-  const put = page.waitForResponse((r) => r.url().includes("/api/profile/card") && r.request().method() === "PUT");
-  await dlg.getByRole("button", { name: "Save" }).click();
-  expect((await put).status()).toBe(200);
-  await page.reload();
-  await expect(page.getByText(AVNAME).locator("visible=true").first()).toBeVisible({ timeout: 20000 });
 });
 
 test("10 nothing readable crossed the wire in either direction", async () => {
