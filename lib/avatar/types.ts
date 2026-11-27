@@ -22,6 +22,6 @@ export const NAME_MAX = 30;
  * moves these into a manifest; the codec reads this constant for now.
  */
 export const CODE_RANGES = {
-  face: 4, skin: 10, eyes: 4, brows: 3, nose: 3, mouth: 4,
-  hair: 10, hairColor: 8, cover: 3, fabric: 8, facial: 3, extra: 5,
+  face: 4, skin: 9, eyes: 4, brows: 3, nose: 3, mouth: 4,
+  hair: 10, hairColor: 7, cover: 3, fabric: 7, facial: 3, extra: 5,
 } as const satisfies Record<keyof AvatarCodes, number>;

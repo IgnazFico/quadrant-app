@@ -39,8 +39,8 @@ async function main() {
   const sealJson = (v: unknown) => sealText(JSON.stringify(v), key);
 
   const sample: AvatarCodes = {
-    face: 4, skin: 10, eyes: 4, brows: 3, nose: 3, mouth: 4,
-    hair: 10, hairColor: 8, cover: 3, fabric: 8, facial: 3, extra: 5,
+    face: 4, skin: 9, eyes: 4, brows: 3, nose: 3, mouth: 4,
+    hair: 10, hairColor: 7, cover: 3, fabric: 7, facial: 3, extra: 5,
   };
 
   // ---- round trips ----
