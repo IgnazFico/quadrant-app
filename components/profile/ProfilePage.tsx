@@ -61,12 +61,9 @@ export function ProfilePage({ profile }: { profile: ProfileData }) {
           <NotificationBell />
         </div>
 
-        <h1 className="mb-1 font-serif text-2xl font-semibold text-[#1F2937]">
+        <h1 className="mb-6 font-serif text-2xl font-semibold text-[#1F2937]">
           Profile
         </h1>
-        <p className="mb-6 text-[13px] text-[#6B7280]">
-          Tap the card to flip it.
-        </p>
 
         {/* ID CARD */}
         <div className="mb-3" style={{ perspective: "1400px" }}>
@@ -175,23 +172,6 @@ export function ProfilePage({ profile }: { profile: ProfileData }) {
                   ))
                 )}
               </div>
-
-              <div className="absolute bottom-2.5 right-3 flex items-center gap-1 font-mono text-[8.5px] text-[#C9CBCF]">
-                <svg
-                  viewBox="0 0 24 24"
-                  width="11"
-                  height="11"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M21 12a9 9 0 1 1-3-6.7" />
-                  <polyline points="21 3 21 9 15 9" />
-                </svg>
-                flip
-              </div>
             </div>
 
             {/* BACK */}
@@ -249,6 +229,9 @@ export function ProfilePage({ profile }: { profile: ProfileData }) {
               </div>
             </div>
           </button>
+          <p className="mt-2 text-center text-[11px] text-[#6B7280]">
+            {flipped ? "Tap the card to flip it back" : "\u21bb Tap the card to flip it"}
+          </p>
         </div>
 
         {/* ALL BADGES */}
