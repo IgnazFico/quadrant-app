@@ -15,6 +15,9 @@ import { test, expect, type Page, type Request, type Response } from "@playwrigh
  * Every request body and every JSON response the app sends or receives for
  * goals, roles, schedule, review, profile, patterns and year-review is
  * captured, and none may contain the readable marker text.
+ *
+ * WO-145: the avatar card's wire check moved to avatar-builder.spec.ts (test 9d),
+ * because sign-up needs an email code on a Preview and this file cannot run there.
  */
 
 test.describe.configure({ mode: "serial" });

@@ -1,0 +1,1 @@
+export default "<ellipse cx='42' cy='46.5' rx='2.5' ry='2.9' fill='#2B2620' stroke='rgba(255,240,225,.45)' stroke-width='.9'/><circle cx='42.8' cy='45.5' r='0.85' fill='#FFF8EE'/><ellipse cx='58' cy='46.5' rx='2.5' ry='2.9' fill='#2B2620' stroke='rgba(255,240,225,.45)' stroke-width='.9'/><circle cx='58.8' cy='45.5' r='0.85' fill='#FFF8EE'/>";

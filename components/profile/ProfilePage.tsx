@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { isRecapWindowOpen } from "../../lib/yearRecapWindow";
 import { NotificationBell } from "../notifications/NotificationBell";
@@ -8,20 +8,13 @@ import { FeedbackModal } from "../feedback/FeedbackModal";
 import { RoleBadgeTile } from "../constellation/RoleBadgeTile";
 import { useAuthStore } from "../../store/authStore";
 import { signOutAction } from "../../lib/authActions";
-import { FeaturedChips } from "./FeaturedChips";
+import { ProfileCard } from "./ProfileCard";
 import type { ProfileData, RoleBadge } from "../../hooks/useProfile";
 
 export function ProfilePage({ profile }: { profile: ProfileData }) {
-  const { loading, user, roles, statementSnippet, statementMeta, toggleFeatured } = profile;
-  const featuredNow = useMemo(() => roles.filter((r) => r.isFeatured).slice(0, 2), [roles]);
-  const [flipped, setFlipped] = useState(false);
-  const [barcode, setBarcode] = useState<number[]>([]);
+  const { loading, roles, toggleFeatured } = profile;
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const clearMasterKey = useAuthStore((s) => s.clearMasterKey);
-
-  useEffect(() => {
-    setBarcode(Array.from({ length: 14 }, () => 8 + Math.random() * 14));
-  }, []);
 
   if (loading) {
     return (
@@ -34,17 +27,6 @@ export function ProfilePage({ profile }: { profile: ProfileData }) {
   const currentMonth = new Date().getMonth();
   // "Your year in Quadrant" is a once-a-year ceremony: only offered Dec 20 to Dec 31 (D-032).
   const showYearReview = isRecapWindowOpen();
-  const featured = roles.filter((r) => r.isFeatured).slice(0, 2);
-  const longestYears = roles.reduce(
-    (max, r) => Math.max(max, r.tenureYears),
-    0,
-  );
-  const identityTitle =
-    featured.length > 0
-      ? featured
-          .map((r) => `${ordinal(r.tenureYears)} Year ${r.label}`)
-          .join(" \u00b7 ")
-      : "Set up your featured roles";
 
   return (
     <div className="flex justify-center bg-[#FFF9F2] px-[18px] pb-[calc(var(--bar-clear)+24px)] pt-5">
@@ -62,137 +44,7 @@ export function ProfilePage({ profile }: { profile: ProfileData }) {
           Profile
         </h1>
 
-        {/* ID CARD */}
-        <div className="mb-3" style={{ perspective: "1400px" }}>
-          <button
-            onClick={() => setFlipped((f) => !f)}
-            className="relative w-full text-left"
-            style={{
-              aspectRatio: "1.586/1",
-              transformStyle: "preserve-3d",
-              transition: "transform .6s cubic-bezier(.4,.2,.2,1)",
-              transform: flipped ? "rotateY(180deg)" : "none",
-            }}
-          >
-            {/* FRONT */}
-            <div
-              className="absolute inset-0 flex flex-col rounded-2xl border border-[#ECE8DF] bg-white p-4"
-              style={{
-                backfaceVisibility: "hidden",
-                boxShadow: "0 10px 30px -14px rgba(31,41,55,0.25)",
-              }}
-            >
-              <div className="mb-auto flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-mono text-[9.5px] uppercase tracking-wide text-[#9CA3AF]">
-                    Quadrant ID
-                  </span>
-                </div>
-                <span className="font-mono text-[9.5px] text-[#C9CBCF]">
-                  {user
-                    ? `QD\u2013${user.email.length.toString().padStart(6, "0")}`
-                    : ""}
-                </span>
-              </div>
-
-              <div className="my-2 flex items-center gap-3.5">
-                <div className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full border-[1.5px] border-dashed border-[#D6D2C8] bg-[#F3F4F6] text-[#C9CBCF]">
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="22"
-                    height="22"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.6"
-                  >
-                    <circle cx="12" cy="8" r="4" />
-                    <path d="M4 21c0-4 4-6 8-6s8 2 8 6" />
-                  </svg>
-                </div>
-                <div className="min-w-0">
-                  <div className="mb-1 border-b border-dashed border-[#E5E1D8] pb-0.5 font-serif text-base font-semibold text-[#1F2937]">
-                    {user?.email.split("@")[0] ?? "Your name"}
-                  </div>
-                  <div className="font-mono text-[10px] leading-tight text-[#F97316]">
-                    {identityTitle}
-                  </div>
-                </div>
-              </div>
-
-              <div className="mb-3 flex gap-4">
-                <MetaField
-                  label="Member since"
-                  value={user ? formatMonthYear(user.createdAt) : "\u2014"}
-                />
-                <MetaField label="Active roles" value={String(roles.length)} />
-                <MetaField
-                  label="Longest role"
-                  value={longestYears > 0 ? `${longestYears} yrs` : "\u2014"}
-                />
-              </div>
-
-              <FeaturedChips featured={featuredNow} ready={!loading} currentMonth={currentMonth} />
-            </div>
-
-            {/* BACK */}
-            <div
-              className="absolute inset-0 flex flex-col rounded-2xl border border-[#ECE8DF] bg-white p-4"
-              style={{
-                backfaceVisibility: "hidden",
-                transform: "rotateY(180deg)",
-                boxShadow: "0 10px 30px -14px rgba(31,41,55,0.25)",
-              }}
-            >
-              <div
-                className="-mx-4 -mt-4 mb-3.5 h-[26px] rounded-t-2xl"
-                style={{
-                  background:
-                    "repeating-linear-gradient(135deg,#2B2620,#2B2620 6px,#3a342b 6px,#3a342b 12px)",
-                }}
-              />
-              <p className="mb-1.5 font-mono text-[9px] uppercase tracking-wide text-[#B7B2A7]">
-                Mission statement
-              </p>
-
-              {statementSnippet ? (
-                <div className="flex-1 rounded-lg border border-dashed border-[#E5E1D8] p-2.5 font-serif text-[12px] italic leading-relaxed text-[#4B5563]">
-                  &ldquo;{statementSnippet}&rdquo;
-                </div>
-              ) : statementMeta ? (
-                <div className="flex-1 rounded-lg border border-dashed border-[#E5E1D8] p-2.5 text-[11px] text-[#C9CBCF]">
-                  Signed, but couldn&apos;t be decrypted this session.
-                </div>
-              ) : (
-                <Link
-                  href="/mission-statement"
-                  className="flex flex-1 items-center justify-center rounded-lg border border-dashed border-[#E5E1D8] p-2.5 text-center text-[11px] text-[#9CA3AF] hover:border-[#F97316] hover:text-[#F97316]"
-                >
-                  You haven&apos;t written one yet &mdash; tap to start
-                </Link>
-              )}
-
-              <div className="mt-3 flex items-end justify-between">
-                <div className="w-[56%] border-t border-dashed border-[#E5E1D8] pt-1 font-mono text-[8.5px] text-[#C9CBCF]">
-                  {statementMeta
-                    ? `Signed by ${statementMeta.signedName}`
-                    : "Signature"}
-                </div>
-                <div className="flex h-[22px] items-end gap-[1.5px]">
-                  {barcode.map((h, i) => (
-                    <span
-                      key={i}
-                      className="w-[2px] bg-[#D6D2C8]"
-                      style={{ height: h }}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-          </button>
-          <p className="mt-2 text-center text-[11px] text-[#6B7280]">
-            {flipped ? "Tap the card to flip it back" : "\u21bb Tap the card to flip it"}
-          </p>
-        </div>
+        <ProfileCard profile={profile} variant="phone" />
 
         {/* ALL BADGES */}
         <section className="mt-7">
@@ -310,27 +162,5 @@ export function ProfilePage({ profile }: { profile: ProfileData }) {
   );
 }
 
-export function MetaField({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="font-mono text-[9px] text-[#B7B2A7]">
-      {label}
-      <b className="mt-0.5 block text-[11px] font-semibold text-[#6B7280]">
-        {value}
-      </b>
-    </div>
-  );
-}
-
-function ordinal(n: number): string {
-  const suffix = n === 1 ? "st" : n === 2 ? "nd" : n === 3 ? "rd" : "th";
-  return `${n}${suffix}`;
-}
-
-function formatMonthYear(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "short",
-    year: "numeric",
-  });
-}
-
 export type { RoleBadge };
+

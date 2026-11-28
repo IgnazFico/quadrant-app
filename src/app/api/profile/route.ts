@@ -15,7 +15,7 @@ export async function GET() {
   const [user, roles, latestStatement, constellations] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
-      select: { email: true, createdAt: true },
+      select: { email: true, createdAt: true, cardSealed: true },
     }),
     prisma.role.findMany({
       where: { userId },
@@ -59,7 +59,11 @@ export async function GET() {
   }));
 
   return NextResponse.json({
-    user: { email: user.email, createdAt: user.createdAt },
+    user: {
+      email: user.email,
+      createdAt: user.createdAt,
+      cardSealed: user.cardSealed ? toWire(user.cardSealed) : null,
+    },
     roles: rolesOut,
     missionStatement: latestStatement
       ? {

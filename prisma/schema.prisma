@@ -26,6 +26,9 @@ model User {
   // (WO-012). NULL = cannot sign in. Rows that existed before the migration
   // are back-filled to createdAt by the migration itself.
   emailVerifiedAt DateTime?
+  // One sealed avatar card ({v:1,name?,av}, lib/avatar/codec.ts). NULL = the
+  // user never built one. The server stores the bytes only (WO-140).
+  cardSealed Bytes?
 
   authKey           AuthKey?
   devices           Device[]

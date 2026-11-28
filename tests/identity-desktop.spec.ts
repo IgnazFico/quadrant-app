@@ -17,7 +17,7 @@ test.describe("Identity desktop merged view", () => {
     await loginAsSeededUser(page);
     await page.goto("/profile");
 
-    await expect(page.getByText("Quadrant ID")).toBeVisible();
+    await expect(page.getByText("Quadrant ID").locator("visible=true").first()).toBeVisible();
     await expect(page.getByRole("heading", { name: "Role badges" })).toBeVisible();
 
     // Mission panel: either the signed-document view or the CTA, never neither.

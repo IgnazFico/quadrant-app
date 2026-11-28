@@ -53,6 +53,17 @@ async function main() {
   const parsed = sealed.goalTitleSchema.parse(await seal("hello"));
   check("schema parses to a Buffer ready for Prisma", Buffer.isBuffer(parsed) && parsed.length === 40 + 5, `len=${parsed.length}`);
 
+  // WO-140: the avatar card is one sealed JSON blob, 41..1000 bytes.
+  const cardSealed = await seal('{"v":1,"av":null}');
+  check("card schema accepts a real sealed card", sealed.cardSchema.safeParse(cardSealed).success);
+  check("card schema rejects plain card JSON", !sealed.cardSchema.safeParse('{"v":1,"av":null}').success);
+  check("card schema rejects an empty string", !sealed.cardSchema.safeParse("").success);
+  check("card schema rejects non-base64", !sealed.cardSchema.safeParse("not*base64*").success);
+  check("card schema rejects 40 bytes", !sealed.cardSchema.safeParse(Buffer.alloc(40).toString("base64")).success);
+  check("card schema rejects 1001 bytes", !sealed.cardSchema.safeParse(Buffer.alloc(1001).toString("base64")).success);
+  check("card schema accepts exactly 1000 bytes", sealed.cardSchema.safeParse(Buffer.alloc(1000).toString("base64")).success);
+  check("card schema accepts 41 bytes", sealed.cardSchema.safeParse(Buffer.alloc(41).toString("base64")).success);
+
   // ---------------- B. serializers ----------------
   const bytes = Buffer.from(await crypto.encryptField("hi", key));
   const g = sealed.serializeGoal({ id: "1", title: bytes });

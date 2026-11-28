@@ -1,0 +1,2 @@
+# art files are one LF line: the SR-6 check and reviewers compare them byte for byte
+lib/avatar/art/*.ts text eol=lf

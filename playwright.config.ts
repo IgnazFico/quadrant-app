@@ -52,6 +52,7 @@ export default defineConfig({
         '**/year-review-guard.spec.ts',
         '**/week-next-planning.spec.ts',
         '**/sealed-titles.spec.ts', // WO-029: needs a real backend and creates an account
+        '**/avatar-builder.spec.ts', // WO-140: needs the seeded staging user (it writes the card)
       ],
       use: { ...devices['Desktop Chrome'] },
       fullyParallel: true,
