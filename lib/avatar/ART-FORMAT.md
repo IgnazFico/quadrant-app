@@ -37,9 +37,9 @@ For the illustrator. Everything here is a placeholder today; real art replaces i
 - nose: `nose-1` curve, `nose-2` bridge, `nose-3` button
 - mouth: `mouth-1`, `mouth-2` calm; `mouth-3`, `mouth-4` smiling
 - hair: 1 short crop, 2 long straight, 3 waves, 4 curly, 5 coily short, 6 locs, 7 braids/cornrows, 8 bun, 9 close shave, 10 bob/side part — each as `hair-N-front` and `hair-N-back`
-- cover: 1 hijab, 2 headwrap, 3 dastar — each as `cover-N-front` and `cover-N-back`
+- cover: 1 hijab, 2 beanie, 3 dastar — each as `cover-N-front` and `cover-N-back`
 - facial: `facial-1` full beard, `facial-2` moustache, `facial-3` goatee
-- extra: `extra-1` round glasses, `extra-2` square glasses, `extra-3` earrings, `extra-4` nose stud, `extra-5` cat-eye glasses
+- extra: `extra-1` round glasses, `extra-2` soft-square glasses, `extra-3` earrings, `extra-4` sunglasses, `extra-5` cat-eye glasses
 
 Each style has a front and a back file. The back piece sits behind the head: it may be a small shape for styles with no back volume, but it must not be empty.
 
@@ -76,7 +76,7 @@ Fixed details (eye pupils, mouth interior, gold earrings) may use a literal hex.
 - `cover-1-front` and `cover-1-back` (hijab) hide all hair, the ears and `extra-3` (earrings).
 - `cover-2-front`, `cover-2-back`, `cover-3-front`, `cover-3-back` hide all hair.
 
-So a hijab must cover where hair and ears would be, and a headwrap or dastar must cover the hair line. Nothing else hides anything.
+So a hijab must cover where hair and ears would be, and a beanie or dastar must cover the hair line. Nothing else hides anything.
 
 ## Forbidden in art files
 

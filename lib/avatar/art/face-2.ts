@@ -1,1 +1,1 @@
-export default "<ellipse cx='50' cy='46' rx='20' ry='22' fill='var(--skin)' stroke='#2B2620' stroke-width='2.4' stroke-linejoin='round' stroke-linecap='round'/>";
+export default "<path d='M50 25 C62.5 25 70 33.5 70 45.5 C70 57.5 61.5 66 50 66 C38.5 66 30 57.5 30 45.5 C30 33.5 37.5 25 50 25Z' fill='var(--skin)' stroke='#2B2620' stroke-width='2.4' stroke-linejoin='round' stroke-linecap='round'/>";

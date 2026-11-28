@@ -1,1 +1,1 @@
-export default "<path d='M50 16.5 C66.5 16.5 76 29.5 76 46 C76 57 73.5 65 71.5 73 C79.5 77.5 86.5 86 88.5 104 L11.5 104 C13.5 86 20.5 77.5 28.5 73 C26.5 65 24 57 24 46 C24 29.5 33.5 16.5 50 16.5Z' fill='var(--fabric)' stroke='#2B2620' stroke-width='2.4' stroke-linejoin='round' stroke-linecap='round'/>";
+export default "<path d='M50 16.5 C66.5 16.5 76 29.5 76 46 C76 58 74 68 72 79 L28 79 C26 68 24 58 24 46 C24 29.5 33.5 16.5 50 16.5Z' fill='var(--fabric)' stroke='#2B2620' stroke-width='2.4' stroke-linejoin='round' stroke-linecap='round'/>";
