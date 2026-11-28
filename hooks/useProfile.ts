@@ -5,6 +5,7 @@ import { useAuthStore } from "../store/authStore";
 import { decryptField, fromBase64 } from "../lib/crypto";
 import { decodeCard, encodeCard } from "../lib/avatar/codec";
 import type { CardData, DecodeResult } from "../lib/avatar/types";
+import { useAvatarStore } from "../store/avatarStore";
 import { openLabel, openText } from "../lib/sealedFields";
 
 // GROWTH-RING-REDESIGN: was `Ring = { year, votesLogged, sealed }`. The badge now
@@ -123,6 +124,7 @@ export function useProfile() {
     });
     if (!res.ok) throw new Error("save failed");
     setCard({ ok: true, card: next });
+    useAvatarStore.getState().setAv(next.av); // top bar updates without reload
   }
 
   return {

@@ -4,6 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuthStore } from "../../store/authStore";
+import { useAvatarStore } from "../../store/avatarStore";
+import { decodeCard } from "../../lib/avatar/codec";
+import { Avatar } from "../avatar/Avatar";
 import { signOutAction } from "../../lib/authActions";
 import { NotificationBell } from "../notifications/NotificationBell";
 import { BottomNav } from "./BottomNav";
@@ -105,6 +108,23 @@ function TopBar({ pathname, email }: { pathname: string; email: string }) {
   const clearMasterKey = useAuthStore((s) => s.clearMasterKey);
   const initials = (email.split("@")[0] || "Q").slice(0, 2).toUpperCase();
   const onProfile = matches(pathname, "/profile");
+  const masterKey = useAuthStore((s) => s.masterKey);
+  const av = useAvatarStore((s) => s.av);
+
+  // Sealed card comes from the existing /api/profile; opened here with the key (D-066).
+  useEffect(() => {
+    let live = true;
+    (async () => {
+      const res = await fetch("/api/profile");
+      if (!res.ok || !live) return;
+      const { user } = await res.json();
+      const card = await decodeCard(user.cardSealed ?? null, masterKey);
+      if (live) useAvatarStore.getState().setAv(card.ok ? card.card.av : null);
+    })().catch(() => {}); // on any failure the initials circle stays
+    return () => {
+      live = false;
+    };
+  }, [masterKey]);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const feedbackBtn = useRef<HTMLButtonElement>(null);
   const closeFeedback = () => {
@@ -180,11 +200,11 @@ function TopBar({ pathname, email }: { pathname: string; email: string }) {
           }`}
         >
           <span
-            className={`grid h-7 w-7 flex-none place-items-center rounded-full bg-[#FFF0E0] font-mono text-[11px] font-semibold text-[#C2410C] ${
+            className={`grid h-7 w-7 flex-none place-items-center overflow-hidden rounded-full bg-[#FFF0E0] font-mono text-[11px] font-semibold text-[#C2410C] ${
               onProfile ? "shadow-[0_0_0_1.5px_#F97316]" : "shadow-[0_0_0_1px_rgba(249,115,22,0.2)]"
             }`}
           >
-            {initials}
+            {av ? <Avatar codes={av} size={28} /> : initials}
           </span>
           <span
             className={`hidden max-w-[180px] truncate text-[12.5px] lg:block ${
